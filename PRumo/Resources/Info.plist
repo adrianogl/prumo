@@ -20,5 +20,7 @@
 	<string>1</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>O PRumo abre o Terminal ou o iTerm para iniciar a sessão do Claude no PR.</string>
 </dict>
 </plist>

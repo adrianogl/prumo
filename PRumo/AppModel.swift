@@ -213,12 +213,12 @@ final class AppModel {
         }
         launching.insert(pr.id)
         Task {
-            await runLaunch(pr: pr, purpose: purpose, mayAskForClone: true)
+            await runLaunch(pr: pr, purpose: purpose, mayAskForClone: true, rescanned: false)
             launching.remove(pr.id)
         }
     }
 
-    private func runLaunch(pr: PullRequest, purpose: SessionPurpose, mayAskForClone: Bool) async {
+    private func runLaunch(pr: PullRequest, purpose: SessionPurpose, mayAskForClone: Bool, rescanned: Bool) async {
         let launcher = ClaudeLauncher(
             settings: claude.settings, scanned: claude.scanned,
             runner: SystemProcessRunner(timeout: AppConstants.longCommandTimeout))
@@ -244,12 +244,21 @@ final class AppModel {
                 showAlert(ClaudeText.wrongClone(repository))
                 return
             }
+            guard rescanned else {
+                await claude.rescan()
+                await runLaunch(pr: pr, purpose: purpose, mayAskForClone: true, rescanned: true)
+                return
+            }
             NSApp.activate()
             guard let folder = FolderPicker.choose(
                 prompt: ClaudeText.chooseClonePrompt, message: ClaudeText.cloneQuestion(repository))
             else { return }
+            guard await CloneValidator.isClone(of: repository, directory: folder, runner: SystemProcessRunner()) else {
+                showAlert(ClaudeText.wrongClone(repository))
+                return
+            }
             claude.setOverride(repository: repository, path: folder)
-            await runLaunch(pr: pr, purpose: purpose, mayAskForClone: false)
+            await runLaunch(pr: pr, purpose: purpose, mayAskForClone: false, rescanned: true)
         case .worktree(let message):
             showAlert(ClaudeText.worktreePrefix + message)
         case .launchFailed(let message):
