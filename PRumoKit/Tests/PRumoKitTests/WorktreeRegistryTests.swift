@@ -78,4 +78,22 @@ private func record(_ id: String, number: Int = 1, path: String? = nil) -> Workt
         #expect(WorktreeRecord.registrable(
             pr: pr, directory: URL(fileURLWithPath: "/wt-other/loja-812"), clone: clone, worktreesRoot: root) == nil)
     }
+
+    @Test func worktreeRecordWithoutAccountDecodes() throws {
+        let json = #"{"pullRequestID":"PR_1","number":1,"path":"/wt/loja-1","clone":"/code/loja"}"#
+        let decoded = try JSONDecoder().decode(WorktreeRecord.self, from: Data(json.utf8))
+        #expect(decoded.accountID == nil)
+    }
+
+    @Test func registrableRecordsAccountWhenPresent() {
+        let root = URL(fileURLWithPath: "/wt")
+        let directory = URL(fileURLWithPath: "/wt/loja-1")
+        let clone = URL(fileURLWithPath: "/code/loja")
+        let withAccount = WorktreeRecord.registrable(
+            pr: .fixture(accountID: "a2"), directory: directory, clone: clone, worktreesRoot: root)
+        let withoutAccount = WorktreeRecord.registrable(
+            pr: .fixture(), directory: directory, clone: clone, worktreesRoot: root)
+        #expect(withAccount?.accountID == "a2")
+        #expect(withoutAccount?.accountID == nil)
+    }
 }

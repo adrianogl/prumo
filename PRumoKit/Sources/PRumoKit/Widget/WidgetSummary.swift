@@ -12,7 +12,7 @@ public enum WidgetSummary {
             if case .failure = pr.ci { return true }
             return false
         }
-        let ready = snapshot.mine.filter { MergeReadiness.isReady($0, viewer: snapshot.viewer) }
+        let ready = snapshot.mine.filter { MergeReadiness.isReady($0, viewer: snapshot.viewer(for: $0)) }
 
         let failingItems = failing
             .filter { !muted.contains($0.id) }

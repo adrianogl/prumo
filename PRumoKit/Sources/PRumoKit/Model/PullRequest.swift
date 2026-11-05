@@ -32,6 +32,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
     public let failedRunName: String?
     public let reviewTarget: ReviewRequestTarget
     public let reviewDecision: ReviewDecision?
+    public let accountID: String
 
     public init(
         id: String, number: Int, title: String, url: URL, repository: String, author: String,
@@ -39,7 +40,8 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         reviews: [Review], comments: [Comment], commentCount: Int, additions: Int, deletions: Int,
         mergeable: Mergeable, reviewRequestedAt: Date?,
         headRefName: String = "", baseRefName: String = "", isCrossRepository: Bool = false, failedRunID: Int? = nil,
-        failedRunName: String? = nil, reviewTarget: ReviewRequestTarget = .you, reviewDecision: ReviewDecision? = nil
+        failedRunName: String? = nil, reviewTarget: ReviewRequestTarget = .you, reviewDecision: ReviewDecision? = nil,
+        accountID: String = ""
     ) {
         self.id = id
         self.number = number
@@ -66,6 +68,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         self.failedRunName = failedRunName
         self.reviewTarget = reviewTarget
         self.reviewDecision = reviewDecision
+        self.accountID = accountID
     }
 
     public func with(mergeable: Mergeable) -> PullRequest {
@@ -76,7 +79,19 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
             deletions: deletions, mergeable: mergeable, reviewRequestedAt: reviewRequestedAt,
             headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository,
             failedRunID: failedRunID, failedRunName: failedRunName,
-            reviewTarget: reviewTarget, reviewDecision: reviewDecision
+            reviewTarget: reviewTarget, reviewDecision: reviewDecision, accountID: accountID
+        )
+    }
+
+    public func with(accountID: String) -> PullRequest {
+        PullRequest(
+            id: id, number: number, title: title, url: url, repository: repository, author: author,
+            isDraft: isDraft, createdAt: createdAt, updatedAt: updatedAt, headSHA: headSHA, ci: ci,
+            reviews: reviews, comments: comments, commentCount: commentCount, additions: additions,
+            deletions: deletions, mergeable: mergeable, reviewRequestedAt: reviewRequestedAt,
+            headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository,
+            failedRunID: failedRunID, failedRunName: failedRunName,
+            reviewTarget: reviewTarget, reviewDecision: reviewDecision, accountID: accountID
         )
     }
 
@@ -84,7 +99,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         case id, number, title, url, repository, author, isDraft, createdAt, updatedAt, headSHA, ci
         case reviews, comments, commentCount, additions, deletions, mergeable, reviewRequestedAt
         case headRefName, baseRefName, isCrossRepository, failedRunID, failedRunName
-        case reviewTarget, reviewDecision
+        case reviewTarget, reviewDecision, accountID
     }
 
     public init(from decoder: Decoder) throws {
@@ -114,5 +129,6 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         failedRunName = try container.decodeIfPresent(String.self, forKey: .failedRunName)
         reviewTarget = try container.decodeIfPresent(ReviewRequestTarget.self, forKey: .reviewTarget) ?? .you
         reviewDecision = try container.decodeIfPresent(ReviewDecision.self, forKey: .reviewDecision)
+        accountID = try container.decodeIfPresent(String.self, forKey: .accountID) ?? ""
     }
 }

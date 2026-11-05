@@ -13,8 +13,12 @@ public struct NotificationEvent: Equatable, Sendable {
     public let url: URL
     public let threadID: String
     public let failedRunID: Int?
+    public let accountID: String
 
-    public init(kind: NotificationKind, pullRequestID: String, title: String, body: String, url: URL, failedRunID: Int? = nil) {
+    public init(
+        kind: NotificationKind, pullRequestID: String, title: String, body: String, url: URL,
+        failedRunID: Int? = nil, accountID: String = ""
+    ) {
         self.kind = kind
         self.pullRequestID = pullRequestID
         self.title = title
@@ -22,5 +26,6 @@ public struct NotificationEvent: Equatable, Sendable {
         self.url = url
         self.threadID = pullRequestID
         self.failedRunID = failedRunID
+        self.accountID = accountID
     }
 }

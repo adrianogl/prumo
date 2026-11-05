@@ -27,7 +27,8 @@ extension PullRequest {
         failedRunID: Int? = nil,
         failedRunName: String? = nil,
         reviewTarget: ReviewRequestTarget = .you,
-        reviewDecision: ReviewDecision? = nil
+        reviewDecision: ReviewDecision? = nil,
+        accountID: String = ""
     ) -> PullRequest {
         PullRequest(
             id: id, number: number, title: title, url: url, repository: repository, author: author,
@@ -36,7 +37,7 @@ extension PullRequest {
             deletions: deletions, mergeable: mergeable, reviewRequestedAt: reviewRequestedAt,
             headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository,
             failedRunID: failedRunID, failedRunName: failedRunName,
-            reviewTarget: reviewTarget, reviewDecision: reviewDecision
+            reviewTarget: reviewTarget, reviewDecision: reviewDecision, accountID: accountID
         )
     }
 }
@@ -47,8 +48,12 @@ extension Snapshot {
         mine: [PullRequest] = [],
         toReview: [PullRequest] = [],
         mergedToday: [MergedPullRequest] = [],
-        fetchedAt: Date = .fixed
+        fetchedAt: Date = .fixed,
+        accountViewers: [String: String] = [:]
     ) -> Snapshot {
-        Snapshot(viewer: viewer, mine: mine, toReview: toReview, mergedToday: mergedToday, fetchedAt: fetchedAt)
+        Snapshot(
+            viewer: viewer, mine: mine, toReview: toReview, mergedToday: mergedToday, fetchedAt: fetchedAt,
+            accountViewers: accountViewers
+        )
     }
 }

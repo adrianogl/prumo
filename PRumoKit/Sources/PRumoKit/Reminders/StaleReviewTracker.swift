@@ -20,7 +20,7 @@ public enum StaleReviewTracker {
                     kind: .staleReview, pullRequestID: pr.id,
                     title: "\(ReminderConstants.titlePrefix) \(hours)h: #\(pr.number)",
                     body: "\(pr.author) \(ReminderConstants.bodyInfix) \(pr.title)",
-                    url: pr.url
+                    url: pr.url, accountID: pr.accountID
                 )
                 return StaleReminder(key: key, event: event)
             }

@@ -4,11 +4,13 @@ public actor RefreshCoordinator {
     public typealias Fetch = @Sendable () async throws(GitHubError) -> Snapshot
 
     private let fetch: Fetch
+    private let accountID: String
     private let store: SnapshotStore
     private var lastKnown: Snapshot?
     private var tail: Task<RefreshResult, Never>?
 
-    public init(fetch: @escaping Fetch, store: SnapshotStore) {
+    public init(accountID: String = "", fetch: @escaping Fetch, store: SnapshotStore) {
+        self.accountID = accountID
         self.fetch = fetch
         self.store = store
     }
@@ -25,15 +27,17 @@ public actor RefreshCoordinator {
         return await task.value
     }
 
+    public func lastSnapshot() async -> Snapshot? {
+        if let lastKnown { return lastKnown }
+        return await store.load()
+    }
+
     private func perform(options: TransitionOptions) async -> RefreshResult {
-        let stored: Snapshot?
-        if let lastKnown {
-            stored = lastKnown
-        } else {
-            stored = await store.load()
-        }
+        let stored = await lastSnapshot()
         do {
-            let fresh = try await fetch().keepingKnownMergeable(from: stored)
+            let fetched = try await fetch()
+            let stamped = accountID.isEmpty ? fetched : fetched.stamped(accountID: accountID)
+            let fresh = stamped.keepingKnownMergeable(from: stored)
             let events = TransitionEngine.events(from: stored, to: fresh, options: options)
             lastKnown = fresh
             try? await store.save(fresh)

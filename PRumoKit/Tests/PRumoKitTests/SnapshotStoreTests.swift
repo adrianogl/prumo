@@ -142,4 +142,55 @@ struct SnapshotStoreTests {
         #expect(decoded.mergedToday.isEmpty)
         #expect(decoded.mine == original.mine)
     }
+
+    @Test func oldSnapshotJSONWithoutAccountDecodes() throws {
+        let snapshot = Snapshot.fixture(
+            mine: [.fixture(id: "PR_1", accountID: "a1")],
+            toReview: [.fixture(id: "PR_2", accountID: "a1")],
+            mergedToday: [MergedPullRequest(
+                id: "PR_3", number: 3, title: "Merge", url: URL(string: "https://github.com/acme/loja/pull/3")!,
+                repository: "acme/loja", mergedAt: .fixed, accountID: "a1"
+            )],
+            accountViewers: ["a1": "adriano"]
+        )
+        var root = try JSONSerialization.jsonObject(with: JSONEncoder().encode(snapshot)) as! [String: Any]
+        root.removeValue(forKey: "accountViewers")
+        for key in ["mine", "toReview", "mergedToday"] {
+            root[key] = (root[key] as! [[String: Any]]).map { item in
+                var copy = item
+                copy.removeValue(forKey: "accountID")
+                return copy
+            }
+        }
+        let decoded = try JSONDecoder().decode(Snapshot.self, from: JSONSerialization.data(withJSONObject: root))
+        #expect(decoded.accountViewers == [:])
+        #expect(decoded.mine.first?.accountID == "")
+        #expect(decoded.toReview.first?.accountID == "")
+        #expect(decoded.mergedToday.first?.accountID == "")
+    }
+
+    @Test func stampedSetsAccountOnEveryItem() {
+        let merged = MergedPullRequest(
+            id: "PR_3", number: 3, title: "Merge", url: URL(string: "https://github.com/acme/loja/pull/3")!,
+            repository: "acme/loja", mergedAt: .fixed
+        )
+        let stamped = Snapshot.fixture(
+            viewer: "adrianogl", mine: [.fixture(id: "PR_1")], toReview: [.fixture(id: "PR_2")], mergedToday: [merged]
+        ).stamped(accountID: "a2")
+        #expect(stamped.mine.map(\.accountID) == ["a2"])
+        #expect(stamped.toReview.map(\.accountID) == ["a2"])
+        #expect(stamped.mergedToday.map(\.accountID) == ["a2"])
+        #expect(stamped.accountViewers == ["a2": "adrianogl"])
+    }
+
+    @Test func viewerForUsesAccountMap() {
+        let snapshot = Snapshot.fixture(viewer: "adrianogl", accountViewers: ["a1": "adrianogl", "a2": "adriano-globex"])
+        #expect(snapshot.viewer(for: .fixture(accountID: "a2")) == "adriano-globex")
+    }
+
+    @Test func viewerForFallsBackToViewer() {
+        let snapshot = Snapshot.fixture(viewer: "adrianogl", accountViewers: ["a1": "adrianogl"])
+        #expect(snapshot.viewer(for: .fixture(accountID: "")) == "adrianogl")
+        #expect(snapshot.viewer(for: .fixture(accountID: "a9")) == "adrianogl")
+    }
 }

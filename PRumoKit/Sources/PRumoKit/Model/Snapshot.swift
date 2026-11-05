@@ -6,23 +6,26 @@ public struct Snapshot: Sendable, Codable, Equatable {
     public let toReview: [PullRequest]
     public let mergedToday: [MergedPullRequest]
     public let fetchedAt: Date
+    public let accountViewers: [String: String]
 
     public init(
         viewer: String,
         mine: [PullRequest],
         toReview: [PullRequest],
         mergedToday: [MergedPullRequest] = [],
-        fetchedAt: Date
+        fetchedAt: Date,
+        accountViewers: [String: String] = [:]
     ) {
         self.viewer = viewer
         self.mine = mine
         self.toReview = toReview
         self.mergedToday = mergedToday
         self.fetchedAt = fetchedAt
+        self.accountViewers = accountViewers
     }
 
     private enum CodingKeys: String, CodingKey {
-        case viewer, mine, toReview, mergedToday, fetchedAt
+        case viewer, mine, toReview, mergedToday, fetchedAt, accountViewers
     }
 
     public init(from decoder: Decoder) throws {
@@ -32,6 +35,27 @@ public struct Snapshot: Sendable, Codable, Equatable {
         toReview = try container.decode([PullRequest].self, forKey: .toReview)
         mergedToday = try container.decodeIfPresent([MergedPullRequest].self, forKey: .mergedToday) ?? []
         fetchedAt = try container.decode(Date.self, forKey: .fetchedAt)
+        accountViewers = container.decodeLossyDictionary(String.self, forKey: .accountViewers)
+    }
+
+    public func viewer(for pr: PullRequest) -> String {
+        accountViewers[pr.accountID] ?? viewer
+    }
+
+    public func stamped(accountID: String) -> Snapshot {
+        Snapshot(
+            viewer: viewer,
+            mine: mine.map { $0.with(accountID: accountID) },
+            toReview: toReview.map { $0.with(accountID: accountID) },
+            mergedToday: mergedToday.map {
+                MergedPullRequest(
+                    id: $0.id, number: $0.number, title: $0.title, url: $0.url, repository: $0.repository,
+                    mergedAt: $0.mergedAt, accountID: accountID
+                )
+            },
+            fetchedAt: fetchedAt,
+            accountViewers: [accountID: viewer]
+        )
     }
 
     public func keepingKnownMergeable(from old: Snapshot?) -> Snapshot {
@@ -41,7 +65,8 @@ public struct Snapshot: Sendable, Codable, Equatable {
             mine: Self.inheriting(mine, from: old.mine),
             toReview: Self.inheriting(toReview, from: old.toReview),
             mergedToday: mergedToday,
-            fetchedAt: fetchedAt
+            fetchedAt: fetchedAt,
+            accountViewers: accountViewers
         )
     }
 

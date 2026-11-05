@@ -19,6 +19,10 @@ struct PopoverView: View {
     private var organization: OrganizationStore { model.organization }
     private var staleLimit: TimeInterval { TimeInterval(model.preferences.preferences.staleReviewHours * 3600) }
     private var viewer: String { model.snapshot?.viewer ?? "" }
+
+    private func viewer(for pr: PullRequest) -> String {
+        model.snapshot?.viewer(for: pr) ?? viewer
+    }
     private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var isLoading: Bool { model.snapshot == nil && model.connection == .ok && !model.needsOnboarding }
 
@@ -236,19 +240,20 @@ struct PopoverView: View {
                 snapshot.toReview, ignoreDrafts: settings.ignoreDraftsInReview,
                 includeTeam: settings.includeTeamRequests)
         case .merge:
-            snapshot.mine.filter { MergeReadiness.isReady($0, viewer: snapshot.viewer) }
+            snapshot.mine.filter { MergeReadiness.isReady($0, viewer: snapshot.viewer(for: $0)) }
         }
     }
 
     private func sections(for tab: ListTab, now: Date) -> [RowSection] {
         let settings = organization.settings
         let context = FilterContext(
-            viewer: viewer, marks: settings.marks, unseen: highlighted.union(organization.unseen),
+            viewer: viewer, viewers: model.snapshot?.accountViewers ?? [:], marks: settings.marks, unseen: highlighted.union(organization.unseen),
             staleLimit: staleLimit, now: now)
         let filtered = RowFiltering.apply(source(for: tab), filter: settings.filter, tab: tab, context: context)
         let searched = trimmedQuery.isEmpty ? filtered : filtered.filter { SearchMatcher.matches($0, query: trimmedQuery) }
         return RowOrdering.sections(
-            searched, tab: tab, ordering: settings.ordering(for: tab), marks: settings.marks, viewer: viewer)
+            searched, tab: tab, ordering: settings.ordering(for: tab), marks: settings.marks,
+            viewer: { model.snapshot?.viewer(for: $0) ?? viewer })
     }
 
     private func rowCount(for tab: ListTab) -> Int {
@@ -416,7 +421,7 @@ struct PopoverView: View {
         return PRRowView(
             pr: pr,
             presentation: presentation(for: pr, now: now),
-            compactLine: compact ? RowPresenter.compactLine(pr, tab: tab, viewer: viewer, now: now) : nil,
+            compactLine: compact ? RowPresenter.compactLine(pr, tab: tab, viewer: viewer(for: pr), now: now) : nil,
             tab: tab,
             isHighlighted: highlighted.contains(pr.id),
             isSelected: isSelected,
@@ -454,9 +459,9 @@ struct PopoverView: View {
         let jiraKey = model.integrations.link(for: pr)?.key
         return switch tab {
         case .mine: RowPresenter.mine(
-            pr, viewer: viewer, now: now, jiraKey: jiraKey, commentFilter: organization.settings.commentAuthorFilter)
+            pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey, commentFilter: organization.settings.commentAuthorFilter)
         case .review: RowPresenter.review(pr, now: now, jiraKey: jiraKey, staleLimit: staleLimit)
-        case .merge: RowPresenter.merge(pr, viewer: viewer, now: now, jiraKey: jiraKey)
+        case .merge: RowPresenter.merge(pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey)
         }
     }
 

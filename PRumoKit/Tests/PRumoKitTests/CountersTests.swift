@@ -54,4 +54,14 @@ import Testing
         #expect(!Counters.hasFailingCI(ok))
         #expect(Counters.hasFailingCI(bad))
     }
+
+    @Test func readyToMergeIgnoresOwnApprovalPerAccount() {
+        let ownApproval = Review(id: "R1", author: "adriano-globex", state: .approved, submittedAt: .fixed)
+        let snapshot = Snapshot.fixture(
+            viewer: "adrianogl",
+            mine: [.fixture(id: "PR_1", reviews: [ownApproval], accountID: "a2")],
+            accountViewers: ["a1": "adrianogl", "a2": "adriano-globex"]
+        )
+        #expect(Counters.readyToMerge(snapshot) == 0)
+    }
 }

@@ -14,10 +14,11 @@ struct FilterPicker: View {
     private var authors: [String] {
         guard let snapshot else { return [] }
         var seen = Set<String>()
+        let ownLogins = Set(snapshot.accountViewers.values.map { $0.lowercased() } + [snapshot.viewer.lowercased()])
         let query = personSearch.trimmingCharacters(in: .whitespaces)
         return (snapshot.mine + snapshot.toReview)
             .map(\.author)
-            .filter { $0.caseInsensitiveCompare(snapshot.viewer) != .orderedSame }
+            .filter { !ownLogins.contains($0.lowercased()) }
             .filter { seen.insert($0.lowercased()).inserted }
             .filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) }
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }

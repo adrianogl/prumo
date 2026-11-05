@@ -2,7 +2,7 @@ import Foundation
 
 public enum RowOrdering {
     public static func sections(
-        _ prs: [PullRequest], tab: ListTab, ordering: TabOrdering, marks: RowMarks, viewer: String
+        _ prs: [PullRequest], tab: ListTab, ordering: TabOrdering, marks: RowMarks, viewer: (PullRequest) -> String
     ) -> [RowSection] {
         let sorted = prs.sorted { precedes($0, $1, tab: tab, order: ordering.order, viewer: viewer) }
         guard ordering.groupByRepository else {
@@ -21,14 +21,14 @@ public enum RowOrdering {
     }
 
     private static func precedes(
-        _ a: PullRequest, _ b: PullRequest, tab: ListTab, order: RowSortOrder, viewer: String
+        _ a: PullRequest, _ b: PullRequest, tab: ListTab, order: RowSortOrder, viewer: (PullRequest) -> String
     ) -> Bool {
         switch order {
         case .recentActivity:
             if a.updatedAt != b.updatedAt { return a.updatedAt > b.updatedAt }
         case .needsActionFirst:
-            let left = needsAction(a, tab: tab, viewer: viewer)
-            let right = needsAction(b, tab: tab, viewer: viewer)
+            let left = needsAction(a, tab: tab, viewer: viewer(a))
+            let right = needsAction(b, tab: tab, viewer: viewer(b))
             if left != right { return left }
             if a.updatedAt != b.updatedAt { return a.updatedAt > b.updatedAt }
         case .oldestFirst:

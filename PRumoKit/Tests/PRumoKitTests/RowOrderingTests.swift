@@ -13,7 +13,7 @@ import Testing
         _ prs: [PullRequest], tab: ListTab = .mine, order: RowSortOrder, group: Bool = false, marks: RowMarks = RowMarks()
     ) -> [[String]] {
         RowOrdering.sections(
-            prs, tab: tab, ordering: TabOrdering(order: order, groupByRepository: group), marks: marks, viewer: "adriano"
+            prs, tab: tab, ordering: TabOrdering(order: order, groupByRepository: group), marks: marks, viewer: { _ in "adriano" }
         ).map { $0.items.map(\.id) }
     }
 
@@ -116,7 +116,7 @@ import Testing
         let marks = RowMarks(pinned: ["C"])
         let sections = RowOrdering.sections(
             prs, tab: .mine, ordering: TabOrdering(order: .recentActivity, groupByRepository: true),
-            marks: marks, viewer: "adriano"
+            marks: marks, viewer: { _ in "adriano" }
         )
         #expect(sections.map { $0.repository } == ["acme/a", "acme/b"])
         #expect(sections.map { $0.items.map { $0.id } } == [["B"], ["C", "A"]])
@@ -124,9 +124,27 @@ import Testing
 
     @Test func ungroupedIsSingleSectionWithoutRepository() {
         let sections = RowOrdering.sections(
-            [.fixture()], tab: .mine, ordering: TabOrdering(), marks: RowMarks(), viewer: "adriano"
+            [.fixture()], tab: .mine, ordering: TabOrdering(), marks: RowMarks(), viewer: { _ in "adriano" }
         )
         #expect(sections.count == 1)
         #expect(sections[0].repository == nil)
+    }
+
+    @Test func orderingNeedsActionUsesViewerClosure() {
+        let ownChanges = Review(id: "R1", author: "adriano-globex", state: .changesRequested, submittedAt: .fixed)
+        let prs = [
+            PullRequest.fixture(id: "A", number: 1, updatedAt: hours(1)),
+            .fixture(id: "B", number: 2, updatedAt: hours(2), reviews: [ownChanges], accountID: "a2")
+        ]
+        let viewers = ["a2": "adriano-globex"]
+        let sections = RowOrdering.sections(
+            prs, tab: .mine, ordering: TabOrdering(order: .needsActionFirst), marks: RowMarks(),
+            viewer: { viewers[$0.accountID] ?? "adriano" }
+        )
+        #expect(sections[0].items.map(\.id) == ["A", "B"])
+        let plain = RowOrdering.sections(
+            prs, tab: .mine, ordering: TabOrdering(order: .needsActionFirst), marks: RowMarks(), viewer: { _ in "adriano" }
+        )
+        #expect(plain[0].items.map(\.id) == ["B", "A"])
     }
 }

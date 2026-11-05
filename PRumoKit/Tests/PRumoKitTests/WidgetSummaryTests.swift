@@ -126,4 +126,16 @@ import Testing
         #expect(try JSONDecoder().decode(WidgetSnapshot.self, from: data) == original)
         #expect(WidgetSnapshot.disconnected.connected == false)
     }
+
+    @Test func widgetSummaryUsesViewerOfEachAccount() {
+        let ownApproval = Review(id: "R1", author: "adriano-globex", state: .approved, submittedAt: .fixed)
+        let snapshot = Snapshot.fixture(
+            viewer: "adrianogl",
+            mine: [.fixture(id: "PR_1", reviews: [ownApproval], accountID: "a2")],
+            accountViewers: ["a1": "adrianogl", "a2": "adriano-globex"]
+        )
+        let summary = make(snapshot)
+        #expect(summary.readyToMerge == 0)
+        #expect(summary.items.isEmpty)
+    }
 }

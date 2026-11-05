@@ -197,4 +197,18 @@ private func failed(at date: Date) -> Snapshot {
         #expect(back.events.isEmpty)
         #expect(await store.load()?.mine.first?.mergeable == .conflicting)
     }
+
+    @Test func coordinatorStampsAccountOnPullRequestsAndEvents() async {
+        let (store, directory) = temporaryStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let script = Script([.success(pending()), .success(failed(at: t1))])
+        let sut = RefreshCoordinator(
+            accountID: "a2", fetch: { () async throws(GitHubError) -> Snapshot in try script.next() }, store: store
+        )
+        _ = await sut.refresh()
+        let result = await sut.refresh()
+        #expect(result.events.map(\.accountID) == ["a2"])
+        #expect(result.snapshot?.mine.map(\.accountID) == ["a2"])
+        #expect(await sut.lastSnapshot()?.accountViewers == ["a2": "adriano"])
+    }
 }

@@ -12,7 +12,7 @@ public enum RowFiltering {
     ) -> Bool {
         matchesRepository(pr, filter)
             && matchesCI(pr, filter)
-            && matchesReview(pr, filter, viewer: context.viewer)
+            && matchesReview(pr, filter, viewer: context.viewer(for: pr))
             && matchesState(pr, filter, context: context)
             && matchesRequest(pr, filter, tab: tab, context: context)
             && matchesAuthor(pr, filter)

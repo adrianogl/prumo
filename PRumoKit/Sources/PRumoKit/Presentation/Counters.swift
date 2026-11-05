@@ -11,6 +11,6 @@ public enum Counters {
     }
 
     public static func readyToMerge(_ s: Snapshot) -> Int {
-        s.mine.filter { MergeReadiness.isReady($0, viewer: s.viewer) }.count
+        s.mine.filter { MergeReadiness.isReady($0, viewer: s.viewer(for: $0)) }.count
     }
 }
