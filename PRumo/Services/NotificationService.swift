@@ -30,6 +30,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, Sen
                 identifier: NotificationCategories.ciFailedNoRun, actions: [open, fix, mute],
                 intentIdentifiers: [], options: []),
             UNNotificationCategory(
+                identifier: NotificationCategories.conflict, actions: [open, mute],
+                intentIdentifiers: [], options: []),
+            UNNotificationCategory(
                 identifier: NotificationCategories.pullRequest, actions: [open],
                 intentIdentifiers: [], options: []),
         ]
@@ -40,13 +43,13 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, Sen
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
-    func post(_ events: [NotificationEvent]) {
+    func post(_ events: [NotificationEvent], grouped: Bool) {
         let center = UNUserNotificationCenter.current()
         for event in events {
             let content = UNMutableNotificationContent()
             content.title = event.title
             content.body = event.body
-            content.threadIdentifier = event.threadID
+            content.threadIdentifier = grouped ? event.threadID : ""
             content.userInfo = [
                 AppConstants.notificationURLKey: event.url.absoluteString,
                 NotificationCategories.pullRequestIDKey: event.pullRequestID,
@@ -55,6 +58,8 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, Sen
             case .ciFailed:
                 content.categoryIdentifier = event.failedRunID == nil
                     ? NotificationCategories.ciFailedNoRun : NotificationCategories.ciFailed
+            case .conflict:
+                content.categoryIdentifier = NotificationCategories.conflict
             default:
                 content.categoryIdentifier = NotificationCategories.pullRequest
             }

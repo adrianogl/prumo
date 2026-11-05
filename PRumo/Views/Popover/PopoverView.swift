@@ -13,12 +13,18 @@ struct PopoverView: View {
     @Environment(\.openSettings) private var openSettings
 
     private var organization: OrganizationStore { model.organization }
+    private var staleLimit: TimeInterval { TimeInterval(model.preferences.preferences.staleReviewHours * 3600) }
     private var viewer: String { model.snapshot?.viewer ?? "" }
     private var isLoading: Bool { model.snapshot == nil && model.connection == .ok && !model.needsOnboarding }
 
     var body: some View {
         VStack(spacing: 0) {
-            header
+            TimelineView(.periodic(from: .now, by: 60)) { context in
+                header
+                    .onChange(of: context.date, initial: true) { _, date in
+                        model.preferences.refreshQuiet(now: date)
+                    }
+            }
             tabs
             if !model.needsOnboarding {
                 FilterBar(organization: organization, snapshot: model.snapshot, tab: tab, isPresentingPicker: $isPresentingPicker)
@@ -82,7 +88,8 @@ struct PopoverView: View {
     private func sections(for tab: ListTab, now: Date) -> [RowSection] {
         let settings = organization.settings
         let context = FilterContext(
-            viewer: viewer, marks: settings.marks, unseen: highlighted.union(organization.unseen), now: now)
+            viewer: viewer, marks: settings.marks, unseen: highlighted.union(organization.unseen),
+            staleLimit: staleLimit, now: now)
         let filtered = RowFiltering.apply(source(for: tab), filter: settings.filter, tab: tab, context: context)
         return RowOrdering.sections(
             filtered, tab: tab, ordering: settings.ordering(for: tab), marks: settings.marks, viewer: viewer)
@@ -271,7 +278,7 @@ struct PopoverView: View {
         let jiraKey = model.integrations.link(for: pr)?.key
         return switch tab {
         case .mine: RowPresenter.mine(pr, viewer: viewer, now: now, jiraKey: jiraKey)
-        case .review: RowPresenter.review(pr, now: now, jiraKey: jiraKey)
+        case .review: RowPresenter.review(pr, now: now, jiraKey: jiraKey, staleLimit: staleLimit)
         case .merge: RowPresenter.merge(pr, viewer: viewer, now: now, jiraKey: jiraKey)
         }
     }

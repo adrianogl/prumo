@@ -15,6 +15,7 @@ final class AppModel {
     let claude: ClaudeSettingsStore
     let integrations: IntegrationSettingsStore
     let organization: OrganizationStore
+    let preferences: NotificationPreferencesStore
     private(set) var launching: Set<String> = []
     private(set) var rerunning: Set<String> = []
 
@@ -23,6 +24,7 @@ final class AppModel {
     @ObservationIgnored private let snapshotStore: SnapshotStore
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let worktreeRegistry: WorktreeRegistry
+    @ObservationIgnored private let reminderStore: ReminderStore
     @ObservationIgnored private var cleaningWorktrees = false
     @ObservationIgnored private var pruningMarks = false
     @ObservationIgnored private var lastMarksPrune = Date.distantPast
@@ -41,9 +43,12 @@ final class AppModel {
         claude: ClaudeSettingsStore? = nil,
         integrations: IntegrationSettingsStore? = nil,
         organization: OrganizationStore? = nil,
-        worktreeRegistry: WorktreeRegistry = WorktreeRegistry(fileURL: WorktreeRegistry.defaultURL())
+        preferences: NotificationPreferencesStore? = nil,
+        worktreeRegistry: WorktreeRegistry = WorktreeRegistry(fileURL: WorktreeRegistry.defaultURL()),
+        reminderStore: ReminderStore = ReminderStore(fileURL: ReminderStore.defaultURL())
     ) {
         self.worktreeRegistry = worktreeRegistry
+        self.reminderStore = reminderStore
         self.notifications = notifications
         self.tokenStore = tokenStore
         self.snapshotStore = snapshotStore
@@ -51,6 +56,7 @@ final class AppModel {
         self.claude = claude ?? ClaudeSettingsStore(defaults: defaults)
         self.integrations = integrations ?? IntegrationSettingsStore(defaults: defaults)
         self.organization = organization ?? OrganizationStore(defaults: defaults)
+        self.preferences = preferences ?? NotificationPreferencesStore(defaults: defaults)
         login = defaults.string(forKey: AppConstants.accountLoginKey)
         origin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
         notifications.onFixWithClaude = { [weak self] id, url in
@@ -231,10 +237,23 @@ final class AppModel {
             organization.learnRepositories(from: fresh)
             cleanUpWorktrees(snapshot: fresh)
             pruneMarks(snapshot: fresh)
+            await deliverNotifications(fresh: fresh, events: result.events)
         }
-        let marks = organization.settings.marks
-        notifications.post(result.events.filter { !marks.isMuted($0.pullRequestID) })
         return result.state != .unauthorized
+    }
+
+    private func deliverNotifications(fresh: Snapshot, events: [NotificationEvent]) async {
+        let now = Date.now
+        preferences.refreshQuiet(now: now)
+        let reminders = await reminderStore.load()
+        let outcome = NotificationPipeline.run(
+            events: events, snapshot: fresh, preferences: preferences.preferences,
+            muted: Set(organization.settings.marks.muted.keys),
+            ignoreDrafts: organization.settings.ignoreDraftsInReview,
+            includeTeam: organization.settings.includeTeamRequests,
+            reminders: reminders, now: now, calendar: .current)
+        try? await reminderStore.save(outcome.reminders)
+        notifications.post(outcome.deliver, grouped: preferences.preferences.groupByPullRequest)
     }
 
     private func trackActivity(fresh: Snapshot, events: [NotificationEvent]) {

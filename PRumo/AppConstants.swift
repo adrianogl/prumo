@@ -11,6 +11,7 @@ enum AppConstants {
     static let claudeSettingsKey = "claudeSettings"
     static let jiraSettingsKey = "jiraSettings"
     static let organizationKey = "organization"
+    static let notificationPreferencesKey = "notificationPreferences"
     static let unseenActivityKey = "unseenActivity"
     static let organizationTeamDefaultMigratedKey = "organizationTeamDefaultMigrated"
     static let ghTokenRetryAttempts = 3

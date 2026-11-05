@@ -2,6 +2,7 @@ enum NotificationCategories {
     static let ciFailed = "ci-failed"
     static let ciFailedNoRun = "ci-failed-no-run"
     static let pullRequest = "pr"
+    static let conflict = "conflict"
     static let openAction = "abrir"
     static let rerunAction = "re-rodar"
     static let fixWithClaudeAction = "corrigir-claude"
