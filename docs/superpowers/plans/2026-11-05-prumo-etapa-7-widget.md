@@ -26,7 +26,7 @@
 - Testes nunca rodam `git`, `gh` ou `osascript` reais nem chamam a API do GitHub.
 - Tudo que é persistido (incluindo o JSON do widget) decodifica versões antigas: campo novo com `decodeIfPresent` e default.
 - Widget pequeno: "para revisar" e "CI falhando". Médio: "para revisar", "CI falhando", "prontos p/ merge" e até três PRs que pedem ação; clique no PR abre o PR.
-- Contadores seguem as regras da barra de menu: "para revisar" conta só pedidos para você (sem time, sem drafts quando ignorados).
+- Contadores seguem as regras da barra de menu: "para revisar" conta pedidos para você e, com "Incluir reviews pedidos ao time" ligado, pedidos ao time; sem drafts quando ignorados.
 
 ## Review Focus
 
@@ -93,12 +93,12 @@ Variantes, nesta ordem:
       public static func target(from url: URL) -> URL?
   }
   ```
-  - Contadores: `Counters.reviewBadge(snapshot, ignoreDrafts:)`, `mine` com `.failure`, `Counters.readyToMerge`.
-  - Itens, sem PRs silenciados, no máximo 3, nesta ordem: CI falhando (`updatedAt` desc), review parado (`.you`, espera ≥ `staleLimit`, maior espera primeiro, `waitingHours` em horas inteiras), pronto para merge (`updatedAt` desc).
+  - Contadores: `Counters.reviewBadge(snapshot, ignoreDrafts:, includeTeam:)`, `mine` com `.failure`, `Counters.readyToMerge`.
+  - Itens, sem PRs silenciados, no máximo 3, nesta ordem: CI falhando (`updatedAt` desc), review parado (`.you`, ou `.team` com a opção ligada, espera ≥ `staleLimit`, maior espera primeiro, `waitingHours` em horas inteiras), pronto para merge (`updatedAt` desc).
   - `WidgetLink.make`: `prumo://open?url=<URL com percent-encoding>`. `target`: só aceita esquema `prumo`, host `open` e URL `https` com host `github.com`; o resto → `nil` (Review Focus 3).
   - Campos de `WidgetSnapshot` com `decodeIfPresent` (`connected` padrão `true`, contadores 0, `items` vazio).
 
-- [ ] **Step 1: Testes** `countsMatchMenuBarRules` (pedido ao time e draft ignorado fora de `toReview`), `itemsOrderedCIThenStaleThenReady`, `capsAtThreeItems`, `mutedNotInItems`, `staleItemHasWholeHours`, `linkRoundTrip`, `linkRejectsNonGitHubURL` (`https://exemplo.com`, `http://github.com/...` e esquema `https` direto → `nil`), `oldWidgetJSONDecodes` (`{"toReview":3}` → `connected == true`, `items == []`).
+- [ ] **Step 1: Testes** `countsMatchMenuBarRules` (pedido ao time dentro de `toReview` com a opção ligada e fora com ela desligada; draft ignorado fora), `itemsOrderedCIThenStaleThenReady`, `capsAtThreeItems`, `mutedNotInItems`, `staleItemHasWholeHours`, `linkRoundTrip`, `linkRejectsNonGitHubURL` (`https://exemplo.com`, `http://github.com/...` e esquema `https` direto → `nil`), `oldWidgetJSONDecodes` (`{"toReview":3}` → `connected == true`, `items == []`).
 - [ ] **Step 2:** `swift test --filter WidgetSummaryTests` → FAIL.
 - [ ] **Step 3:** Implementar.
 - [ ] **Step 4:** `swift test` → PASS.

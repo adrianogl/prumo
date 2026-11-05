@@ -27,7 +27,7 @@
 - Tudo que é persistido (snapshot em disco, JSON no UserDefaults, `reminders.json`) decodifica versões antigas: campo novo com `decodeIfPresent` e default, com teste usando JSON sem o campo.
 - Não perturbe: opções "por 1 hora", "até amanhã às 9h" (dia seguinte do calendário, 09:00 local) e "até eu reativar". Durante a pausa o app atualiza os dados, mas descarta as notificações; ao sair da pausa, as do período não aparecem.
 - Horário de trabalho: desligado por padrão; quando ligado, padrão seg–sex, 9h–18h (fim exclusivo). Fora dele, o app age como Não perturbe.
-- Review parado: padrão 24 h, relógio corrido, uma vez por pedido. Se vencer durante uma pausa, sai no primeiro refresh depois da pausa, não é descartado. Pedidos ao time, drafts ignorados e PRs silenciados não lembram.
+- Review parado: padrão 24 h, relógio corrido, uma vez por pedido. Se vencer durante uma pausa, sai no primeiro refresh depois da pausa, não é descartado. Pedido ao time lembra quando "Incluir reviews pedidos ao time" está ligado; drafts ignorados e PRs silenciados não lembram.
 - Pronto para merge: regra do `MergeReadiness` da etapa 4 (inclui o caso sem branch protection: uma aprovação basta e PR sem checks conta como CI verde).
 
 ## Review Focus
@@ -122,7 +122,7 @@ Eventos (por PR que já existia em `old.mine`, depois dos de comentário):
   public actor ReminderStore { public init(fileURL: URL); public static func defaultURL() -> URL; public func load() -> ReminderState; public func save(_ state: ReminderState) throws }
   ```
   - `key`: `"<id>@<Int(início.timeIntervalSince1970)>"`, com início = `reviewRequestedAt ?? createdAt`. Pedido novo depois de um re-review gera chave nova.
-  - `due`: PRs de `toReview` com `.you`, fora de `muted`, sem draft quando `ignoreDrafts`, espera ≥ `limit`, chave fora de `reminded`. Evento `.staleReview`, título `Review parado há <h>h: #<n>` (h = horas inteiras), corpo `<autor> pediu seu review em <título>`, URL do PR.
+  - `due`: PRs de `toReview` (`.you`, e `.team` quando `includeTeam`), fora de `muted`, sem draft quando `ignoreDrafts`, espera ≥ `limit`, chave fora de `reminded`. Evento `.staleReview`, título `Review parado há <h>h: #<n>` (h = horas inteiras), corpo `<autor> pediu seu review em <título>`, URL do PR.
   - `insert` sem duplicar e mantendo só as 500 chaves mais novas.
   - `ReminderStore.defaultURL()`: `~/Library/Application Support/PRumo/reminders.json`. Arquivo ausente ou inválido → `ReminderState()`.
   - `RowPresenter.review(_:now:jiraKey:staleLimit: TimeInterval? = nil)`: espera ≥ limite → acrescenta `Badge("esperando há <h>h", .warning, .clock)` e a bolinha vira `.attention` (CI falhando continua `.failed`).

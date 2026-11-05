@@ -131,15 +131,15 @@ Linha compacta (`repo` = parte depois da `/`):
 
 **Interfaces:**
 - Produces:
-  - `public struct TransitionOptions: Equatable, Sendable { public var ignoreDraftReviews: Bool; public init(ignoreDraftReviews: Bool = true) }`
+  - `public struct TransitionOptions: Equatable, Sendable { public var ignoreDraftReviews: Bool; public var includeTeamRequests: Bool; public init(ignoreDraftReviews: Bool = true, includeTeamRequests: Bool = true) }`
   - `TransitionEngine.events(from:to:options: TransitionOptions = .init())`
   - `RefreshCoordinator.refresh(options: TransitionOptions = .init()) async -> RefreshResult`
   - `public enum ReviewInclusion { public static func visible(_ prs: [PullRequest], ignoreDrafts: Bool, includeTeam: Bool) -> [PullRequest] }`
-  - `public enum Counters { public static func reviewBadge(_ s: Snapshot, ignoreDrafts: Bool) -> Int; public static func hasFailingCI(_ s: Snapshot) -> Bool; public static func readyToMerge(_ s: Snapshot) -> Int }`: `reviewBadge` conta só `.you`, sem drafts quando ignorando.
+  - `public enum Counters { public static func reviewBadge(_ s: Snapshot, ignoreDrafts: Bool, includeTeam: Bool) -> Int; public static func hasFailingCI(_ s: Snapshot) -> Bool; public static func readyToMerge(_ s: Snapshot) -> Int }`: `reviewBadge` conta pedidos `.you` e, com `includeTeam`, também `.team`; sem drafts quando ignorando.
 
-Regras de review pedido no engine: só PRs `.you` contam, em `old` e em `new`; com `ignoreDraftReviews`, drafts saem dos dois conjuntos. PR que estava em `old.toReview` como draft e chega em `new` sem draft notifica mesmo com `reviewRequestedAt` antigo (Review Focus 3). PR que passa de `.team` para `.you` notifica.
+Regras de review pedido no engine: PRs `.you` contam sempre e `.team` só com `includeTeamRequests`, em `old` e em `new`; com `ignoreDraftReviews`, drafts saem dos dois conjuntos; ligar ou desligar `includeTeamRequests` não gera rajada de notificações. PR que estava em `old.toReview` como draft e chega em `new` sem draft notifica mesmo com `reviewRequestedAt` antigo (Review Focus 3). PR que passa de `.team` para `.you` notifica.
 
-- [ ] **Step 1: Testes** `teamRequestNotifiesWhenIncluded`, `teamRequestSilentWhenExcluded`, `togglingTeamOptionDoesNotBurst`, `teamRequestBecomingDirectNotifies`, `draftReviewRequestIgnoredWhenOptionOn`, `draftReviewRequestNotifiesWhenOptionOff`, `draftBecomingReadyNotifiesWhenIgnoringDrafts`, `coordinatorPassesOptionsToEngine`, `reviewBadgeExcludesTeamAndIgnoredDrafts`, `reviewBadgeCountsTeamWhenIncluded`, `visibleReviewsRespectDraftAndTeamOptions`, `readyCountUsesMergeReadiness`.
+- [ ] **Step 1: Testes** `teamRequestNotifiesWhenIncluded`, `teamRequestSilentWhenExcluded`, `togglingTeamOptionDoesNotBurst`, `teamRequestBecomingDirectNotifies`, `draftReviewRequestIgnoredWhenOptionOn`, `draftReviewRequestNotifiesWhenOptionOff`, `draftBecomingReadyNotifiesWhenIgnoringDrafts`, `coordinatorPassesOptionsToEngine`, `reviewBadgeExcludesTeamWhenOffAndIgnoredDrafts`, `reviewBadgeCountsTeamWhenIncluded`, `visibleReviewsRespectDraftAndTeamOptions`, `readyCountUsesMergeReadiness`.
 - [ ] **Step 2:** `swift test --filter "TransitionEngineTests|RefreshCoordinatorTests|CountersTests"` → FAIL.
 - [ ] **Step 3:** Implementar.
 - [ ] **Step 4:** `swift test` → PASS.
@@ -188,7 +188,7 @@ Regras de review pedido no engine: só PRs `.you` contam, em `old` e em `new`; c
 
 Todos os campos com `decodeIfPresent` e o default da Global Constraints.
 
-- [ ] **Step 1: Testes** `emptyJSONDecodesToDefaults` (`{}` → `ignoreDraftsInReview == true`, `includeTeamRequests == false`, `rowStyle == .detailed`, `ordering(for: .review) == TabOrdering()`), `roundTripCodable`, `criteriaCountIgnoresRepositories`, `marksPrunedOnlyWhenClosedOrMerged` (estado `.open` mantém).
+- [ ] **Step 1: Testes** `emptyJSONDecodesToDefaults` (`{}` → `ignoreDraftsInReview == true`, `includeTeamRequests == true`, `rowStyle == .detailed`, `ordering(for: .review) == TabOrdering()`), `roundTripCodable`, `criteriaCountIgnoresRepositories`, `marksPrunedOnlyWhenClosedOrMerged` (estado `.open` mantém).
 - [ ] **Step 2:** `swift test --filter OrganizationSettingsTests` → FAIL.
 - [ ] **Step 3:** Implementar.
 - [ ] **Step 4:** `swift test` → PASS.
@@ -383,7 +383,7 @@ Limpeza: depois de um refresh `.ok`, ids marcados ausentes de `mine` e `toReview
 ### Task 12: Verificação ponta a ponta
 
 - [ ] **Step 1:** `swift test` → todos PASS. `xcodebuild clean build` → `BUILD SUCCEEDED`, zero warnings do projeto.
-- [ ] **Step 2 (usuário):** com "Incluir reviews pedidos ao time" ligado, um PR pedido ao time aparece com `time <nome>`, sem notificação e fora do contador da barra.
+- [ ] **Step 2 (usuário):** com "Incluir reviews pedidos ao time" ligado, um PR pedido ao time aparece com `time <nome>`, notifica e entra no contador da barra; desligando a opção, ele some da lista, das notificações e do contador.
 - [ ] **Step 3 (usuário):** aba Merge lista os prontos; depois de um merge, o PR aparece em "Mergeados hoje" com o horário.
 - [ ] **Step 4 (usuário):** silenciar um PR pelo menu e pela notificação de CI → desce para o fim, esmaecido, sem novas notificações; reativar pelos Ajustes.
 - [ ] **Step 5 (usuário):** salvar uma visão, limpar os filtros, reaplicar a visão; trocar para linha compacta.
