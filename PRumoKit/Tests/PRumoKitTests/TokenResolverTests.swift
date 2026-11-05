@@ -4,8 +4,9 @@ import Testing
 private struct FakeRunner: ProcessRunner {
     var status: Int32 = 0
     var stdout: String = ""
-    func run(_ executable: String, _ args: [String]) async throws -> (status: Int32, stdout: String) {
-        (status, stdout)
+    var stderr: String = ""
+    func run(_ executable: String, _ args: [String]) async throws -> (status: Int32, stdout: String, stderr: String) {
+        (status, stdout, stderr)
     }
 }
 
