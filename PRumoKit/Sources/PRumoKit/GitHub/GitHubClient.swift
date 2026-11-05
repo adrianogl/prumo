@@ -3,19 +3,26 @@ import Foundation
 public struct GitHubClient: Sendable {
     private static let endpoint = URL(string: "https://api.github.com/graphql")!
     private static let restBase = "https://api.github.com"
+    private static let cancelPollInterval: Duration = .seconds(2)
+    private static let cancelTimeout: Duration = .seconds(30)
+    private static let finishedRunStatuses: Set<String> = ["completed", "cancelled"]
+    private static let alreadyFinishedStatus = 409
 
     private let token: String
     private let transport: HTTPTransport
     private let now: @Sendable () -> Date
+    private let sleep: @Sendable (Duration) async -> Void
 
     public init(
         token: String,
         transport: HTTPTransport = URLSessionTransport(),
-        now: @escaping @Sendable () -> Date = Date.init
+        now: @escaping @Sendable () -> Date = Date.init,
+        sleep: @escaping @Sendable (Duration) async -> Void = { try? await Task.sleep(for: $0) }
     ) {
         self.token = token
         self.transport = transport
         self.now = now
+        self.sleep = sleep
     }
 
     public func fetchSnapshot() async throws(ProviderError) -> Snapshot {
@@ -64,14 +71,44 @@ public struct GitHubClient: Sendable {
     }
 
     public func rerunFailedJobs(repository: String, runID: Int) async throws(ProviderError) {
-        guard let url = URL(string: "\(Self.restBase)/repos/\(repository)/actions/runs/\(runID)/rerun-failed-jobs") else {
-            throw .unexpectedResponse
+        _ = try await send(try runRequest(repository: repository, runID: runID, action: "rerun-failed-jobs", method: "POST"))
+    }
+
+    public func cancelAndRerun(repository: String, runIDs: [Int]) async throws(ProviderError) {
+        for runID in runIDs {
+            do throws(ProviderError) {
+                _ = try await send(try runRequest(repository: repository, runID: runID, action: "cancel", method: "POST"))
+            } catch .server(status: Self.alreadyFinishedStatus) {
+                continue
+            }
         }
+        for runID in runIDs {
+            try await waitUntilFinished(repository: repository, runID: runID)
+        }
+        for runID in runIDs {
+            _ = try await send(try runRequest(repository: repository, runID: runID, action: "rerun", method: "POST"))
+        }
+    }
+
+    private func waitUntilFinished(repository: String, runID: Int) async throws(ProviderError) {
+        let attempts = Int(Self.cancelTimeout / Self.cancelPollInterval) + 1
+        for attempt in 1...attempts {
+            let data = try await send(try runRequest(repository: repository, runID: runID, action: nil, method: "GET"))
+            guard let run = try? JSONDecoder().decode(WorkflowRunResponse.self, from: data) else { throw .unexpectedResponse }
+            if Self.finishedRunStatuses.contains(run.status) { return }
+            if attempt < attempts { await sleep(Self.cancelPollInterval) }
+        }
+        throw .cancelTimedOut(runID: runID)
+    }
+
+    private func runRequest(repository: String, runID: Int, action: String?, method: String) throws(ProviderError) -> URLRequest {
+        let path = ["\(Self.restBase)/repos/\(repository)/actions/runs/\(runID)", action].compactMap { $0 }.joined(separator: "/")
+        guard let url = URL(string: path) else { throw .unexpectedResponse }
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = method
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        _ = try await send(request)
+        return request
     }
 
     private func search(_ term: String, query document: String = Queries.searchQuery) async throws(ProviderError) -> Data {
@@ -135,6 +172,10 @@ public struct GitHubClient: Sendable {
         else { return }
         throw .graphQL(messages: errors.compactMap { $0["message"] as? String })
     }
+}
+
+private struct WorkflowRunResponse: Decodable {
+    let status: String
 }
 
 private struct StatesResponse: Decodable {

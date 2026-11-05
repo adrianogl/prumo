@@ -347,4 +347,34 @@ private func client(_ transport: FakeTransport) -> GitLabClient {
         }
         #expect(transport.requests.isEmpty)
     }
+
+    @Test func gitlabCancelThenRetry() async throws {
+        let transport = FakeTransport { request in
+            let field = graphQLQuery(request).contains("pipelineCancel") ? "pipelineCancel" : "pipelineRetry"
+            return (json(["data": [field: ["errors": [String]()]]]), gitLabResponse(200))
+        }
+        try await client(transport).cancelAndRerun(pr: .fixture(provider: .gitlab, pendingRunIDs: [5003]))
+        let queries = transport.requests.map(graphQLQuery)
+        #expect(queries.count == 2)
+        #expect(queries[0].contains("pipelineCancel(input: {id: \"gid://gitlab/Ci::Pipeline/5003\"})"))
+        #expect(queries[1].contains("pipelineRetry(input: {id: \"gid://gitlab/Ci::Pipeline/5003\"})"))
+    }
+
+    @Test func gitlabCancelErrorsStopBeforeRetry() async {
+        let transport = FakeTransport { _ in
+            (json(["data": ["pipelineCancel": ["errors": ["Pipeline não pode ser cancelado"]]]]), gitLabResponse(200))
+        }
+        await #expect(throws: ProviderError.graphQL(messages: ["Pipeline não pode ser cancelado"])) {
+            try await client(transport).cancelAndRerun(pr: .fixture(provider: .gitlab, pendingRunIDs: [5003]))
+        }
+        #expect(transport.requests.count == 1)
+    }
+
+    @Test func gitlabCancelWithoutPipelineSendsNothing() async {
+        let transport = FakeTransport { _ in (Data(), gitLabResponse(200)) }
+        await #expect(throws: ProviderError.unexpectedResponse) {
+            try await client(transport).cancelAndRerun(pr: .fixture(provider: .gitlab))
+        }
+        #expect(transport.requests.isEmpty)
+    }
 }

@@ -40,6 +40,8 @@ struct GitLabResponse: Decodable {
     struct Pipeline: Decodable {
         let id: String
         let status: String
+        let createdAt: Date?
+        let startedAt: Date?
         let jobs: Jobs?
     }
 

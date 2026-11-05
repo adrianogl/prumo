@@ -7,4 +7,5 @@ public enum ProviderError: Error, Equatable {
     case server(status: Int)
     case graphQL(messages: [String])
     case unexpectedResponse
+    case cancelTimedOut(runID: Int)
 }

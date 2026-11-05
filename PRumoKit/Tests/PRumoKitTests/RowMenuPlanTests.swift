@@ -90,4 +90,36 @@ import Testing
         let entries = RowMenuPlan.entries(pr: pr, claudePurposes: [], jira: nil)
         #expect(entries.contains(.rerunFailedJobs(jobName: "pipeline", runID: 9, disabledReason: nil)))
     }
+
+    private var stuck: PullRequest {
+        PullRequest.fixture(ci: .pending(done: 0, total: 3), ciPendingSince: Date.fixed.addingTimeInterval(-3600), pendingRunIDs: [77])
+    }
+
+    @Test func planShowsCancelAndRerunWhenStuck() {
+        let entries = RowMenuPlan.entries(pr: stuck, claudePurposes: [], jira: nil, isCIStuck: true)
+        let index = entries.firstIndex(of: .cancelAndRerun(disabledReason: nil))
+        #expect(index != nil)
+        #expect(index.map { entries[$0 + 1] } == .copyLink)
+    }
+
+    @Test func planHidesCancelAndRerunWhenNotStuck() {
+        let entries = RowMenuPlan.entries(pr: stuck, claudePurposes: [], jira: nil)
+        #expect(!entries.contains { if case .cancelAndRerun = $0 { true } else { false } })
+    }
+
+    @Test func planHidesWhenNoCancelableRun() {
+        let pr = PullRequest.fixture(ci: .pending(done: 0, total: 3), ciPendingSince: Date.fixed.addingTimeInterval(-3600))
+        let entries = RowMenuPlan.entries(pr: pr, claudePurposes: [], jira: nil, isCIStuck: true)
+        #expect(!entries.contains { if case .cancelAndRerun = $0 { true } else { false } })
+    }
+
+    @Test func gitlabStuckDisabledWithoutApiScope() {
+        let pr = PullRequest.fixture(
+            ci: .pending(done: 0, total: 3), provider: .gitlab,
+            ciPendingSince: Date.fixed.addingTimeInterval(-3600), pendingRunIDs: [5003])
+        let reason = RerunAvailability.disabledReason(provider: .gitlab, scopes: ["read_api"])
+        let entries = RowMenuPlan.entries(pr: pr, claudePurposes: [], jira: nil, rerunDisabledReason: reason, isCIStuck: true)
+        #expect(reason != nil)
+        #expect(entries.contains(.cancelAndRerun(disabledReason: reason)))
+    }
 }

@@ -96,6 +96,37 @@ import Testing
         #expect(try mine(14, in: snapshot()).ci == .pending(done: 3, total: 7))
     }
 
+    @Test func runningPipelineMapsPendingSinceAndRun() throws {
+        let pr = try mine(14, in: snapshot())
+        #expect(pr.ciPendingSince == date("2026-11-05T10:52:00.000Z"))
+        #expect(pr.pendingRunIDs == [5003])
+    }
+
+    @Test func pendingPipelineWithoutStartUsesCreatedAt() throws {
+        let data = try mutatedFixture(at: 2) { mr in
+            var pipeline = mr["headPipeline"] as! [String: Any]
+            pipeline["status"] = "PENDING"
+            pipeline["startedAt"] = NSNull()
+            mr["headPipeline"] = pipeline
+        }
+        let mapped = try MergeRequestMapper.snapshot(data, host: host, capabilities: full, now: .fixed)
+        let pr = try #require(mapped.mine.first { $0.number == 14 })
+        #expect(pr.ciPendingSince == date("2026-11-05T10:40:00Z"))
+        #expect(pr.pendingRunIDs == [5003])
+    }
+
+    @Test func finishedPipelineHasNoPendingData() throws {
+        let pr = try mine(12, in: snapshot())
+        #expect(pr.ciPendingSince == nil)
+        #expect(pr.pendingRunIDs == [])
+    }
+
+    @Test func oldFixtureWithoutPipelineDatesHasNoPendingSince() throws {
+        let pending = try oldSnapshot().mine.filter { if case .pending = $0.ci { true } else { false } }
+        #expect(!pending.isEmpty)
+        #expect(pending.allSatisfy { $0.ciPendingSince == nil && !$0.pendingRunIDs.isEmpty })
+    }
+
     @Test func canceledPipelineIsFailure() throws {
         let pr = try mine(15, in: snapshot())
         #expect(pr.ci == .failure(failedChecks: ["pipeline"], total: 2))

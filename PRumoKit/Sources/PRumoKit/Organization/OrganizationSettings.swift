@@ -1,3 +1,5 @@
+import Foundation
+
 public struct OrganizationSettings: Codable, Equatable, Sendable {
     public var filter: RowFilter
     public var orderings: [String: TabOrdering]
@@ -11,6 +13,7 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
     public var includeTeamRequests: Bool
     public var ignoredCommentAuthors: [String]
     public var marks: RowMarks
+    public var stuckCIThreshold: TimeInterval
 
     public static let defaults = OrganizationSettings()
 
@@ -26,7 +29,8 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
         ignoreDraftsInReview: Bool = true,
         includeTeamRequests: Bool = true,
         ignoredCommentAuthors: [String] = OrganizationConstants.defaultIgnoredCommentAuthors,
-        marks: RowMarks = RowMarks()
+        marks: RowMarks = RowMarks(),
+        stuckCIThreshold: TimeInterval = OrganizationConstants.defaultStuckCIThreshold
     ) {
         self.filter = filter
         self.orderings = orderings
@@ -40,6 +44,7 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
         self.includeTeamRequests = includeTeamRequests
         self.ignoredCommentAuthors = ignoredCommentAuthors
         self.marks = marks
+        self.stuckCIThreshold = stuckCIThreshold
     }
 
     public init(from decoder: Decoder) throws {
@@ -57,6 +62,8 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
         ignoredCommentAuthors = c.decodeLossy(
             [String].self, forKey: .ignoredCommentAuthors, default: OrganizationConstants.defaultIgnoredCommentAuthors)
         marks = c.decodeLossy(RowMarks.self, forKey: .marks, default: RowMarks())
+        stuckCIThreshold = c.decodeLossy(
+            TimeInterval.self, forKey: .stuckCIThreshold, default: OrganizationConstants.defaultStuckCIThreshold)
     }
 
     public var commentAuthorFilter: CommentAuthorFilter {

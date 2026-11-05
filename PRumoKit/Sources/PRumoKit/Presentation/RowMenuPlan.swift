@@ -9,7 +9,8 @@ public enum RowMenuPlan {
         isPinned: Bool = false,
         isMuted: Bool = false,
         checkoutWarning: String? = nil,
-        rerunDisabledReason: String? = nil
+        rerunDisabledReason: String? = nil,
+        isCIStuck: Bool = false
     ) -> [RowMenuEntry] {
         var entries: [RowMenuEntry] = []
         for (index, purpose) in claudePurposes.enumerated() {
@@ -20,6 +21,9 @@ public enum RowMenuPlan {
         if let jira, let url = jira.url { entries.append(.openJira(key: jira.key, url: url)) }
         if let runID = pr.failedRunID, case .failure = pr.ci {
             entries.append(.rerunFailedJobs(jobName: pr.failedRunName ?? (pr.provider == .gitlab ? Self.pipelineLabel : ""), runID: runID, disabledReason: rerunDisabledReason))
+        }
+        if isCIStuck, !pr.pendingRunIDs.isEmpty {
+            entries.append(.cancelAndRerun(disabledReason: rerunDisabledReason))
         }
         entries.append(.copyLink)
         entries.append(.copyCheckout(command: checkoutCommand(for: pr), warning: checkoutWarning))

@@ -24,8 +24,13 @@ enum PresentationText {
     static let waitingPrefix = "esperando há"
     static let lastDataPrefix = "último dado"
     static let lastDataSuffix = "atrás"
+    static let ciStuckPrefix = "CI parado há"
+    static let minuteUnit = "min"
+    static let hourUnit = "h"
 }
 
 enum PresentationMetrics {
     static let secondsPerHour: TimeInterval = 3600
+    static let secondsPerMinute: TimeInterval = 60
+    static let minutesPerHour = 60
 }

@@ -10,6 +10,7 @@ enum MergeRequestMapper {
     private static let skippedStatus = "SKIPPED"
     private static let failedJobStatus = "FAILED"
     private static let terminalJobStatuses: Set<String> = ["SUCCESS", "FAILED", "CANCELED", "SKIPPED", "MANUAL"]
+    private static let pendingPipelineStatuses: Set<String> = ["CREATED", "WAITING_FOR_RESOURCE", "PREPARING", "PENDING", "RUNNING"]
     private static let pipelineFallbackName = "pipeline"
     private static let jobFallbackName = "job"
     private static let approvalPrefix = "approval"
@@ -75,6 +76,7 @@ enum MergeRequestMapper {
         guard let iid = Int(node.iid), let projectID = numericID(node.project.id) else { return nil }
         let ci = ciStatus(node.headPipeline)
         let failure = failedRun(node.headPipeline, ci: ci)
+        let pending = node.headPipeline.flatMap { pendingPipelineStatuses.contains($0.status) ? $0 : nil }
         let noteList = notes(node)
         return PullRequest(
             id: GitLabID.make(host: context.host, projectID: projectID, iid: iid),
@@ -106,7 +108,9 @@ enum MergeRequestMapper {
             reviewDecision: nil,
             provider: .gitlab,
             mergeReady: mergeReady(node.detailedMergeStatus, capabilities: context.capabilities),
-            failedJobID: failure?.jobID
+            failedJobID: failure?.jobID,
+            ciPendingSince: pending.flatMap { $0.startedAt ?? $0.createdAt },
+            pendingRunIDs: pending.flatMap { numericID($0.id) }.map { [$0] } ?? []
         )
     }
 

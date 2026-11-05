@@ -7,6 +7,10 @@ enum GitLabQueries {
         "mutation { pipelineRetry(input: {id: \"gid://gitlab/Ci::Pipeline/\(runID)\"}) { errors } }"
     }
 
+    static func pipelineCancel(runID: Int) -> String {
+        "mutation { pipelineCancel(input: {id: \"gid://gitlab/Ci::Pipeline/\(runID)\"}) { errors } }"
+    }
+
     static func snapshot(_ capabilities: GitLabCapabilities) -> String {
         let mergeStatus = capabilities.hasDetailedMergeStatus ? " detailedMergeStatus" : ""
         let reviewer = capabilities.hasReviewState ? "username mergeRequestInteraction { reviewState }" : "username"
@@ -30,7 +34,7 @@ enum GitLabQueries {
           author { username }
           approvedBy { nodes { username } }
           reviewers { nodes { \(reviewer) } }
-          headPipeline { id status jobs(first: 100) { count nodes { id name status allowFailure } } }
+          headPipeline { id status createdAt startedAt jobs(first: 100) { count nodes { id name status allowFailure } } }
           notes(last: 50) { nodes { id body system createdAt url author { username bot } } }
         }
         """

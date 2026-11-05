@@ -37,7 +37,8 @@ struct PRRowView: View {
             pr: pr, claudePurposes: purposes, jira: model.integrations.link(for: pr),
             isPinned: marks.isPinned(pr.id), isMuted: marks.muted[pr.id] != nil,
             checkoutWarning: model.checkoutWarning(for: pr),
-            rerunDisabledReason: model.rerunDisabledReason(for: pr))
+            rerunDisabledReason: model.rerunDisabledReason(for: pr),
+            isCIStuck: model.isCIStuckAndCancelable(pr, now: .now))
     }
 
     private func purpose(forBadgeAt index: Int) -> SessionPurpose? {

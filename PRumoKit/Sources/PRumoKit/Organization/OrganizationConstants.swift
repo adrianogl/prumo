@@ -2,6 +2,7 @@ import Foundation
 
 public enum OrganizationConstants {
     public static let defaultStaleLimit: TimeInterval = 24 * 3600
+    public static let defaultStuckCIThreshold: TimeInterval = 30 * 60
     public static let defaultIgnoredCommentAuthors = ["github-actions", "datadog-official"]
     static let botSuffix = "[bot]"
 }

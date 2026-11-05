@@ -298,12 +298,24 @@
                           "name": "deploy",
                           "status": "IN_PROGRESS",
                           "conclusion": null,
-                          "detailsUrl": "https://github.com/acme/web/actions/runs/103005/job/1035"
+                          "detailsUrl": "https://github.com/acme/web/actions/runs/103005/job/1035",
+                          "startedAt": "2026-11-05T11:20:00Z",
+                          "checkSuite": { "createdAt": "2026-11-05T11:19:00Z", "workflowRun": { "databaseId": 103005 } }
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "Pre-build",
+                          "status": "QUEUED",
+                          "conclusion": null,
+                          "detailsUrl": "https://github.com/acme/web/actions/runs/103006/job/1036",
+                          "startedAt": null,
+                          "checkSuite": { "createdAt": "2026-11-05T10:52:00Z", "workflowRun": { "databaseId": 103006 } }
                         },
                         {
                           "__typename": "StatusContext",
                           "context": "lint",
-                          "state": "PENDING"
+                          "state": "PENDING",
+                          "createdAt": "2026-11-05T11:00:00Z"
                         }
                       ]
                     }

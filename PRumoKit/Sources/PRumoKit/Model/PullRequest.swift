@@ -36,6 +36,8 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
     public let provider: ProviderKind
     public let mergeReady: Bool?
     public let failedJobID: Int?
+    public let ciPendingSince: Date?
+    public let pendingRunIDs: [Int]
 
     public init(
         id: String, number: Int, title: String, url: URL, repository: String, author: String,
@@ -44,7 +46,8 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         mergeable: Mergeable, reviewRequestedAt: Date?,
         headRefName: String = "", baseRefName: String = "", isCrossRepository: Bool = false, failedRunID: Int? = nil,
         failedRunName: String? = nil, reviewTarget: ReviewRequestTarget = .you, reviewDecision: ReviewDecision? = nil,
-        accountID: String = "", provider: ProviderKind = .github, mergeReady: Bool? = nil, failedJobID: Int? = nil
+        accountID: String = "", provider: ProviderKind = .github, mergeReady: Bool? = nil, failedJobID: Int? = nil,
+        ciPendingSince: Date? = nil, pendingRunIDs: [Int] = []
     ) {
         self.id = id
         self.number = number
@@ -75,6 +78,8 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         self.provider = provider
         self.mergeReady = mergeReady
         self.failedJobID = failedJobID
+        self.ciPendingSince = ciPendingSince
+        self.pendingRunIDs = pendingRunIDs
     }
 
     public func with(mergeable: Mergeable) -> PullRequest {
@@ -86,7 +91,8 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
             headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository,
             failedRunID: failedRunID, failedRunName: failedRunName,
             reviewTarget: reviewTarget, reviewDecision: reviewDecision, accountID: accountID,
-            provider: provider, mergeReady: mergeReady, failedJobID: failedJobID
+            provider: provider, mergeReady: mergeReady, failedJobID: failedJobID,
+            ciPendingSince: ciPendingSince, pendingRunIDs: pendingRunIDs
         )
     }
 
@@ -99,7 +105,8 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
             headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository,
             failedRunID: failedRunID, failedRunName: failedRunName,
             reviewTarget: reviewTarget, reviewDecision: reviewDecision, accountID: accountID,
-            provider: provider, mergeReady: mergeReady, failedJobID: failedJobID
+            provider: provider, mergeReady: mergeReady, failedJobID: failedJobID,
+            ciPendingSince: ciPendingSince, pendingRunIDs: pendingRunIDs
         )
     }
 
@@ -108,6 +115,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         case reviews, comments, commentCount, additions, deletions, mergeable, reviewRequestedAt
         case headRefName, baseRefName, isCrossRepository, failedRunID, failedRunName
         case reviewTarget, reviewDecision, accountID, provider, mergeReady, failedJobID
+        case ciPendingSince, pendingRunIDs
     }
 
     public init(from decoder: Decoder) throws {
@@ -141,6 +149,8 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         provider = container.decodeLossy(ProviderKind.self, forKey: .provider, default: .github)
         mergeReady = container.decodeLossy(Bool?.self, forKey: .mergeReady, default: nil)
         failedJobID = container.decodeLossy(Int?.self, forKey: .failedJobID, default: nil)
+        ciPendingSince = container.decodeLossy(Date?.self, forKey: .ciPendingSince, default: nil)
+        pendingRunIDs = container.decodeLossy([Int].self, forKey: .pendingRunIDs, default: [])
     }
 
     public var reference: String {

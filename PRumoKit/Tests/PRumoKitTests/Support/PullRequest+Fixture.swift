@@ -31,7 +31,9 @@ extension PullRequest {
         accountID: String = "",
         provider: ProviderKind = .github,
         mergeReady: Bool? = nil,
-        failedJobID: Int? = nil
+        failedJobID: Int? = nil,
+        ciPendingSince: Date? = nil,
+        pendingRunIDs: [Int] = []
     ) -> PullRequest {
         PullRequest(
             id: id, number: number, title: title, url: url, repository: repository, author: author,
@@ -41,7 +43,8 @@ extension PullRequest {
             headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository,
             failedRunID: failedRunID, failedRunName: failedRunName,
             reviewTarget: reviewTarget, reviewDecision: reviewDecision, accountID: accountID,
-            provider: provider, mergeReady: mergeReady, failedJobID: failedJobID
+            provider: provider, mergeReady: mergeReady, failedJobID: failedJobID,
+            ciPendingSince: ciPendingSince, pendingRunIDs: pendingRunIDs
         )
     }
 }

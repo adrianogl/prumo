@@ -27,6 +27,20 @@ struct PullRequestMapperTests {
         #expect(s.mine.map(\.ci) == [.success(total: 12), .failure(failedChecks: ["unit-tests"], total: 12), .pending(done: 4, total: 9), .none])
     }
 
+    @Test func mapsPendingSinceAndRunsFromPendingChecks() throws {
+        let pr = try snapshot().mine[2]
+        #expect(pr.ciPendingSince == ISO8601DateFormatter().date(from: "2026-11-05T10:52:00Z"))
+        #expect(pr.pendingRunIDs == [103005, 103006])
+    }
+
+    @Test func noPendingDataWhenCIFinished() throws {
+        let s = try snapshot()
+        for pr in [s.mine[0], s.mine[1], s.mine[3]] {
+            #expect(pr.ciPendingSince == nil)
+            #expect(pr.pendingRunIDs == [])
+        }
+    }
+
     @Test func detectsBotsAndConflict() throws {
         let s = try snapshot()
         #expect(s.mine[1].comments[0].authorIsBot)

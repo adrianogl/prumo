@@ -59,7 +59,7 @@ public actor RefreshCoordinator {
         case .unauthorized: .unauthorized
         case .rateLimited(let resetAt): .rateLimited(resetAt: resetAt)
         case .network, .server, .graphQL: .offline(lastSuccess: stored?.fetchedAt)
-        case .unexpectedResponse: .unexpectedResponse(lastSuccess: stored?.fetchedAt)
+        case .unexpectedResponse, .cancelTimedOut: .unexpectedResponse(lastSuccess: stored?.fetchedAt)
         }
     }
 }

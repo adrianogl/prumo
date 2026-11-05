@@ -65,6 +65,8 @@
       "headPipeline": {
        "id": "gid://gitlab/Ci::Pipeline/5001",
        "status": "SUCCESS",
+       "createdAt": "2026-11-05T09:00:00Z",
+       "startedAt": "2026-11-05T09:01:00Z",
        "jobs": {
         "count": 7,
         "nodes": [
@@ -260,6 +262,8 @@
       "headPipeline": {
        "id": "gid://gitlab/Ci::Pipeline/5003",
        "status": "RUNNING",
+       "createdAt": "2026-11-05T10:40:00Z",
+       "startedAt": "2026-11-05T10:52:00.000Z",
        "jobs": {
         "count": 7,
         "nodes": [

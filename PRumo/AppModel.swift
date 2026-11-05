@@ -748,6 +748,8 @@ final class AppModel {
             NSWorkspace.shared.open(url)
         case .rerunFailedJobs(_, let runID, _):
             rerunFailedJobs(pr: pr, runID: runID)
+        case .cancelAndRerun:
+            cancelAndRerun(pr: pr)
         case .copyLink:
             copyToPasteboard(pr.url.absoluteString)
         case .copyCheckout(let command, _):
@@ -793,6 +795,38 @@ final class AppModel {
             } else {
                 refreshNow()
             }
+        }
+    }
+
+    func stuckCIDuration(for pr: PullRequest, now: Date) -> TimeInterval? {
+        StuckCI.since(pr: pr, now: now, threshold: organization.settings.stuckCIThreshold)
+    }
+
+    func isCIStuckAndCancelable(_ pr: PullRequest, now: Date) -> Bool {
+        StuckCI.isCancelable(pr: pr, now: now, threshold: organization.settings.stuckCIThreshold)
+    }
+
+    func cancelAndRerun(pr: PullRequest) {
+        guard !rerunning.contains(pr.id), let client = session(for: pr)?.client else { return }
+        rerunning.insert(pr.id)
+        let repository = pr.repository
+        let provider = pr.provider
+        Task {
+            let failure = await Task.detached { () -> ProviderError? in
+                do throws(ProviderError) {
+                    try await client.cancelAndRerun(pr: pr)
+                    return nil
+                } catch {
+                    return error
+                }
+            }.value
+            rerunning.remove(pr.id)
+            if let failure {
+                showAlert(
+                    RowMenuText.cancelAndRerunFailure(failure, provider: provider, repository: repository),
+                    title: RowMenuText.cancelAndRerunAlertTitle)
+            }
+            refreshNow()
         }
     }
 

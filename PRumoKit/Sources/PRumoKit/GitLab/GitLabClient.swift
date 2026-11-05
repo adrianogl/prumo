@@ -6,6 +6,8 @@ public struct GitLabClient: AccountClient {
     private static let reviewStateFields = ["mergeRequestInteraction", "reviewState"]
     private static let missingFieldMarker = "exist"
     private static let restStates: [String: PRState] = ["opened": .open, "closed": .closed, "merged": .merged]
+    private static let retryField = "pipelineRetry"
+    private static let cancelField = "pipelineCancel"
 
     private let host: String
     private let token: String
@@ -100,14 +102,22 @@ public struct GitLabClient: AccountClient {
 
     public func rerunFailedJobs(pr: PullRequest) async throws(ProviderError) {
         guard let runID = pr.failedRunID else { throw .unexpectedResponse }
-        let data = try await post(query: GitLabQueries.pipelineRetry(runID: runID), variables: [:])
-        let decoded: PipelineRetryResponse
-        do {
-            decoded = try JSONDecoder().decode(PipelineRetryResponse.self, from: data)
-        } catch {
-            throw .unexpectedResponse
-        }
-        let errors = decoded.data.pipelineRetry.errors
+        try await mutate(GitLabQueries.pipelineRetry(runID: runID), field: Self.retryField)
+    }
+
+    public func cancelAndRerun(pr: PullRequest) async throws(ProviderError) {
+        guard let runID = pr.pendingRunIDs.first else { throw .unexpectedResponse }
+        try await mutate(GitLabQueries.pipelineCancel(runID: runID), field: Self.cancelField)
+        try await mutate(GitLabQueries.pipelineRetry(runID: runID), field: Self.retryField)
+    }
+
+    private func mutate(_ mutation: String, field: String) async throws(ProviderError) {
+        let data = try await post(query: mutation, variables: [:])
+        guard
+            let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let payload = (object["data"] as? [String: Any])?[field] as? [String: Any],
+            let errors = payload["errors"] as? [String]
+        else { throw .unexpectedResponse }
         guard errors.isEmpty else { throw .graphQL(messages: errors) }
     }
 
@@ -215,18 +225,6 @@ private struct CurrentUserResponse: Decodable {
 
     struct User: Decodable {
         let username: String
-    }
-}
-
-private struct PipelineRetryResponse: Decodable {
-    let data: DataNode
-
-    struct DataNode: Decodable {
-        let pipelineRetry: Retry
-    }
-
-    struct Retry: Decodable {
-        let errors: [String]
     }
 }
 

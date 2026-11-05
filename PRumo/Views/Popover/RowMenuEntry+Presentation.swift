@@ -9,6 +9,7 @@ extension RowMenuEntry {
         case .openInBrowser: RowMenuText.openInBrowser
         case .openJira(let key, _): RowMenuText.openJira(key)
         case .rerunFailedJobs(let jobName, _, _): RowMenuText.rerunFailedJobs(jobName)
+        case .cancelAndRerun: RowMenuText.cancelAndRerun
         case .copyLink: RowMenuText.copyLink
         case .copyCheckout(let command, _): RowMenuText.copyCheckout(command)
         case .separator: ""
@@ -21,6 +22,7 @@ extension RowMenuEntry {
         switch self {
         case .copyCheckout(_, let warning): warning
         case .rerunFailedJobs(_, _, let disabledReason): disabledReason
+        case .cancelAndRerun(let disabledReason): disabledReason
         default: nil
         }
     }
@@ -32,7 +34,7 @@ extension RowMenuEntry {
         case .openJira: KeyboardShortcut(KeyEquivalent(RowMenuKey.openJira), modifiers: .command)
         case .copyLink: KeyboardShortcut(KeyEquivalent(RowMenuKey.copy), modifiers: .command)
         case .copyCheckout: KeyboardShortcut(KeyEquivalent(RowMenuKey.copy), modifiers: [.command, .shift])
-        case .openInBrowser, .rerunFailedJobs, .separator, .pin, .mute: nil
+        case .openInBrowser, .rerunFailedJobs, .cancelAndRerun, .separator, .pin, .mute: nil
         }
     }
 

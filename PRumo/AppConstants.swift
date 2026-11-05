@@ -32,6 +32,9 @@ enum AppConstants {
     static let refreshIntervalOptions: [(label: String, seconds: TimeInterval)] = [
         ("30 s", 30), ("60 s", 60), ("2 min", 120), ("5 min", 300)
     ]
+    static let stuckCIThresholdOptions: [(label: String, seconds: TimeInterval)] = [
+        ("15 min", 15 * 60), ("30 min", 30 * 60), ("1 h", 3600), ("2 h", 2 * 3600)
+    ]
     static let tokenCreationURL = URL(string: "https://github.com/settings/tokens/new?scopes=repo,read:org&description=PRumo")!
     static let licenseURL = URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!
 }

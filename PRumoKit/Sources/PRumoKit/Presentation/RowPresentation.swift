@@ -35,7 +35,7 @@ public struct RowPresentation: Equatable, Sendable {
 public enum RowPresenter {
     public static func mine(
         _ pr: PullRequest, viewer: String, now: Date, jiraKey: String? = nil, commentFilter: CommentAuthorFilter = .none,
-        account: AccountLabel? = nil, staleSince: Date? = nil
+        account: AccountLabel? = nil, staleSince: Date? = nil, ciStuckFor: TimeInterval? = nil
     ) -> RowPresentation {
         let summary = ReviewSummary(pr, viewer: viewer)
         let approvals = summary.approvals
@@ -76,7 +76,7 @@ public enum RowPresenter {
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: hasChangesRequested),
             title: pr.title,
-            subtitle: subtitle(pr, from: pr.createdAt, now: now, account: account, staleSince: staleSince),
+            subtitle: subtitle(pr, from: pr.createdAt, now: now, account: account, staleSince: staleSince, ciStuckFor: ciStuckFor),
             badges: badges,
             ciFailureBadgeIndex: ciFailureIndex,
             conflictBadgeIndex: conflictIndex,
@@ -88,7 +88,7 @@ public enum RowPresenter {
 
     public static func review(
         _ pr: PullRequest, now: Date, jiraKey: String? = nil, staleLimit: TimeInterval? = nil,
-        account: AccountLabel? = nil, staleSince: Date? = nil
+        account: AccountLabel? = nil, staleSince: Date? = nil, ciStuckFor: TimeInterval? = nil
     ) -> RowPresentation {
         let requestedAt = pr.reviewRequestedAt ?? pr.createdAt
         let waited = now.timeIntervalSince(requestedAt)
@@ -109,7 +109,7 @@ public enum RowPresenter {
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: isStale),
             title: pr.title,
-            subtitle: subtitle(pr, from: requestedAt, now: now, account: account, staleSince: staleSince),
+            subtitle: subtitle(pr, from: requestedAt, now: now, account: account, staleSince: staleSince, ciStuckFor: ciStuckFor),
             badges: badges,
             jiraBadgeIndex: jiraIndex,
             accountProvider: account?.provider
@@ -118,7 +118,7 @@ public enum RowPresenter {
 
     public static func merge(
         _ pr: PullRequest, viewer: String, now: Date, jiraKey: String? = nil,
-        account: AccountLabel? = nil, staleSince: Date? = nil
+        account: AccountLabel? = nil, staleSince: Date? = nil, ciStuckFor: TimeInterval? = nil
     ) -> RowPresentation {
         let summary = ReviewSummary(pr, viewer: viewer)
         var badges: [Badge] = []
@@ -134,7 +134,7 @@ public enum RowPresenter {
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: false),
             title: pr.title,
-            subtitle: subtitle(pr, from: pr.createdAt, now: now, account: account, staleSince: staleSince),
+            subtitle: subtitle(pr, from: pr.createdAt, now: now, account: account, staleSince: staleSince, ciStuckFor: ciStuckFor),
             badges: badges,
             jiraBadgeIndex: jiraIndex,
             accountProvider: account?.provider
@@ -142,7 +142,8 @@ public enum RowPresenter {
     }
 
     public static func compactLine(
-        _ pr: PullRequest, tab: ListTab, viewer: String, now: Date, account: AccountLabel? = nil
+        _ pr: PullRequest, tab: ListTab, viewer: String, now: Date, account: AccountLabel? = nil,
+        ciStuckFor: TimeInterval? = nil
     ) -> String {
         let repo = pr.repository.split(separator: "/").last.map(String.init) ?? pr.repository
         var parts = [account?.text, "\(repo) \(pr.reference)"].compactMap { $0 }
@@ -154,6 +155,7 @@ public enum RowPresenter {
             case let .team(name): parts.append("\(PresentationText.teamPrefix) \(name)")
             }
             parts.append(RelativeAge.string(from: pr.reviewRequestedAt ?? pr.createdAt, now: now))
+            if let ciStuckFor { parts.append(StuckCI.text(ciStuckFor)) }
         case .mine, .merge:
             let summary = ReviewSummary(pr, viewer: viewer)
             if summary.hasChangesRequested {
@@ -166,7 +168,7 @@ public enum RowPresenter {
             switch pr.ci {
             case .none: break
             case .success: parts.append(PresentationText.ciOk)
-            case .pending: parts.append(PresentationText.ciRunning)
+            case .pending: parts.append(ciStuckFor.map(StuckCI.text) ?? PresentationText.ciRunning)
             case .failure: parts.append(PresentationText.ciFailed)
             }
             if pr.mergeable == .conflicting { parts.append(PresentationText.conflict) }
@@ -177,12 +179,12 @@ public enum RowPresenter {
     }
 
     private static func subtitle(
-        _ pr: PullRequest, from: Date, now: Date, account: AccountLabel?, staleSince: Date?
+        _ pr: PullRequest, from: Date, now: Date, account: AccountLabel?, staleSince: Date?, ciStuckFor: TimeInterval?
     ) -> String {
         let age = staleSince.map {
             "\(PresentationText.lastDataPrefix) \(RelativeAge.string(from: $0, now: now)) \(PresentationText.lastDataSuffix)"
         } ?? RelativeAge.string(from: from, now: now)
-        let parts = [account?.text, "\(pr.repository) \(pr.reference)", age].compactMap { $0 }
+        let parts = [account?.text, "\(pr.repository) \(pr.reference)", age, ciStuckFor.map(StuckCI.text)].compactMap { $0 }
         return parts.joined(separator: PresentationText.separator)
     }
 

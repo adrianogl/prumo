@@ -4,6 +4,8 @@ public enum PullRequestMapper {
     private static let failingConclusions: Set<String> = ["FAILURE", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE"]
     private static let failingStates: Set<String> = ["FAILURE", "ERROR"]
     private static let waitingStates: Set<String> = ["PENDING", "EXPECTED"]
+    private static let pendingCheckStatuses: Set<String> = ["QUEUED", "IN_PROGRESS", "PENDING", "WAITING"]
+    private static let checkRunTypename = "CheckRun"
     private static let ghost = "ghost"
     private static let botTypename = "Bot"
     private static let userTypename = "User"
@@ -66,6 +68,7 @@ public enum PullRequestMapper {
     ) -> PullRequest {
         let commit = node.commits.nodes.first?.commit
         let failedRun = failedRun(commit?.statusCheckRollup)
+        let pending = (commit?.statusCheckRollup?.contexts.nodes ?? []).filter(isPending)
         return PullRequest(
             id: node.id,
             number: node.number,
@@ -91,7 +94,9 @@ public enum PullRequestMapper {
             failedRunID: failedRun?.id,
             failedRunName: failedRun?.name,
             reviewTarget: target,
-            reviewDecision: node.reviewDecision.flatMap(ReviewDecision.init(rawValue:))
+            reviewDecision: node.reviewDecision.flatMap(ReviewDecision.init(rawValue:)),
+            ciPendingSince: pending.compactMap(pendingSince).min(),
+            pendingRunIDs: pendingRunIDs(pending)
         )
     }
 
@@ -143,6 +148,21 @@ public enum PullRequestMapper {
               let match = details.firstMatch(of: /\/actions\/runs\/(\d+)\//),
               let id = Int(match.1) else { return nil }
         return (id, name)
+    }
+
+    private static func isPending(_ context: GraphQLResponse.Context) -> Bool {
+        if context.typename == checkRunTypename { return pendingCheckStatuses.contains(context.status ?? "") }
+        return waitingStates.contains(context.state ?? "")
+    }
+
+    private static func pendingSince(_ context: GraphQLResponse.Context) -> Date? {
+        if context.typename == checkRunTypename { return context.startedAt ?? context.checkSuite?.createdAt }
+        return context.createdAt
+    }
+
+    private static func pendingRunIDs(_ pending: [GraphQLResponse.Context]) -> [Int] {
+        var seen: Set<Int> = []
+        return pending.compactMap { $0.checkSuite?.workflowRun?.databaseId }.filter { seen.insert($0).inserted }
     }
 
     private static func isFailedCheckRun(_ context: GraphQLResponse.Context) -> Bool {

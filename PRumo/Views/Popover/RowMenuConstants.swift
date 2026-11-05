@@ -10,6 +10,8 @@ enum RowMenuText {
     static let unmute = "Reativar notificações"
     static let rerunFailedJobs = "Re-rodar job que falhou"
     static let rerunAlertTitle = "Não foi possível re-rodar o job"
+    static let cancelAndRerun = "Cancelar e rodar o CI de novo"
+    static let cancelAndRerunAlertTitle = "Não foi possível rodar o CI de novo"
     static let unauthorized = "Token inválido. Conecte de novo pelo popover."
     static let network = "Sem conexão com o GitHub."
     static let rateLimited = "Limite da API do GitHub. Tente de novo mais tarde."
@@ -50,8 +52,21 @@ enum RowMenuText {
             provider == .gitlab ? gitlabRateLimited : rateLimited
         case .graphQL(let messages) where provider == .gitlab:
             messages.isEmpty ? gitlabGenericError : messages.joined(separator: " ")
-        case .graphQL, .unexpectedResponse:
+        case .graphQL, .unexpectedResponse, .cancelTimedOut:
             provider == .gitlab ? gitlabGenericError : genericError
+        }
+    }
+
+    static func cancelAndRerunFailure(_ error: ProviderError, provider: ProviderKind, repository: String) -> String {
+        switch error {
+        case .cancelTimedOut(let runID):
+            "O run \(runID) não terminou de cancelar em 30 s. Tente de novo em instantes."
+        case .server(status: 403) where provider == .github:
+            "O GitHub recusou: sem permissão para cancelar ou rodar de novo o CI em \(repository)."
+        case .server(status: 404):
+            provider == .gitlab ? "Pipeline não encontrado em \(repository)." : "Run não encontrado em \(repository)."
+        default:
+            rerunFailure(error, provider: provider, repository: repository, runID: 0)
         }
     }
 }

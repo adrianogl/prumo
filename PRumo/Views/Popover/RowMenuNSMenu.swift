@@ -21,7 +21,12 @@ enum RowMenuNSMenu {
         item.target = handler
         item.tag = tag
         item.toolTip = entry.help
-        if case .rerunFailedJobs(_, _, let disabledReason) = entry { item.isEnabled = !isRerunning && disabledReason == nil }
+        switch entry {
+        case .rerunFailedJobs(_, _, let disabledReason), .cancelAndRerun(let disabledReason):
+            item.isEnabled = !isRerunning && disabledReason == nil
+        default:
+            break
+        }
         if case .claude = entry { item.image = ClaudeMarkImage.menuIcon }
         return item
     }

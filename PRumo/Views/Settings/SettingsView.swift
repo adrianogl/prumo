@@ -65,6 +65,11 @@ struct SettingsView: View {
                     Text(option.label).tag(option.seconds)
                 }
             }
+            Picker(SettingsText.stuckCIThreshold, selection: stuckCIThreshold) {
+                ForEach(AppConstants.stuckCIThresholdOptions, id: \.seconds) { option in
+                    Text(option.label).tag(option.seconds)
+                }
+            }
             Picker(SettingsText.rowStyle, selection: rowStyle) {
                 Text(SettingsText.rowStyleDetailed).tag(RowStyle.detailed)
                 Text(SettingsText.rowStyleCompact).tag(RowStyle.compact)
@@ -87,6 +92,12 @@ struct SettingsView: View {
         Binding(
             get: { model.organization.settings.rowStyle },
             set: { model.organization.settings.rowStyle = $0 })
+    }
+
+    private var stuckCIThreshold: Binding<TimeInterval> {
+        Binding(
+            get: { model.organization.settings.stuckCIThreshold },
+            set: { model.organization.settings.stuckCIThreshold = $0 })
     }
 
     private var about: some View {

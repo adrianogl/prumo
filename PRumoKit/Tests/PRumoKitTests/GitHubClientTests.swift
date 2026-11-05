@@ -266,4 +266,77 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
         }
         #expect(transport.requests.isEmpty)
     }
+
+    private final class SleepLog: @unchecked Sendable {
+        private let lock = NSLock()
+        private var recorded: [Duration] = []
+        var durations: [Duration] { lock.withLock { recorded } }
+        func record(_ duration: Duration) { lock.withLock { recorded.append(duration) } }
+    }
+
+    private func runStatus(_ status: String) -> Data {
+        Data(#"{"id":1,"status":"\#(status)"}"#.utf8)
+    }
+
+    private func sleepingClient(_ transport: FakeTransport, log: SleepLog) -> GitHubClient {
+        GitHubClient(token: "t0k", transport: transport, now: { Date.fixed }, sleep: { log.record($0) })
+    }
+
+    @Test func githubCancelThenRerunOrder() async throws {
+        let polls = SleepLog()
+        let gets = NSLock()
+        nonisolated(unsafe) var getCount = 0
+        let transport = FakeTransport { request in
+            if request.httpMethod == "GET" {
+                let count = gets.withLock { getCount += 1; return getCount }
+                return (runStatus(count < 3 ? "in_progress" : "completed"), httpResponse(200))
+            }
+            return (Data(), httpResponse(202))
+        }
+        let pr = PullRequest.fixture(repository: "acme/loja", pendingRunIDs: [4242])
+        try await sleepingClient(transport, log: polls).cancelAndRerun(pr: pr)
+
+        let base = "https://api.github.com/repos/acme/loja/actions/runs/4242"
+        #expect(transport.requests.map { "\($0.httpMethod ?? "") \($0.url?.absoluteString ?? "")" } == [
+            "POST \(base)/cancel",
+            "GET \(base)",
+            "GET \(base)",
+            "GET \(base)",
+            "POST \(base)/rerun",
+        ])
+        #expect(polls.durations == [.seconds(2), .seconds(2)])
+        #expect(transport.requests.allSatisfy { $0.value(forHTTPHeaderField: "Authorization") == "bearer t0k" })
+    }
+
+    @Test func githubCancelTimeoutFails() async {
+        let polls = SleepLog()
+        let transport = FakeTransport { request in
+            request.httpMethod == "GET" ? (runStatus("queued"), httpResponse(200)) : (Data(), httpResponse(202))
+        }
+        let pr = PullRequest.fixture(repository: "acme/loja", pendingRunIDs: [4242])
+        await #expect(throws: ProviderError.cancelTimedOut(runID: 4242)) {
+            try await sleepingClient(transport, log: polls).cancelAndRerun(pr: pr)
+        }
+        #expect(polls.durations.reduce(.zero, +) == .seconds(30))
+        #expect(!transport.requests.contains { $0.url?.lastPathComponent == "rerun" })
+    }
+
+    @Test func githubCancelOfFinishedRunStillReruns() async throws {
+        let transport = FakeTransport { request in
+            if request.url?.lastPathComponent == "cancel" { return (Data(), httpResponse(409)) }
+            if request.httpMethod == "GET" { return (runStatus("completed"), httpResponse(200)) }
+            return (Data(), httpResponse(201))
+        }
+        let pr = PullRequest.fixture(repository: "acme/loja", pendingRunIDs: [4242])
+        try await sleepingClient(transport, log: SleepLog()).cancelAndRerun(pr: pr)
+        #expect(transport.requests.last?.url?.lastPathComponent == "rerun")
+    }
+
+    @Test func githubCancelWithoutRunsSendsNothing() async {
+        let transport = FakeTransport { _ in (Data(), httpResponse(202)) }
+        await #expect(throws: ProviderError.unexpectedResponse) {
+            try await client(transport).cancelAndRerun(pr: .fixture())
+        }
+        #expect(transport.requests.isEmpty)
+    }
 }

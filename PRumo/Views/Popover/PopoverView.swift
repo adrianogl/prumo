@@ -457,7 +457,9 @@ struct PopoverView: View {
             pr: pr,
             presentation: presentation(for: pr, now: now),
             compactLine: compact
-                ? RowPresenter.compactLine(pr, tab: tab, viewer: viewer(for: pr), now: now, account: model.accountLabel(for: pr))
+                ? RowPresenter.compactLine(
+                    pr, tab: tab, viewer: viewer(for: pr), now: now, account: model.accountLabel(for: pr),
+                    ciStuckFor: model.stuckCIDuration(for: pr, now: now))
                 : nil,
             tab: tab,
             isHighlighted: highlighted.contains(pr.id),
@@ -500,14 +502,15 @@ struct PopoverView: View {
         let jiraKey = model.integrations.link(for: pr)?.key
         let account = model.accountLabel(for: pr)
         let stale = staleSince(accountID: pr.accountID).since
+        let stuck = model.stuckCIDuration(for: pr, now: now)
         return switch tab {
         case .mine: RowPresenter.mine(
             pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey, commentFilter: organization.settings.commentAuthorFilter,
-            account: account, staleSince: stale)
+            account: account, staleSince: stale, ciStuckFor: stuck)
         case .review: RowPresenter.review(
-            pr, now: now, jiraKey: jiraKey, staleLimit: staleLimit, account: account, staleSince: stale)
+            pr, now: now, jiraKey: jiraKey, staleLimit: staleLimit, account: account, staleSince: stale, ciStuckFor: stuck)
         case .merge: RowPresenter.merge(
-            pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey, account: account, staleSince: stale)
+            pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey, account: account, staleSince: stale, ciStuckFor: stuck)
         }
     }
 
