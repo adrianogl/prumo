@@ -30,4 +30,8 @@ public actor SnapshotStore {
         )
         try data.write(to: fileURL, options: .atomic)
     }
+
+    public func delete() {
+        try? FileManager.default.removeItem(at: fileURL)
+    }
 }

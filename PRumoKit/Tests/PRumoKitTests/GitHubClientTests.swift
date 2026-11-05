@@ -91,4 +91,16 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
         }
         await #expect(throws: GitHubError.graphQL(messages: ["x"])) { try await client(transport).fetchSnapshot() }
     }
+
+    @Test func partialDataWithErrorsStillMaps() async throws {
+        let transport = FakeTransport { request in
+            let isMine = variableQuery(request) == Queries.mine
+            var object = try JSONSerialization.jsonObject(with: fixture(isMine ? "search-mine" : "search-review")) as! [String: Any]
+            object["errors"] = [["message": "Resource protected by organization SAML enforcement"]]
+            return (try JSONSerialization.data(withJSONObject: object), httpResponse(200))
+        }
+        let snapshot = try await client(transport).fetchSnapshot()
+        #expect(snapshot.viewer == "adriano")
+        #expect(!snapshot.mine.isEmpty)
+    }
 }

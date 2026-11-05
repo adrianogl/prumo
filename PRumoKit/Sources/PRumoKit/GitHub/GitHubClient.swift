@@ -76,7 +76,8 @@ public struct GitHubClient: Sendable {
         guard
             let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
             let errors = object["errors"] as? [[String: Any]],
-            !errors.isEmpty
+            !errors.isEmpty,
+            object["data"] is NSNull || object["data"] == nil
         else { return }
         throw .graphQL(messages: errors.compactMap { $0["message"] as? String })
     }

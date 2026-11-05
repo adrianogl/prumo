@@ -65,4 +65,13 @@ struct SnapshotStoreTests {
         let url = SnapshotStore.defaultURL()
         #expect(url.path.hasSuffix("Library/Application Support/PRumo/snapshot.json"))
     }
+
+    @Test func deleteRemovesFile() async throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SnapshotStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        try await store.save(.fixture())
+        await store.delete()
+        #expect(await store.load() == nil)
+    }
 }
