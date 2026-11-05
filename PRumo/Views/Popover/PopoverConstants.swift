@@ -20,6 +20,13 @@ enum PopoverMetrics {
     static let dndSleepOffsetY: CGFloat = -4
     static let dndFrameSize: CGFloat = 20
     static let footerSpacing: CGFloat = 4
+    static let searchSpacing: CGFloat = 6
+    static let searchVerticalPadding: CGFloat = 5
+}
+
+enum PopoverFocus: Hashable {
+    case list
+    case search
 }
 
 enum PopoverSymbol {
@@ -36,6 +43,8 @@ enum PopoverSymbol {
     static let merged = "checkmark"
     static let dndBell = "bell"
     static let dndSleep = "zzz"
+    static let search = "magnifyingglass"
+    static let clearSearch = "xmark.circle.fill"
 }
 
 enum PopoverText {
@@ -63,6 +72,10 @@ enum PopoverText {
     static let dndUntilIndefinite = "Não perturbe até você reativar"
     static let outsideWorkingHours = "Fora do horário de trabalho"
     static let footerSeparator = "·"
+    static let searchPlaceholder = "Buscar por título, repositório ou número"
+    static let clearSearch = "Limpar busca"
+
+    static func nothingFound(query: String) -> String { "Nada encontrado para “\(query)”" }
 
     static func dndUntil(time: String) -> String { "Não perturbe até \(time)" }
 

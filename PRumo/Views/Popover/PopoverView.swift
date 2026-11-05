@@ -9,12 +9,16 @@ struct PopoverView: View {
     @State private var openGeneration = 0
     @State private var window: NSWindow?
     @State private var isPresentingPicker = false
+    @State private var query = ""
+    @State private var isSearchVisible = false
+    @FocusState private var focus: PopoverFocus?
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
     private var organization: OrganizationStore { model.organization }
     private var staleLimit: TimeInterval { TimeInterval(model.preferences.preferences.staleReviewHours * 3600) }
     private var viewer: String { model.snapshot?.viewer ?? "" }
+    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var isLoading: Bool { model.snapshot == nil && model.connection == .ok && !model.needsOnboarding }
 
     var body: some View {
@@ -29,6 +33,9 @@ struct PopoverView: View {
             if !model.needsOnboarding {
                 FilterBar(organization: organization, snapshot: model.snapshot, tab: tab, staleHours: model.preferences.preferences.staleReviewHours, isPresentingPicker: $isPresentingPicker)
             }
+            if isSearchVisible && !model.needsOnboarding {
+                SearchField(text: $query, focus: $focus)
+            }
             StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
             Divider()
             list
@@ -37,6 +44,10 @@ struct PopoverView: View {
         }
         .frame(width: PopoverMetrics.width)
         .background(Color.prumoPopoverBackground)
+        .focusable()
+        .focusEffectDisabled()
+        .focused($focus, equals: .list)
+        .onKeyPress(phases: .down, action: handleKeyPress)
         .background(WindowReader { reached in
             window = reached
             if reached?.isKeyWindow == true { open() }
@@ -62,12 +73,39 @@ struct PopoverView: View {
     private func open() {
         guard !isOpen else { return }
         isOpen = true
+        if focus == nil { focus = .list }
         highlighted = organization.unseen
         openGeneration += 1
     }
 
     private func close() {
         isOpen = false
+        clearSearch()
+    }
+
+    private func clearSearch() {
+        query = ""
+        isSearchVisible = false
+        focus = .list
+    }
+
+    private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        if press.key == .escape {
+            guard isSearchVisible && !query.isEmpty else { return .ignored }
+            clearSearch()
+            return .handled
+        }
+        guard !isSearchVisible, !model.needsOnboarding,
+              press.modifiers.isDisjoint(with: [.command, .control]),
+              let first = press.characters.unicodeScalars.first,
+              !CharacterSet.controlCharacters.contains(first),
+              !CharacterSet.whitespacesAndNewlines.contains(first),
+              !(0xF700...0xF8FF).contains(first.value)
+        else { return .ignored }
+        query = press.characters
+        isSearchVisible = true
+        focus = .search
+        return .handled
     }
 
     private func source(for tab: ListTab) -> [PullRequest] {
@@ -91,8 +129,9 @@ struct PopoverView: View {
             viewer: viewer, marks: settings.marks, unseen: highlighted.union(organization.unseen),
             staleLimit: staleLimit, now: now)
         let filtered = RowFiltering.apply(source(for: tab), filter: settings.filter, tab: tab, context: context)
+        let searched = trimmedQuery.isEmpty ? filtered : filtered.filter { SearchMatcher.matches($0, query: trimmedQuery) }
         return RowOrdering.sections(
-            filtered, tab: tab, ordering: settings.ordering(for: tab), marks: settings.marks, viewer: viewer)
+            searched, tab: tab, ordering: settings.ordering(for: tab), marks: settings.marks, viewer: viewer)
     }
 
     private func rowCount(for tab: ListTab) -> Int {
@@ -103,6 +142,7 @@ struct PopoverView: View {
         let repositories = organization.settings.filter.repositories
         return MergedToday.items(model.snapshot?.mergedToday ?? [], now: now, calendar: .current)
             .filter { repositories.isEmpty || repositories.contains($0.repository) }
+            .filter { trimmedQuery.isEmpty || SearchMatcher.matches($0, query: trimmedQuery) }
     }
 
     private func showOnboarding() {
@@ -238,7 +278,8 @@ struct PopoverView: View {
     }
 
     private var emptyText: String {
-        switch tab {
+        if !trimmedQuery.isEmpty { return PopoverText.nothingFound(query: trimmedQuery) }
+        return switch tab {
         case .mine: PopoverText.emptyMine
         case .review: PopoverText.emptyReview
         case .merge: PopoverText.emptyMerge
