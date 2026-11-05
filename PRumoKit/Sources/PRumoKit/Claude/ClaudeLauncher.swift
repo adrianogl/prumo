@@ -1,7 +1,6 @@
 import Foundation
 
 public struct ClaudeLauncher: Sendable {
-    static let forkNotice = " O PR vem de um fork; não faça push."
     static let safePathCharacters = Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/._-")
 
     private let settings: ClaudeSettings
@@ -54,18 +53,18 @@ public struct ClaudeLauncher: Sendable {
 
         let scriptURL = sessionsDir.appendingPathComponent("\(uuid()).zsh")
         guard !scriptURL.path.isEmpty, scriptURL.path.allSatisfy(Self.safePathCharacters.contains) else {
-            throw .launchFailed("O caminho de cache do PRumo tem espaço ou acento (\(scriptURL.path)); o PRumo não consegue abrir o terminal com segurança nesse caso.")
+            throw .launchFailed(ClaudeMessages.unsafeCachePath(scriptURL.path))
         }
         let claudeFound: Bool
         do {
             claudeFound = try await claudeLocator()
         } catch ProcessRunnerError.timedOut {
-            throw .launchFailed("O shell demorou demais para responder ao procurar o claude.")
+            throw .launchFailed(ClaudeMessages.shellTimedOut)
         } catch {
             throw .launchFailed(Self.message(for: error))
         }
         guard claudeFound else {
-            throw .launchFailed("Não encontrei o comando claude no PATH do seu shell.")
+            throw .launchFailed(ClaudeMessages.claudeNotFound)
         }
 
         let worktreesRoot = expand(settings.worktreesRoot)
@@ -92,7 +91,7 @@ public struct ClaudeLauncher: Sendable {
             prompt = PromptTemplate.render(settings.reviewTemplate, values: PromptValues.review(pr))
         case .fixCI:
             prompt = PromptTemplate.render(settings.ciTemplate, values: PromptValues.ci(pr))
-            if pr.isCrossRepository { prompt += Self.forkNotice }
+            if pr.isCrossRepository { prompt += ClaudeMessages.forkNotice }
         }
 
         let script = TerminalCommand.scriptContents(
@@ -115,7 +114,7 @@ public struct ClaudeLauncher: Sendable {
         if result.status != 0 {
             await discard(created: created, worktrees: worktrees, directory: directory, clone: clone, number: pr.number)
             let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
-            throw .launchFailed(stderr.isEmpty ? "O terminal não abriu (código \(result.status))." : stderr)
+            throw .launchFailed(stderr.isEmpty ? ClaudeMessages.terminalExit(result.status) : stderr)
         }
         return LaunchResult(directory: directory, clone: clone)
     }
@@ -127,7 +126,7 @@ public struct ClaudeLauncher: Sendable {
 
     private static func message(for error: Error) -> String {
         if let runnerError = error as? ProcessRunnerError, runnerError == .timedOut {
-            return "O comando demorou demais para responder."
+            return ClaudeMessages.commandTimedOut
         }
         return error.localizedDescription
     }

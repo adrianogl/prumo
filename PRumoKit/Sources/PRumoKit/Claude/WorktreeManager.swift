@@ -43,7 +43,7 @@ public struct WorktreeManager: Sendable {
             if await isRemovable(path: target, clone: clone) {
                 try await git(["-C", clone.path, "worktree", "remove", target.path])
             } else {
-                throw .gitFailed("A worktree \(target.path) tem alterações; finalize ou descarte antes de corrigir a CI.")
+                throw .gitFailed(ClaudeMessages.dirtyWorktree(target.path))
             }
         }
 
