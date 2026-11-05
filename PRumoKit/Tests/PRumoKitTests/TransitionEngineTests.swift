@@ -141,8 +141,8 @@ private func review(_ id: String, author: String = "maria", state: ReviewState, 
         #expect(TransitionEngine.events(from: without, to: back).isEmpty)
         let staleHistory = Snapshot.fixture(
             mine: [.fixture(
-                reviews: [review("r1", state: .approved, at: t0.addingTimeInterval(-60))],
-                comments: [comment("c1", at: t0), comment("c0", at: t0.addingTimeInterval(-3600))]
+                reviews: [review("r1", state: .approved, at: t0.addingTimeInterval(-300))],
+                comments: [comment("c1", at: t0.addingTimeInterval(-300)), comment("c0", at: t0.addingTimeInterval(-3600))]
             )],
             fetchedAt: t2
         )
@@ -201,5 +201,38 @@ private func review(_ id: String, author: String = "maria", state: ReviewState, 
             fetchedAt: t1
         )
         #expect(TransitionEngine.events(from: old, to: new).map(\.pullRequestID) == ["A", "B", "C"])
+    }
+
+    @Test func approvedComesBeforeChangesRequestedRegardlessOfReviewOrder() {
+        let old = Snapshot.fixture(mine: [.fixture()])
+        let new = Snapshot.fixture(
+            mine: [.fixture(reviews: [
+                review("r1", author: "joao", state: .changesRequested),
+                review("r2", author: "maria", state: .approved)
+            ])],
+            fetchedAt: t2
+        )
+        #expect(TransitionEngine.events(from: old, to: new).map(\.kind) == [.approved, .changesRequested])
+    }
+
+    @Test func commentCreatedJustBeforeOldFetchStillNotifies() {
+        let old = Snapshot.fixture(mine: [.fixture()], fetchedAt: t1)
+        let new = Snapshot.fixture(
+            mine: [.fixture(comments: [comment("c1", at: t1.addingTimeInterval(-60))])],
+            fetchedAt: t2
+        )
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(events.count == 1)
+        #expect(events[0].kind == .newComment)
+        #expect(events[0].title == "Comentário novo em #812")
+    }
+
+    @Test func staleReviewRequestReturningToListEmitsNothing() {
+        let old = Snapshot.fixture(toReview: [], fetchedAt: t2)
+        let new = Snapshot.fixture(
+            toReview: [.fixture(id: "PR_815", number: 815, reviewRequestedAt: t0)],
+            fetchedAt: t2.addingTimeInterval(60)
+        )
+        #expect(TransitionEngine.events(from: old, to: new).isEmpty)
     }
 }

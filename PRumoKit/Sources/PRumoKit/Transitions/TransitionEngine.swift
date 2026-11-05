@@ -1,20 +1,20 @@
 import Foundation
 
 public enum TransitionEngine {
-    static let bodyLimit = 80
-
     public static func events(from old: Snapshot?, to new: Snapshot) -> [NotificationEvent] {
         guard let old else { return [] }
         let oldMine = Dictionary(old.mine.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var result: [NotificationEvent] = []
+        let threshold = old.fetchedAt.addingTimeInterval(-TransitionConstants.dateTolerance)
         for pr in new.mine {
             guard let before = oldMine[pr.id] else { continue }
             result += ciEvents(before, pr)
-            result += reviewEvents(before, pr, viewer: new.viewer, since: old.fetchedAt)
-            result += commentEvents(before, pr, viewer: new.viewer, since: old.fetchedAt)
+            result += reviewEvents(before, pr, viewer: new.viewer, since: threshold)
+            result += commentEvents(before, pr, viewer: new.viewer, since: threshold)
         }
         let knownReviewRequests = Set(old.toReview.map(\.id))
         for pr in new.toReview where !knownReviewRequests.contains(pr.id) {
+            if let requestedAt = pr.reviewRequestedAt, requestedAt <= threshold { continue }
             result.append(NotificationEvent(
                 kind: .reviewRequested, pullRequestID: pr.id,
                 title: "Review pedido: #\(pr.number)",
@@ -46,7 +46,7 @@ public enum TransitionEngine {
 
     private static func reviewEvents(_ old: PullRequest, _ new: PullRequest, viewer: String, since: Date) -> [NotificationEvent] {
         let known = Set(old.reviews.map(\.id))
-        return new.reviews.compactMap { review in
+        let events: [NotificationEvent] = new.reviews.compactMap { review in
             guard !known.contains(review.id), review.author != viewer, review.submittedAt > since else { return nil }
             switch review.state {
             case .approved:
@@ -63,6 +63,7 @@ public enum TransitionEngine {
                 return nil
             }
         }
+        return events.filter { $0.kind == .approved } + events.filter { $0.kind == .changesRequested }
     }
 
     private static func commentEvents(_ old: PullRequest, _ new: PullRequest, viewer: String, since: Date) -> [NotificationEvent] {
@@ -82,6 +83,6 @@ public enum TransitionEngine {
         let flat = text.replacingOccurrences(of: "\r\n", with: " ")
             .replacingOccurrences(of: "\n", with: " ")
             .replacingOccurrences(of: "\r", with: " ")
-        return flat.count > bodyLimit ? String(flat.prefix(bodyLimit)) + "…" : flat
+        return flat.count > TransitionConstants.bodyLimit ? String(flat.prefix(TransitionConstants.bodyLimit)) + "…" : flat
     }
 }
