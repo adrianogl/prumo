@@ -42,7 +42,7 @@ O app falhou, mesmo funcionando, se:
 
 - notificar o estado que já existia na primeira execução ou depois de reiniciar;
 - disparar uma notificação por check de CI em vez de uma por resultado;
-- notificar comentário do próprio usuário ou de bot;
+- notificar comentário do próprio usuário, de bot ou de autor da lista "Ignorar comentários de";
 - precisar de mais de um clique para chegar ao PR;
 - virar um cliente do GitHub com botões de aprovar e comentar.
 
@@ -112,7 +112,7 @@ Dois modos, configuráveis nos Ajustes. O padrão é o detalhado.
 - à esquerda, bolinha de status: verde (tudo ok), cinza (CI rodando), vermelho (CI falhou), azul (precisa da sua atenção: alterações pedidas ou review parado);
 - título do PR;
 - `org/repo #número · idade`;
-- badges: CI (`✓ CI 12/12`, `✗ unit-tests` com o nome do primeiro check que falhou, `● CI 4/9`), aprovações, alterações pedidas, comentários (ícone de conversa e quantidade), draft, conflito (ícone de merge bloqueado), chave do Jira, e na aba Revisar: para você/time, autor e tamanho do diff (`+212 −48`), espera (ícone de relógio e horas);
+- badges: CI (`✓ CI 12/12`, `✗ unit-tests` com o nome do primeiro check que falhou, `● CI 4/9`), aprovações, alterações pedidas, comentários (ícone de conversa e quantidade), draft, conflito (ícone de merge bloqueado), chave do Jira (badge azul, cor do Jira, que abre o card quando o prefixo da chave tem site configurado; sem site, o badge é neutro), e na aba Revisar: para você/time, autor e tamanho do diff (`+212 −48`), espera (ícone de relógio e horas);
 - à direita, no topo, bolinha caramelo de "novo" quando o PR teve atividade desde a última vez que o popover foi aberto. O título fica em negrito nesse caso.
 
 **Compacto**: bolinha de status e uma linha só de metadados (`repo #n · aprovado · CI ok · 2h`).
@@ -164,8 +164,11 @@ Cada tipo pode ser ligado e desligado nos Ajustes.
 ### Busca e teclado
 
 - Atalho global (`⌥⌘P`, configurável) abre e fecha o popover.
-- Com o popover aberto, digitar abre um campo de busca que filtra as três abas por título, repositório ou número.
-- `↑` `↓` navegam entre as linhas (linha com contorno caramelo), `↵` abre, `⌘1` `⌘2` `⌘3` trocam de aba, `⌘.` abre o menu da linha.
+- A busca fica sempre visível, embaixo dos filtros, e filtra as três abas por título, repositório ou número. Digitar com o foco na lista leva o foco para a busca.
+- `↑` `↓` navegam entre as linhas (linha com contorno caramelo), `↵` abre, `⌘1` `⌘2` `⌘3` trocam de aba, `⌘.` abre o menu da linha. `↑`, `↓` e `↵` funcionam também com o foco na busca.
+- Com uma linha selecionada: `⌘K` abre o Claude, `⌘J` abre o card no Jira, `⌘C` copia o link e `⇧⌘C` copia o comando de checkout. `esc` limpa a busca quando há texto digitado.
+- Com outra linha selecionada pelo teclado, o `⋯` não aparece no hover da linha sob o mouse, para os atalhos não irem para ela. O menu de contexto (botão direito) continua igual.
+- No rodapé, o atalho global só aparece quando foi registrado com sucesso.
 
 ### Claude no terminal
 
@@ -222,11 +225,12 @@ WidgetKit, dois tamanhos:
 
 ### Ajustes
 
-Janela com estas seções:
+Janela com 600 de largura e as abas Conta, Geral, Notificações, Comentários, Filtros, Claude, Integrações e Sobre:
 
 - **Conta**: usuário conectado e origem do token (`gh` ou token colado); trocar conta.
 - **Exibição**: linha detalhada ou compacta; intervalo de atualização (padrão 60 s); abrir ao iniciar o macOS; atalho global.
 - **Notificações**: um toggle por tipo; agrupar notificações de CI; lembrete de review parado após N horas (padrão 24 h); só em horário de trabalho (dias e horário).
+- **Comentários**: lista "Ignorar comentários de" (padrão `github-actions` e `datadog-official`). A comparação ignora maiúsculas e o sufixo `[bot]`. Bots são sempre ignorados, com ou sem entrada na lista. Comentário de autor ignorado não conta no badge, não notifica e não acende o marcador de novo.
 - **Filtros**: ignorar drafts em Revisar; incluir reviews pedidos ao time (padrão ligado); visões salvas; PRs silenciados (lista, com reativar).
 - **Claude**: template de revisão, template de correção de CI, flags extras do `claude`, terminal (Ghostty padrão, Terminal, iTerm ou comando personalizado), pasta das worktrees, clones encontrados (com adicionar manualmente), apagar worktree quando o PR fechar.
 - **Integrações**: Jira, com uma lista de prefixo de chave → endereço do site (ex.: `ON` → `empresa.atlassian.net`, `DEV` → site da Contoso).
@@ -263,7 +267,7 @@ Sem rede ou com erro da API, o popover mantém os últimos dados com um aviso ("
   - **CI**: o rollup de checks do último commit do PR sai de pendente para sucesso ou falha. Uma notificação por commit, não por check.
   - **Aprovado**: decisão de review passa a aprovado, ou chega review aprovado novo.
   - **Alterações pedidas**: chega review com alterações pedidas.
-  - **Comentário**: comentário novo (de issue ou de review) de autor que não é o usuário e não é bot.
+  - **Comentário**: comentário novo (de issue ou de review) de autor que não é o usuário, não é bot e não está na lista "Ignorar comentários de". Num PR com mais de 20 comentários a contagem é aproximada.
   - **Review pedido**: PR novo na lista de reviews pedidos.
   - **Review parado**: pedido aberto há mais que o limite configurado. Lembra uma vez por pedido.
   - **Pronto para merge**: PR passa a cumprir aprovado + CI verde + sem conflito.
@@ -297,7 +301,7 @@ Build local, assinado com o time pessoal (gratuito) do Xcode, para rodar na máq
 - Token: tenta `gh auth token` antes de pedir PAT; PAT no Keychain.
 - Intervalo de atualização de 60 s, configurável.
 - Primeira leitura sem notificações.
-- Comentário do próprio usuário e de bot não notifica.
+- Comentário do próprio usuário, de bot e de autor da lista "Ignorar comentários de" não conta no badge, não notifica e não acende o marcador de novo. Num PR com mais de 20 comentários a contagem é aproximada.
 - Notificação de CI abre a página de checks, não a página do PR.
 - Não perturbe descarta o que aconteceu durante a pausa.
 - Sem conexão: mostra os últimos dados com aviso.

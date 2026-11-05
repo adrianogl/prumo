@@ -420,6 +420,7 @@ struct PopoverView: View {
             tab: tab,
             isHighlighted: highlighted.contains(pr.id),
             isSelected: isSelected,
+            hasOtherSelection: selectedID != nil && !isSelected,
             model: model)
             .background {
                 GeometryReader { geometry in
@@ -474,20 +475,26 @@ struct PopoverView: View {
                         .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
                         .lineLimit(1)
                         .truncationMode(.tail)
-                    Text(PopoverText.footerSeparator)
+                    if model.hotKeyRegistered {
+                        Text(PopoverText.footerSeparator)
+                    }
                 } else {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
                         if let status = footerStatus(now: context.date) {
                             HStack(spacing: PopoverMetrics.footerSpacing) {
                                 Text(status)
-                                Text(PopoverText.footerSeparator)
+                                if model.hotKeyRegistered {
+                                    Text(PopoverText.footerSeparator)
+                                }
                             }
                         }
                     }
                 }
-                Text(model.hotKey.display)
-                    .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
-                    .fixedSize()
+                if model.hotKeyRegistered {
+                    Text(model.hotKey.display)
+                        .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
+                        .fixedSize()
+                }
             }
             Spacer()
             Button(action: showSettings) {

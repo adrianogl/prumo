@@ -181,3 +181,13 @@ Comportamento:
 - [ ] **Step 2 (usuário):** tentar gravar um atalho que outro app já usa (ex.: o do Raycast) → aviso, o anterior continua funcionando.
 - [ ] **Step 3 (usuário):** digitar `calculo` e `#81` na busca; selecionar texto do campo e `⌘C` → copia o texto, não o link.
 - [ ] **Step 4 (usuário):** com uma linha selecionada, esperar um refresh que tire o PR da lista → seleção some sem erro.
+
+---
+
+## Mudanças durante a execução
+
+- Ajustes com 600 de largura.
+- Cores: azul para atenção, cinza para CI rodando, com o badge de CI rodando também cinza.
+- Busca sempre visível, embaixo dos filtros.
+- Task A: autores de comentário ignorados na aba Comentários.
+- Task J: badge do Jira clicável e azul.

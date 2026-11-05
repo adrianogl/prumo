@@ -9,6 +9,7 @@ struct PRRowView: View {
     let tab: ListTab
     let isHighlighted: Bool
     let isSelected: Bool
+    let hasOtherSelection: Bool
     let model: AppModel
     @State private var hovering = false
     @State private var menuOpen = false
@@ -21,7 +22,7 @@ struct PRRowView: View {
 
     private var isPinned: Bool { model.organization.settings.marks.isPinned(pr.id) }
     private var muted: MutedPullRequest? { model.organization.settings.marks.muted[pr.id] }
-    private var showsMenu: Bool { hovering || menuOpen || model.isLaunching(pr) }
+    private var showsMenu: Bool { (hovering && !hasOtherSelection) || menuOpen || model.isLaunching(pr) }
 
     private var actions: RowActions {
         let entries = Self.menuEntries(pr: pr, tab: tab, presentation: presentation, model: model)
