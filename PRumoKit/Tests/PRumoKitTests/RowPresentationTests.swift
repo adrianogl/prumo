@@ -222,6 +222,30 @@ private typealias RowComment = Comment
         #expect(!RowPresenter.review(.fixture(), now: .fixed).badges.contains(Badge("ON-1", .neutral)))
     }
 
+    @Test func jiraBadgeIndexPointsToLastBadge() {
+        let mine = RowPresenter.mine(.fixture(ci: .success(total: 3), commentCount: 2), viewer: "adriano", now: .fixed, jiraKey: "ON-1234")
+        #expect(mine.jiraBadgeIndex == mine.badges.count - 1)
+        let review = RowPresenter.review(.fixture(), now: .fixed, jiraKey: "ON-1234")
+        #expect(review.jiraBadgeIndex == review.badges.count - 1)
+        let merge = RowPresenter.merge(.fixture(), viewer: "adriano", now: .fixed, jiraKey: "ON-9")
+        #expect(merge.jiraBadgeIndex == merge.badges.count - 1)
+    }
+
+    @Test func jiraBadgeIndexIsNilWithoutKey() {
+        #expect(RowPresenter.mine(.fixture(), viewer: "adriano", now: .fixed).jiraBadgeIndex == nil)
+        #expect(RowPresenter.review(.fixture(), now: .fixed).jiraBadgeIndex == nil)
+        #expect(RowPresenter.merge(.fixture(), viewer: "adriano", now: .fixed).jiraBadgeIndex == nil)
+    }
+
+    @Test func jiraBadgeDoesNotShiftActionIndices() {
+        let pr = PullRequest.fixture(ci: .failure(failedChecks: ["build"], total: 3), commentCount: 2, mergeable: .conflicting)
+        let with = RowPresenter.mine(pr, viewer: "adriano", now: .fixed, jiraKey: "ON-1")
+        let without = RowPresenter.mine(pr, viewer: "adriano", now: .fixed)
+        #expect(with.ciFailureBadgeIndex == without.ciFailureBadgeIndex)
+        #expect(with.conflictBadgeIndex == without.conflictBadgeIndex)
+        #expect(with.commentsBadgeIndex == without.commentsBadgeIndex)
+    }
+
     @Test func reviewRowShowsForYouBadgeFirst() {
         let row = RowPresenter.review(.fixture(reviewTarget: .you), now: .fixed)
         #expect(row.badges.first == Badge("para você", .accent))

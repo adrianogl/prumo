@@ -38,6 +38,7 @@ extension StatusDot {
 
 struct BadgeView: View {
     let badge: Badge
+    var tint: Color?
 
     var body: some View {
         HStack(spacing: 3) {
@@ -49,9 +50,9 @@ struct BadgeView: View {
         }
         .fixedSize()
         .font(.system(size: 10.5, weight: .medium))
-        .foregroundStyle(badge.tone.color)
+        .foregroundStyle(tint ?? badge.tone.color)
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
-        .background(Color.prumoBadgeBackground, in: RoundedRectangle(cornerRadius: 5))
+        .background(tint.map { $0.opacity(PopoverMetrics.jiraBadgeBackgroundOpacity) } ?? Color.prumoBadgeBackground, in: RoundedRectangle(cornerRadius: 5))
     }
 }

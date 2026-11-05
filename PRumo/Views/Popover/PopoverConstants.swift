@@ -25,6 +25,7 @@ enum PopoverMetrics {
     static let searchVerticalPadding: CGFloat = 5
     static let selectionLineWidth: CGFloat = 1.5
     static let selectionCornerRadius: CGFloat = 6
+    static let jiraBadgeBackgroundOpacity: Double = 0.14
 }
 
 enum PopoverFocus: Hashable {
@@ -64,6 +65,7 @@ enum PopoverText {
     static let mineTab = "Meus PRs"
     static let reviewTab = "Revisar"
     static let mergeTab = "Merge"
+    static let openJiraHelp = "Abrir card no Jira"
     static let emptyMine = "Nenhum PR aberto"
     static let emptyReview = "Nenhum review pedido"
     static let emptyMerge = "Nenhum PR pronto para merge"
@@ -120,6 +122,8 @@ enum PopoverText {
         let data = lastSuccess.map { "Mostrando dados de \($0). " } ?? ""
         return "O GitHub mandou uma resposta que o PRumo não entendeu. \(data)Tentando de novo em \(retryIn)s."
     }
+
+    static func openJiraLabel(key: String) -> String { "\(openJiraHelp) \(key)" }
 
     static func rateLimited(resetAt: String?) -> String {
         resetAt.map { "Limite da API do GitHub. Volta às \($0)" } ?? "Limite da API do GitHub."

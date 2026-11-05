@@ -12,11 +12,12 @@ public struct RowPresentation: Equatable, Sendable {
     public let ciFailureBadgeIndex: Int?
     public let conflictBadgeIndex: Int?
     public let commentsBadgeIndex: Int?
+    public let jiraBadgeIndex: Int?
 
     public init(
         dot: StatusDot, title: String, subtitle: String, badges: [Badge],
         ciFailureBadgeIndex: Int? = nil, conflictBadgeIndex: Int? = nil,
-        commentsBadgeIndex: Int? = nil
+        commentsBadgeIndex: Int? = nil, jiraBadgeIndex: Int? = nil
     ) {
         self.dot = dot
         self.title = title
@@ -25,6 +26,7 @@ public struct RowPresentation: Equatable, Sendable {
         self.ciFailureBadgeIndex = ciFailureBadgeIndex
         self.conflictBadgeIndex = conflictBadgeIndex
         self.commentsBadgeIndex = commentsBadgeIndex
+        self.jiraBadgeIndex = jiraBadgeIndex
     }
 }
 
@@ -62,7 +64,11 @@ public enum RowPresenter {
             commentsIndex = badges.count
             badges.append(Badge(String(commentTotal), .neutral, .comments))
         }
-        if let jiraKey { badges.append(Badge(jiraKey, .neutral)) }
+        var jiraIndex: Int?
+        if let jiraKey {
+            jiraIndex = badges.count
+            badges.append(Badge(jiraKey, .neutral))
+        }
 
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: hasChangesRequested),
@@ -71,7 +77,8 @@ public enum RowPresenter {
             badges: badges,
             ciFailureBadgeIndex: ciFailureIndex,
             conflictBadgeIndex: conflictIndex,
-            commentsBadgeIndex: commentsIndex
+            commentsBadgeIndex: commentsIndex,
+            jiraBadgeIndex: jiraIndex
         )
     }
 
@@ -88,13 +95,18 @@ public enum RowPresenter {
         }
         if let ci = ciBadge(pr.ci) { badges.append(ci) }
         badges.append(Badge("+\(pr.additions) \(PresentationText.minus)\(pr.deletions)", .neutral))
-        if let jiraKey { badges.append(Badge(jiraKey, .neutral)) }
+        var jiraIndex: Int?
+        if let jiraKey {
+            jiraIndex = badges.count
+            badges.append(Badge(jiraKey, .neutral))
+        }
 
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: isStale),
             title: pr.title,
             subtitle: subtitle(pr, from: requestedAt, now: now),
-            badges: badges
+            badges: badges,
+            jiraBadgeIndex: jiraIndex
         )
     }
 
@@ -104,13 +116,18 @@ public enum RowPresenter {
         if let ci = ciBadge(pr.ci) { badges.append(ci) }
         if summary.approvals > 0 { badges.append(approvalsBadge(summary.approvals)) }
         badges.append(Badge(PresentationText.noConflict, .positive))
-        if let jiraKey { badges.append(Badge(jiraKey, .neutral)) }
+        var jiraIndex: Int?
+        if let jiraKey {
+            jiraIndex = badges.count
+            badges.append(Badge(jiraKey, .neutral))
+        }
 
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: false),
             title: pr.title,
             subtitle: subtitle(pr, from: pr.createdAt, now: now),
-            badges: badges
+            badges: badges,
+            jiraBadgeIndex: jiraIndex
         )
     }
 

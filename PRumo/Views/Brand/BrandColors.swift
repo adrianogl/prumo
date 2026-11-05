@@ -21,3 +21,11 @@ extension Color {
             : NSColor(srgbRed: 0xef / 255, green: 0xe6 / 255, blue: 0xd6 / 255, alpha: 1)
     })
 }
+
+extension Color {
+    static let jiraBlue = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? NSColor(srgbRed: 0x57 / 255, green: 0x9d / 255, blue: 0xff / 255, alpha: 1)
+            : NSColor(srgbRed: 0x0c / 255, green: 0x66 / 255, blue: 0xe4 / 255, alpha: 1)
+    })
+}

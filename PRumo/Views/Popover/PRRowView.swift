@@ -148,7 +148,11 @@ struct PRRowView: View {
                 if compactLine == nil, !presentation.badges.isEmpty {
                     FlowLayout(spacing: PopoverMetrics.badgeSpacing, lineSpacing: PopoverMetrics.badgeLineSpacing) {
                         ForEach(Array(presentation.badges.enumerated()), id: \.offset) { index, badge in
-                            BadgeView(badge: badge).allowsHitTesting(false).accessibilityHidden(true)
+                            if index == presentation.jiraBadgeIndex, let jiraURL {
+                                jiraButton(badge, url: jiraURL)
+                            } else {
+                                BadgeView(badge: badge).allowsHitTesting(false).accessibilityHidden(true)
+                            }
                             if let purpose = purpose(forBadgeAt: index) {
                                 claudeButton(purpose)
                             }
@@ -162,6 +166,20 @@ struct PRRowView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var jiraURL: URL? { model.integrations.link(for: pr)?.url }
+
+    private func jiraButton(_ badge: Badge, url: URL) -> some View {
+        Button {
+            NSWorkspace.shared.open(url)
+        } label: {
+            BadgeView(badge: badge, tint: .jiraBlue)
+        }
+        .buttonStyle(.plain)
+        .pointerStyle(.link)
+        .help(PopoverText.openJiraHelp)
+        .accessibilityLabel(PopoverText.openJiraLabel(key: badge.text))
     }
 
     private func claudeButton(_ purpose: SessionPurpose) -> some View {
