@@ -7,7 +7,7 @@ enum ClaudeSettingsMetrics {
 }
 
 enum ClaudeSettingsText {
-    static let tab = "Claude"
+    static let tab = "IA"
     static let reviewTemplate = "Revisar PR"
     static let reviewVariables = "Variáveis: {numero} {url} {repo} {branch} {titulo}"
     static let ciTemplate = "Corrigir CI"

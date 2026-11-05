@@ -9,6 +9,7 @@ enum ClaudeMetrics {
 
 enum ClaudeSymbol {
     static let mark = "AIMark"
+    static let tab = "AIMarkTab"
     static let more = "ellipsis"
 }
 
