@@ -507,4 +507,31 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         let events = TransitionEngine.events(from: old, to: new)
         #expect(events.map(\.kind) == [.ciSucceeded])
     }
+
+    @Test func transitionTitlesUseReference() {
+        let gitlabURL = URL(string: "https://gitlab.empresa.com/vendas/api/-/merge_requests/341")!
+        let review = Review(id: "r1", author: "maria", state: .approved, submittedAt: t1)
+        let old = Snapshot.fixture(mine: [.fixture(number: 341, url: gitlabURL, ci: .pending(done: 1, total: 2), provider: .gitlab)])
+        let new = Snapshot.fixture(
+            mine: [.fixture(
+                number: 341, url: gitlabURL, ci: .failure(failedChecks: ["build"], total: 2),
+                reviews: [review], provider: .gitlab
+            )],
+            fetchedAt: t1
+        )
+        let titles = TransitionEngine.events(from: old, to: new).map(\.title)
+        #expect(titles.contains("!341 aprovado"))
+        #expect(titles.contains("CI falhou em !341"))
+    }
+
+    @Test func gitlabCIURLIsPipelinesTab() {
+        let gitlabURL = URL(string: "https://gitlab.empresa.com/vendas/api/-/merge_requests/341")!
+        let old = Snapshot.fixture(mine: [.fixture(number: 341, url: gitlabURL, ci: .pending(done: 1, total: 2), provider: .gitlab)])
+        let new = Snapshot.fixture(
+            mine: [.fixture(number: 341, url: gitlabURL, ci: .success(total: 2), provider: .gitlab)],
+            fetchedAt: t1
+        )
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(events.first?.url.absoluteString == "https://gitlab.empresa.com/vendas/api/-/merge_requests/341/pipelines")
+    }
 }

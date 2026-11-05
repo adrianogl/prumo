@@ -145,7 +145,7 @@ public enum RowPresenter {
         _ pr: PullRequest, tab: ListTab, viewer: String, now: Date, account: AccountLabel? = nil
     ) -> String {
         let repo = pr.repository.split(separator: "/").last.map(String.init) ?? pr.repository
-        var parts = [account?.text, "\(repo) #\(pr.number)"].compactMap { $0 }
+        var parts = [account?.text, "\(repo) \(pr.reference)"].compactMap { $0 }
         switch tab {
         case .review:
             parts.append(pr.author)
@@ -182,7 +182,7 @@ public enum RowPresenter {
         let age = staleSince.map {
             "\(PresentationText.lastDataPrefix) \(RelativeAge.string(from: $0, now: now)) \(PresentationText.lastDataSuffix)"
         } ?? RelativeAge.string(from: from, now: now)
-        let parts = [account?.text, "\(pr.repository) #\(pr.number)", age].compactMap { $0 }
+        let parts = [account?.text, "\(pr.repository) \(pr.reference)", age].compactMap { $0 }
         return parts.joined(separator: PresentationText.separator)
     }
 

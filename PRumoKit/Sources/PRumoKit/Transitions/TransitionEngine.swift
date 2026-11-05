@@ -22,7 +22,7 @@ public enum TransitionEngine {
             if !oldToReviewIDs.contains(pr.id), let requestedAt = pr.reviewRequestedAt, requestedAt <= threshold { continue }
             result.append(NotificationEvent(
                 kind: .reviewRequested, pullRequestID: pr.id,
-                title: "Review pedido: #\(pr.number)",
+                title: "Review pedido: \(pr.reference)",
                 body: "\(pr.author) pediu seu review em \(pr.title)", url: pr.url,
                 accountID: pr.accountID
             ))
@@ -36,19 +36,19 @@ public enum TransitionEngine {
 
     private static func ciEvents(_ old: PullRequest, _ new: PullRequest) -> [NotificationEvent] {
         guard new.ci.isTerminal, !old.ci.isTerminal || old.headSHA != new.headSHA else { return [] }
-        let checksURL = new.url.appendingPathComponent("checks")
+        let checksURL = new.checksURL
         switch new.ci {
         case .success(let total):
             return [NotificationEvent(
                 kind: .ciSucceeded, pullRequestID: new.id,
-                title: "CI terminou em #\(new.number): \(total)/\(total)", body: new.title, url: checksURL,
+                title: "CI terminou em \(new.reference): \(total)/\(total)", body: new.title, url: checksURL,
                 accountID: new.accountID
             )]
         case .failure(let failedChecks, _):
             let first = failedChecks.first.map { " · \($0)" } ?? ""
             return [NotificationEvent(
                 kind: .ciFailed, pullRequestID: new.id,
-                title: "CI falhou em #\(new.number)", body: "\(new.title)\(first)", url: checksURL,
+                title: "CI falhou em \(new.reference)", body: "\(new.title)\(first)", url: checksURL,
                 failedRunID: new.failedRunID, accountID: new.accountID
             )]
         case .none, .pending:
@@ -63,12 +63,12 @@ public enum TransitionEngine {
             switch review.state {
             case .approved:
                 return NotificationEvent(
-                    kind: .approved, pullRequestID: new.id, title: "#\(new.number) aprovado",
+                    kind: .approved, pullRequestID: new.id, title: "\(new.reference) aprovado",
                     body: "\(review.author) aprovou \(new.title)", url: new.url, accountID: new.accountID
                 )
             case .changesRequested:
                 return NotificationEvent(
-                    kind: .changesRequested, pullRequestID: new.id, title: "Alterações pedidas em #\(new.number)",
+                    kind: .changesRequested, pullRequestID: new.id, title: "Alterações pedidas em \(new.reference)",
                     body: "\(review.author) pediu alterações em \(new.title)", url: new.url, accountID: new.accountID
                 )
             case .commented, .dismissed, .pending:
@@ -91,7 +91,7 @@ public enum TransitionEngine {
             .map { (author: $0.author, body: $0.body, url: $0.url ?? new.url, date: $0.submittedAt) }
         let fresh = comments + reviews
         guard let latest = fresh.max(by: { $0.date < $1.date }) else { return [] }
-        let title = fresh.count > 1 ? "\(fresh.count) comentários novos em #\(new.number)" : "Comentário novo em #\(new.number)"
+        let title = fresh.count > 1 ? "\(fresh.count) comentários novos em \(new.reference)" : "Comentário novo em \(new.reference)"
         return [NotificationEvent(
             kind: .newComment, pullRequestID: new.id, title: title,
             body: "\(latest.author): \"\(excerpt(latest.body))\"", url: latest.url, accountID: new.accountID
@@ -102,7 +102,7 @@ public enum TransitionEngine {
         guard old.mergeable != .conflicting, new.mergeable == .conflicting else { return [] }
         let suffix = new.baseRefName.isEmpty ? "" : " · conflito com \(new.baseRefName)"
         return [NotificationEvent(
-            kind: .conflict, pullRequestID: new.id, title: "#\(new.number) entrou em conflito",
+            kind: .conflict, pullRequestID: new.id, title: "\(new.reference) entrou em conflito",
             body: "\(new.title)\(suffix)", url: new.url, accountID: new.accountID
         )]
     }
@@ -116,7 +116,7 @@ public enum TransitionEngine {
             body = "Aprovado e sem conflito"
         }
         return [NotificationEvent(
-            kind: .readyToMerge, pullRequestID: new.id, title: "#\(new.number) pronto para merge",
+            kind: .readyToMerge, pullRequestID: new.id, title: "\(new.reference) pronto para merge",
             body: body, url: new.url, accountID: new.accountID
         )]
     }

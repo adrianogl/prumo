@@ -3,6 +3,8 @@ public enum SessionEnvironment {
         switch provider {
         case .github:
             return ["GH_TOKEN": token]
+        case .gitlab:
+            return ["GITLAB_TOKEN": token, "GITLAB_HOST": host]
         }
     }
 }

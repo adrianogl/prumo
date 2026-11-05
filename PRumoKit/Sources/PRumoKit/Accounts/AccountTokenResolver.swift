@@ -12,6 +12,7 @@ public struct AccountTokenResolver: Sendable {
         switch account.origin {
         case .pasted: token = tokenStore(account.id).read()
         case .ghCLI: token = await gh.token(for: account.login)
+        case .glabCLI: token = nil
         }
         guard let token, !token.isEmpty else { return nil }
         return token

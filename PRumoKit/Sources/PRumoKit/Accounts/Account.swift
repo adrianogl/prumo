@@ -5,6 +5,7 @@ public struct Account: Codable, Equatable, Identifiable, Sendable {
     public var login: String
     public var nickname: String
     public var origin: TokenOrigin
+    public var scopes: [String]?
 
     public init(
         id: String,
@@ -12,7 +13,8 @@ public struct Account: Codable, Equatable, Identifiable, Sendable {
         host: String = AccountConstants.githubHost,
         login: String,
         nickname: String = "",
-        origin: TokenOrigin
+        origin: TokenOrigin,
+        scopes: [String]? = nil
     ) {
         self.id = id
         self.provider = provider
@@ -20,6 +22,7 @@ public struct Account: Codable, Equatable, Identifiable, Sendable {
         self.login = login
         self.nickname = nickname
         self.origin = origin
+        self.scopes = scopes
     }
 
     public init(from decoder: Decoder) throws {
@@ -30,6 +33,7 @@ public struct Account: Codable, Equatable, Identifiable, Sendable {
         host = c.decodeLossy(String.self, forKey: .host, default: AccountConstants.githubHost)
         nickname = c.decodeLossy(String.self, forKey: .nickname, default: "")
         origin = c.decodeLossy(TokenOrigin.self, forKey: .origin, default: .pasted)
+        scopes = c.decodeLossy([String]?.self, forKey: .scopes, default: nil)
     }
 
     public var displayName: String {

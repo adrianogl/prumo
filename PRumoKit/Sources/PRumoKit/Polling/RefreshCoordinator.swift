@@ -1,7 +1,7 @@
 import Foundation
 
 public actor RefreshCoordinator {
-    public typealias Fetch = @Sendable () async throws(GitHubError) -> Snapshot
+    public typealias Fetch = @Sendable () async throws(ProviderError) -> Snapshot
 
     private let fetch: Fetch
     private let accountID: String
@@ -54,7 +54,7 @@ public actor RefreshCoordinator {
         }
     }
 
-    private static func state(for error: GitHubError, stored: Snapshot?) -> ConnectionState {
+    private static func state(for error: ProviderError, stored: Snapshot?) -> ConnectionState {
         switch error {
         case .unauthorized: .unauthorized
         case .rateLimited(let resetAt): .rateLimited(resetAt: resetAt)

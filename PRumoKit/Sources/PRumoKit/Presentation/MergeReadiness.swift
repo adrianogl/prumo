@@ -1,5 +1,8 @@
 public enum MergeReadiness {
     public static func isReady(_ pr: PullRequest, viewer: String) -> Bool {
+        if let mergeReady = pr.mergeReady {
+            return mergeReady && !pr.isDraft && ciAllowsMerge(pr.ci)
+        }
         guard !pr.isDraft, pr.mergeable == .mergeable, ciAllowsMerge(pr.ci) else { return false }
         switch pr.reviewDecision {
         case .approved:

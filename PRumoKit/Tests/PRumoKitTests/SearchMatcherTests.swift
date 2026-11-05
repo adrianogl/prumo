@@ -41,4 +41,11 @@ import Testing
         #expect(SearchMatcher.matches(merged, query: "#81"))
         #expect(!SearchMatcher.matches(merged, query: "frete"))
     }
+
+    @Test func searchAcceptsBang() {
+        let mr = PullRequest.fixture(number: 341, repository: "vendas/api", provider: .gitlab)
+        #expect(SearchMatcher.matches(mr, query: "!341"))
+        #expect(SearchMatcher.matches(mr, query: "!34"))
+        #expect(!SearchMatcher.matches(mr, query: "!99"))
+    }
 }

@@ -361,4 +361,11 @@ private typealias RowComment = Comment
         #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).accountProvider == nil)
         #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed, account: label).accountProvider == .github)
     }
+
+    @Test func subtitleUsesReference() {
+        let pr = PullRequest.fixture(
+            number: 341, repository: "vendas/api", createdAt: Date.fixed.addingTimeInterval(-5 * 3600), provider: .gitlab
+        )
+        #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).subtitle == "vendas/api !341 · 5h")
+    }
 }

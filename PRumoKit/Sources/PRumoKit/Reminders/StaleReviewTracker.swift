@@ -18,7 +18,7 @@ public enum StaleReviewTracker {
                 let hours = Int(waited / ReminderConstants.secondsPerHour)
                 let event = NotificationEvent(
                     kind: .staleReview, pullRequestID: pr.id,
-                    title: "\(ReminderConstants.titlePrefix) \(hours)h: #\(pr.number)",
+                    title: "\(ReminderConstants.titlePrefix) \(hours)h: \(pr.reference)",
                     body: "\(pr.author) \(ReminderConstants.bodyInfix) \(pr.title)",
                     url: pr.url, accountID: pr.accountID
                 )

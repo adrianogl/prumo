@@ -86,7 +86,7 @@ final class OnboardingModel {
         step = .token
     }
 
-    private static func message(for error: GitHubError) -> String {
+    private static func message(for error: ProviderError) -> String {
         switch error {
         case .unauthorized: OnboardingText.invalidToken
         case .network: OnboardingText.offline

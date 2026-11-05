@@ -6,5 +6,6 @@ public protocol TokenStore: Sendable {
 
 public enum TokenOrigin: String, Codable, Sendable {
     case ghCLI
+    case glabCLI
     case pasted
 }

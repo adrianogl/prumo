@@ -110,8 +110,8 @@ final class AddAccountModel {
 
     private func validate(_ token: String) async -> String? {
         let client = GitHubClient(token: token)
-        let result = await Task.detached { () -> Result<String, GitHubError> in
-            do throws(GitHubError) {
+        let result = await Task.detached { () -> Result<String, ProviderError> in
+            do throws(ProviderError) {
                 return .success(try await client.viewerLogin())
             } catch {
                 return .failure(error)
@@ -128,7 +128,7 @@ final class AddAccountModel {
         return nil
     }
 
-    private static func message(for error: GitHubError) -> String {
+    private static func message(for error: ProviderError) -> String {
         switch error {
         case .unauthorized: AccountsSettingsText.invalidToken
         case .network: AccountsSettingsText.noConnection

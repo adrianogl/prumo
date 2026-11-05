@@ -127,7 +127,7 @@ import Testing
         #expect(await store.load()?.mine.map(\.accountID) == ["", ""])
         let sut = RefreshCoordinator(
             accountID: AccountMigration.legacyAccountID,
-            fetch: { () async throws(GitHubError) -> Snapshot in content },
+            fetch: { () async throws(ProviderError) -> Snapshot in content },
             store: store
         )
         let result = await sut.refresh()

@@ -109,33 +109,33 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
 
     @Test func maps401ToUnauthorized() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
-        await #expect(throws: GitHubError.unauthorized) { try await client(transport).fetchSnapshot() }
+        await #expect(throws: ProviderError.unauthorized) { try await client(transport).fetchSnapshot() }
     }
 
     @Test func maps403WithZeroRemainingToRateLimited() async {
         let transport = FakeTransport { _ in
             (Data(), httpResponse(403, headers: ["x-ratelimit-remaining": "0", "x-ratelimit-reset": "1793900000"]))
         }
-        await #expect(throws: GitHubError.rateLimited(resetAt: Date(timeIntervalSince1970: 1_793_900_000))) {
+        await #expect(throws: ProviderError.rateLimited(resetAt: Date(timeIntervalSince1970: 1_793_900_000))) {
             try await client(transport).fetchSnapshot()
         }
     }
 
     @Test func maps500ToServer() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(502)) }
-        await #expect(throws: GitHubError.server(status: 502)) { try await client(transport).fetchSnapshot() }
+        await #expect(throws: ProviderError.server(status: 502)) { try await client(transport).fetchSnapshot() }
     }
 
     @Test func mapsURLErrorToNetwork() async {
         let transport = FakeTransport { _ in throw URLError(.notConnectedToInternet) }
-        await #expect(throws: GitHubError.network) { try await client(transport).fetchSnapshot() }
+        await #expect(throws: ProviderError.network) { try await client(transport).fetchSnapshot() }
     }
 
     @Test func surfacesGraphQLErrors() async {
         let transport = FakeTransport { _ in
             (Data(#"{"errors":[{"message":"x"}]}"#.utf8), httpResponse(200))
         }
-        await #expect(throws: GitHubError.graphQL(messages: ["x"])) { try await client(transport).fetchSnapshot() }
+        await #expect(throws: ProviderError.graphQL(messages: ["x"])) { try await client(transport).fetchSnapshot() }
     }
 
     @Test func nullNodesFromSSOProtectedOrgAreSkipped() async throws {
@@ -150,19 +150,19 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
         let transport = FakeTransport { _ in
             (Data(#"{"data":{"search":{"nodes":[]}}}"#.utf8), httpResponse(200))
         }
-        await #expect(throws: GitHubError.unexpectedResponse) { try await client(transport).fetchSnapshot() }
+        await #expect(throws: ProviderError.unexpectedResponse) { try await client(transport).fetchSnapshot() }
     }
 
     @Test func maps403WithRetryAfterToRateLimited() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(403, headers: ["retry-after": "60"])) }
-        await #expect(throws: GitHubError.rateLimited(resetAt: Date.fixed.addingTimeInterval(60))) {
+        await #expect(throws: ProviderError.rateLimited(resetAt: Date.fixed.addingTimeInterval(60))) {
             try await client(transport).fetchSnapshot()
         }
     }
 
     @Test func plain403StaysServerError() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(403)) }
-        await #expect(throws: GitHubError.server(status: 403)) { try await client(transport).fetchSnapshot() }
+        await #expect(throws: ProviderError.server(status: 403)) { try await client(transport).fetchSnapshot() }
     }
 
     @Test func partialDataWithErrorsStillMaps() async throws {
@@ -208,35 +208,35 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
 
     @Test func rerunMaps403ToServer() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(403)) }
-        await #expect(throws: GitHubError.server(status: 403)) {
+        await #expect(throws: ProviderError.server(status: 403)) {
             try await client(transport).rerunFailedJobs(repository: "acme/loja", runID: 555)
         }
     }
 
     @Test func rerunMaps404ToServer() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(404)) }
-        await #expect(throws: GitHubError.server(status: 404)) {
+        await #expect(throws: ProviderError.server(status: 404)) {
             try await client(transport).rerunFailedJobs(repository: "acme/loja", runID: 555)
         }
     }
 
     @Test func rerunMaps401ToUnauthorized() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
-        await #expect(throws: GitHubError.unauthorized) {
+        await #expect(throws: ProviderError.unauthorized) {
             try await client(transport).rerunFailedJobs(repository: "acme/loja", runID: 555)
         }
     }
 
     @Test func rerunMapsTransportErrorToNetwork() async {
         let transport = FakeTransport { _ in throw URLError(.notConnectedToInternet) }
-        await #expect(throws: GitHubError.network) {
+        await #expect(throws: ProviderError.network) {
             try await client(transport).rerunFailedJobs(repository: "acme/loja", runID: 555)
         }
     }
 
     @Test func pullRequestStatesMaps401ToUnauthorized() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
-        await #expect(throws: GitHubError.unauthorized) { try await client(transport).pullRequestStates(ids: ["A"]) }
+        await #expect(throws: ProviderError.unauthorized) { try await client(transport).pullRequestStates(ids: ["A"]) }
     }
 
     @Test func viewerLoginParsesLogin() async throws {
@@ -249,7 +249,7 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
 
     @Test func viewerLogin401IsUnauthorized() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
-        await #expect(throws: GitHubError.unauthorized) { try await client(transport).viewerLogin() }
+        await #expect(throws: ProviderError.unauthorized) { try await client(transport).viewerLogin() }
     }
 
     @Test func rerunUsesFailedRunOfPR() async throws {
@@ -261,7 +261,7 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
 
     @Test func rerunWithoutRunIsUnexpected() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(201)) }
-        await #expect(throws: GitHubError.unexpectedResponse) {
+        await #expect(throws: ProviderError.unexpectedResponse) {
             try await client(transport).rerunFailedJobs(pr: .fixture(failedRunID: nil))
         }
         #expect(transport.requests.isEmpty)

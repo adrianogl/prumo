@@ -105,8 +105,8 @@ enum PopoverText {
 
     static func mergedAt(time: String) -> String { "merge às \(time)" }
 
-    static func mergedSubtitle(account: String? = nil, repository: String, number: Int, time: String) -> String {
-        let parts = [account, "\(repository) #\(number)", mergedAt(time: time)].compactMap { $0 }
+    static func mergedSubtitle(account: String? = nil, repository: String, reference: String, time: String) -> String {
+        let parts = [account, "\(repository) \(reference)", mergedAt(time: time)].compactMap { $0 }
         return parts.joined(separator: " · ")
     }
 

@@ -1,6 +1,6 @@
 import Foundation
 
-public enum GitHubError: Error, Equatable {
+public enum ProviderError: Error, Equatable {
     case unauthorized
     case rateLimited(resetAt: Date?)
     case network

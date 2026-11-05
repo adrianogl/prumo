@@ -3,8 +3,8 @@ import Testing
 @testable import PRumoKit
 
 @Suite struct AccountListTests {
-    private func account(_ id: String, login: String, nickname: String = "", host: String = "github.com", origin: TokenOrigin = .pasted) -> Account {
-        Account(id: id, host: host, login: login, nickname: nickname, origin: origin)
+    private func account(_ id: String, login: String, nickname: String = "", host: String = "github.com", origin: TokenOrigin = .pasted, provider: ProviderKind = .github) -> Account {
+        Account(id: id, provider: provider, host: host, login: login, nickname: nickname, origin: origin)
     }
 
     @Test func accountListRoundTrip() {
@@ -86,5 +86,28 @@ import Testing
         #expect(account("a2", login: "adrianogl", host: "GitHub.com").isPublicHost)
         #expect(account("a3", login: "adriano", host: "gitlab.com").isPublicHost)
         #expect(!account("a4", login: "adriano", host: "gitlab.empresa.com").isPublicHost)
+    }
+
+    @Test func accountWithGlabOriginAndScopesDecodes() {
+        let json = #"{"accounts":[{"id":"a1","provider":"gitlab","login":"adriano","host":"gitlab.empresa.com","origin":"glabCLI","scopes":["read_api","read_user"]}]}"#
+        let item = AccountList.decode(Data(json.utf8))?.accounts.first
+        #expect(item?.provider == .gitlab)
+        #expect(item?.origin == .glabCLI)
+        #expect(item?.scopes == ["read_api", "read_user"])
+    }
+
+    @Test func accountWithoutScopesDecodesAsUnknown() {
+        let json = #"{"accounts":[{"id":"a1","provider":"github","login":"adrianogl"}]}"#
+        #expect(AccountList.decode(Data(json.utf8))?.accounts.first?.scopes == nil)
+    }
+
+    @Test func labelShowsCustomHost() {
+        let label = AccountLabel.make(account("a1", login: "adriano", host: "gitlab.empresa.com", provider: .gitlab))
+        #expect(label.text == "adriano · gitlab.empresa.com")
+        #expect(label.provider == .gitlab)
+    }
+
+    @Test func labelHidesGitlabCom() {
+        #expect(AccountLabel.make(account("a1", login: "adriano", host: "gitlab.com", provider: .gitlab)).text == "adriano")
     }
 }

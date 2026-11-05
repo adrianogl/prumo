@@ -18,11 +18,11 @@ public struct GitHubClient: Sendable {
         self.now = now
     }
 
-    public func fetchSnapshot() async throws(GitHubError) -> Snapshot {
+    public func fetchSnapshot() async throws(ProviderError) -> Snapshot {
         let moment = now()
-        async let mine = result { () async throws(GitHubError) -> Data in try await search(Queries.mine) }
-        async let review = result { () async throws(GitHubError) -> Data in try await search(Queries.review) }
-        async let merged = result { () async throws(GitHubError) -> Data in
+        async let mine = result { () async throws(ProviderError) -> Data in try await search(Queries.mine) }
+        async let review = result { () async throws(ProviderError) -> Data in try await search(Queries.review) }
+        async let merged = result { () async throws(ProviderError) -> Data in
             try await search(Queries.merged(since: moment, timeZone: .current), query: Queries.mergedSearchQuery)
         }
         let mineData = try await mine.get()
@@ -35,11 +35,11 @@ public struct GitHubClient: Sendable {
         }
     }
 
-    private func result(_ work: () async throws(GitHubError) -> Data) async -> Result<Data, GitHubError> {
+    private func result(_ work: () async throws(ProviderError) -> Data) async -> Result<Data, ProviderError> {
         do { return .success(try await work()) } catch { return .failure(error) }
     }
 
-    public func pullRequestStates(ids: [String]) async throws(GitHubError) -> [String: PRState] {
+    public func pullRequestStates(ids: [String]) async throws(ProviderError) -> [String: PRState] {
         guard !ids.isEmpty else { return [:] }
         let data = try await post(query: Queries.states, variables: ["ids": ids])
         do {
@@ -54,7 +54,7 @@ public struct GitHubClient: Sendable {
         }
     }
 
-    public func viewerLogin() async throws(GitHubError) -> String {
+    public func viewerLogin() async throws(ProviderError) -> String {
         let data = try await post(query: Queries.viewer, variables: [:])
         do {
             return try JSONDecoder().decode(ViewerResponse.self, from: data).data.viewer.login
@@ -63,7 +63,7 @@ public struct GitHubClient: Sendable {
         }
     }
 
-    public func rerunFailedJobs(repository: String, runID: Int) async throws(GitHubError) {
+    public func rerunFailedJobs(repository: String, runID: Int) async throws(ProviderError) {
         guard let url = URL(string: "\(Self.restBase)/repos/\(repository)/actions/runs/\(runID)/rerun-failed-jobs") else {
             throw .unexpectedResponse
         }
@@ -74,11 +74,11 @@ public struct GitHubClient: Sendable {
         _ = try await send(request)
     }
 
-    private func search(_ term: String, query document: String = Queries.searchQuery) async throws(GitHubError) -> Data {
+    private func search(_ term: String, query document: String = Queries.searchQuery) async throws(ProviderError) -> Data {
         try await post(query: document, variables: ["q": term])
     }
 
-    private func post(query: String, variables: [String: Any]) async throws(GitHubError) -> Data {
+    private func post(query: String, variables: [String: Any]) async throws(ProviderError) -> Data {
         var request = URLRequest(url: Self.endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -90,7 +90,7 @@ public struct GitHubClient: Sendable {
         return data
     }
 
-    private func send(_ original: URLRequest) async throws(GitHubError) -> Data {
+    private func send(_ original: URLRequest) async throws(ProviderError) -> Data {
         var request = original
         request.setValue("bearer \(token)", forHTTPHeaderField: "Authorization")
         let data: Data
@@ -104,7 +104,7 @@ public struct GitHubClient: Sendable {
         return data
     }
 
-    private func check(_ response: HTTPURLResponse) throws(GitHubError) {
+    private func check(_ response: HTTPURLResponse) throws(ProviderError) {
         switch response.statusCode {
         case 200..<300:
             return
@@ -126,7 +126,7 @@ public struct GitHubClient: Sendable {
         }
     }
 
-    private func checkGraphQLErrors(_ data: Data) throws(GitHubError) {
+    private func checkGraphQLErrors(_ data: Data) throws(ProviderError) {
         guard
             let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
             let errors = object["errors"] as? [[String: Any]],

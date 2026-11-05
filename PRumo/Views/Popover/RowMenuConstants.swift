@@ -27,7 +27,7 @@ enum RowMenuText {
         "Copiar \(command)"
     }
 
-    static func rerunFailure(_ error: GitHubError, repository: String, runID: Int) -> String {
+    static func rerunFailure(_ error: ProviderError, repository: String, runID: Int) -> String {
         switch error {
         case .server(status: 403):
             "O GitHub recusou: sem permissão para re-rodar jobs em \(repository) ou o run ainda está rodando."

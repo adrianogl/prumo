@@ -199,7 +199,7 @@ final class AppModel {
         guard let token else { return nil }
         let client = GitHubClient(token: token)
         let fetched = await Task.detached { () -> String? in
-            do throws(GitHubError) {
+            do throws(ProviderError) {
                 return try await client.viewerLogin()
             } catch {
                 return nil
@@ -421,7 +421,7 @@ final class AppModel {
         let gate = SessionGate()
         let coordinator = RefreshCoordinator(
             accountID: account.id,
-            fetch: { () async throws(GitHubError) -> Snapshot in
+            fetch: { () async throws(ProviderError) -> Snapshot in
                 try gate.check()
                 let fetched = try await client.fetchSnapshot()
                 try gate.check()
@@ -678,8 +678,8 @@ final class AppModel {
         rerunning.insert(pr.id)
         let repository = pr.repository
         Task {
-            let failure = await Task.detached { () -> GitHubError? in
-                do throws(GitHubError) {
+            let failure = await Task.detached { () -> ProviderError? in
+                do throws(ProviderError) {
                     try await client.rerunFailedJobs(pr: pr)
                     return nil
                 } catch {

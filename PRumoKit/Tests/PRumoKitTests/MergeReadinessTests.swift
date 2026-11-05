@@ -59,4 +59,13 @@ import Testing
     @Test func draftIsNotReady() {
         #expect(!ready(.fixture(isDraft: true, reviewDecision: .approved)))
     }
+
+    @Test func mergeReadyOverridesRule() {
+        #expect(!ready(.fixture(ci: .success(total: 3), reviews: [approval()], reviewDecision: .approved, mergeReady: false)))
+        #expect(ready(.fixture(reviews: [], reviewDecision: .reviewRequired, mergeReady: true)))
+        #expect(!ready(.fixture(isDraft: true, reviewDecision: .approved, mergeReady: true)))
+        #expect(!ready(.fixture(ci: .failure(failedChecks: ["build"], total: 3), mergeReady: true)))
+        #expect(!ready(.fixture(ci: .pending(done: 1, total: 3), mergeReady: true)))
+        #expect(ready(.fixture(ci: .success(total: 3), mergeReady: true)))
+    }
 }

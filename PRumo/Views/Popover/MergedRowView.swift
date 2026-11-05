@@ -10,7 +10,7 @@ struct MergedRowView: View {
 
     private var subtitle: String {
         PopoverText.mergedSubtitle(
-            account: account?.text, repository: item.repository, number: item.number, time: ClockFormat.string(from: item.mergedAt))
+            account: account?.text, repository: item.repository, reference: item.reference, time: ClockFormat.string(from: item.mergedAt))
     }
 
     var body: some View {

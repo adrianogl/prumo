@@ -4,13 +4,13 @@ import Testing
 
 private final class Script: @unchecked Sendable {
     private let lock = NSLock()
-    private var steps: [Result<Snapshot, GitHubError>]
+    private var steps: [Result<Snapshot, ProviderError>]
 
-    init(_ steps: [Result<Snapshot, GitHubError>]) {
+    init(_ steps: [Result<Snapshot, ProviderError>]) {
         self.steps = steps
     }
 
-    func next() throws(GitHubError) -> Snapshot {
+    func next() throws(ProviderError) -> Snapshot {
         let step = lock.withLock { steps.removeFirst() }
         return try step.get()
     }
@@ -25,9 +25,9 @@ private func temporaryDirectory() -> URL {
     FileManager.default.temporaryDirectory.appendingPathComponent("prumo-tests-\(UUID().uuidString)")
 }
 
-private func coordinator(_ steps: [Result<Snapshot, GitHubError>], store: SnapshotStore) -> RefreshCoordinator {
+private func coordinator(_ steps: [Result<Snapshot, ProviderError>], store: SnapshotStore) -> RefreshCoordinator {
     let script = Script(steps)
-    return RefreshCoordinator(fetch: { () async throws(GitHubError) -> Snapshot in try script.next() }, store: store)
+    return RefreshCoordinator(fetch: { () async throws(ProviderError) -> Snapshot in try script.next() }, store: store)
 }
 
 private let t1 = Date.fixed.addingTimeInterval(60)
@@ -203,7 +203,7 @@ private func failed(at date: Date) -> Snapshot {
         defer { try? FileManager.default.removeItem(at: directory) }
         let script = Script([.success(pending()), .success(failed(at: t1))])
         let sut = RefreshCoordinator(
-            accountID: "a2", fetch: { () async throws(GitHubError) -> Snapshot in try script.next() }, store: store
+            accountID: "a2", fetch: { () async throws(ProviderError) -> Snapshot in try script.next() }, store: store
         )
         _ = await sut.refresh()
         let result = await sut.refresh()

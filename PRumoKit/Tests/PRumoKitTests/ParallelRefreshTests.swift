@@ -48,10 +48,10 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
         }
         try await storeB.save(snapshot(at: savedAt, viewer: "rafael"))
         let accountA = RefreshCoordinator(
-            accountID: "a1", fetch: { () async throws(GitHubError) -> Snapshot in snapshot() }, store: storeA
+            accountID: "a1", fetch: { () async throws(ProviderError) -> Snapshot in snapshot() }, store: storeA
         )
         let accountB = RefreshCoordinator(
-            accountID: "b2", fetch: { () async throws(GitHubError) -> Snapshot in throw .network }, store: storeB
+            accountID: "b2", fetch: { () async throws(ProviderError) -> Snapshot in throw .network }, store: storeB
         )
         let results = await ParallelRefresh.run(
             [("a1", accountA), ("b2", accountB)], previous: [:], options: .init(), now: .fixed
@@ -73,14 +73,14 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
         }
         let slow = RefreshCoordinator(
             accountID: "a1",
-            fetch: { () async throws(GitHubError) -> Snapshot in
+            fetch: { () async throws(ProviderError) -> Snapshot in
                 try? await Task.sleep(for: .milliseconds(100))
                 return snapshot()
             },
             store: storeA
         )
         let fast = RefreshCoordinator(
-            accountID: "b2", fetch: { () async throws(GitHubError) -> Snapshot in snapshot() }, store: storeB
+            accountID: "b2", fetch: { () async throws(ProviderError) -> Snapshot in snapshot() }, store: storeB
         )
         let results = await ParallelRefresh.run(
             [("a1", slow), ("b2", fast)], previous: [:], options: .init(), now: .fixed
@@ -99,14 +99,14 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
         try await storeA.save(snapshot(at: savedAt, viewer: "mariana"))
         let slow = RefreshCoordinator(
             accountID: "a1",
-            fetch: { () async throws(GitHubError) -> Snapshot in
+            fetch: { () async throws(ProviderError) -> Snapshot in
                 try? await Task.sleep(for: .seconds(5))
                 return snapshot()
             },
             store: storeA
         )
         let fast = RefreshCoordinator(
-            accountID: "b2", fetch: { () async throws(GitHubError) -> Snapshot in snapshot() }, store: storeB
+            accountID: "b2", fetch: { () async throws(ProviderError) -> Snapshot in snapshot() }, store: storeB
         )
         let started = ContinuousClock.now
         let results = await ParallelRefresh.run(
@@ -129,7 +129,7 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
         let calls = CallCounter()
         let coordinator = RefreshCoordinator(
             accountID: "a1",
-            fetch: { () async throws(GitHubError) -> Snapshot in
+            fetch: { () async throws(ProviderError) -> Snapshot in
                 calls.increment()
                 if calls.value == 1 { try? await Task.sleep(for: .milliseconds(300)) }
                 return .fixture(viewer: "mariana", mine: [.fixture(ci: .success(total: 3))], fetchedAt: .fixed)
@@ -160,7 +160,7 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
             try? FileManager.default.removeItem(at: dirB)
         }
         let counter = StartCounter()
-        let waitForBoth: RefreshCoordinator.Fetch = { () async throws(GitHubError) -> Snapshot in
+        let waitForBoth: RefreshCoordinator.Fetch = { () async throws(ProviderError) -> Snapshot in
             await counter.start()
             let deadline = ContinuousClock.now.advanced(by: .seconds(1))
             while await counter.count() < 2 {
@@ -186,7 +186,7 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
         let calls = CallCounter()
         let sut = RefreshCoordinator(
             accountID: "a1",
-            fetch: { () async throws(GitHubError) -> Snapshot in
+            fetch: { () async throws(ProviderError) -> Snapshot in
                 calls.increment()
                 return snapshot()
             },
@@ -215,7 +215,7 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
         let calls = CallCounter()
         let sut = RefreshCoordinator(
             accountID: "a1",
-            fetch: { () async throws(GitHubError) -> Snapshot in
+            fetch: { () async throws(ProviderError) -> Snapshot in
                 calls.increment()
                 return snapshot()
             },
@@ -239,7 +239,7 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
             toReview: [.fixture(id: "PR_77", number: 77, author: "carla", reviewRequestedAt: .fixed)]
         )
         let sut = RefreshCoordinator(
-            accountID: "c3", fetch: { () async throws(GitHubError) -> Snapshot in busy }, store: store
+            accountID: "c3", fetch: { () async throws(ProviderError) -> Snapshot in busy }, store: store
         )
         let results = await ParallelRefresh.run([("c3", sut)], previous: [:], options: .init(), now: .fixed)
         #expect(results[0].state == .ok)

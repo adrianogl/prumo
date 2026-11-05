@@ -58,7 +58,7 @@ struct AccountsSettingsView: View {
     private func reconnect(_ account: Account) {
         switch account.origin {
         case .pasted: sheet = .reconnect(account)
-        case .ghCLI: model.reconnect(id: account.id)
+        case .ghCLI, .glabCLI: model.reconnect(id: account.id)
         }
     }
 

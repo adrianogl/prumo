@@ -25,7 +25,7 @@ public enum SearchMatcher {
     private static func terms(from query: String) -> [String] {
         normalized(query)
             .split(whereSeparator: \.isWhitespace)
-            .map { String($0.drop(while: { $0 == "#" })) }
+            .map { String($0.drop(while: { $0 == "#" || $0 == "!" })) }
             .filter { !$0.isEmpty }
     }
 

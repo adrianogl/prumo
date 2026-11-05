@@ -28,7 +28,10 @@ extension PullRequest {
         failedRunName: String? = nil,
         reviewTarget: ReviewRequestTarget = .you,
         reviewDecision: ReviewDecision? = nil,
-        accountID: String = ""
+        accountID: String = "",
+        provider: ProviderKind = .github,
+        mergeReady: Bool? = nil,
+        failedJobID: Int? = nil
     ) -> PullRequest {
         PullRequest(
             id: id, number: number, title: title, url: url, repository: repository, author: author,
@@ -37,7 +40,8 @@ extension PullRequest {
             deletions: deletions, mergeable: mergeable, reviewRequestedAt: reviewRequestedAt,
             headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository,
             failedRunID: failedRunID, failedRunName: failedRunName,
-            reviewTarget: reviewTarget, reviewDecision: reviewDecision, accountID: accountID
+            reviewTarget: reviewTarget, reviewDecision: reviewDecision, accountID: accountID,
+            provider: provider, mergeReady: mergeReady, failedJobID: failedJobID
         )
     }
 }

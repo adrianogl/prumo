@@ -12,7 +12,7 @@ final class SessionGate: Sendable {
         stopped.withLock { $0 = true }
     }
 
-    func check() throws(GitHubError) {
+    func check() throws(ProviderError) {
         if isStopped { throw .network }
     }
 }

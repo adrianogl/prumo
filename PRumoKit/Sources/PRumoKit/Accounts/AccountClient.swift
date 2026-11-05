@@ -1,5 +1,5 @@
 public protocol AccountClient: Sendable {
-    func fetchSnapshot() async throws(GitHubError) -> Snapshot
-    func pullRequestStates(ids: [String]) async throws(GitHubError) -> [String: PRState]
-    func rerunFailedJobs(pr: PullRequest) async throws(GitHubError)
+    func fetchSnapshot() async throws(ProviderError) -> Snapshot
+    func pullRequestStates(ids: [String]) async throws(ProviderError) -> [String: PRState]
+    func rerunFailedJobs(pr: PullRequest) async throws(ProviderError)
 }
