@@ -7,8 +7,11 @@ final class WidgetPublisher {
     private let fileURL: URL
     private var lastPublished: WidgetSnapshot?
 
-    init(fileURL: URL) {
+    private let now: () -> Date
+
+    init(fileURL: URL, now: @escaping () -> Date = Date.init) {
         self.fileURL = fileURL
+        self.now = now
     }
 
     static func makeDefault() -> WidgetPublisher? {
@@ -18,8 +21,10 @@ final class WidgetPublisher {
     }
 
     func publish(_ snapshot: WidgetSnapshot) {
-        let content = Self.comparable(snapshot)
-        guard content != lastPublished else { return }
+        let decision = WidgetPublishDecision.make(
+            new: snapshot, lastPublished: lastPublished, now: now(), renewAfter: AppConstants.widgetRenewAfter
+        )
+        guard decision.write else { return }
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         guard let data = try? encoder.encode(snapshot) else { return }
@@ -28,13 +33,9 @@ final class WidgetPublisher {
         } catch {
             return
         }
-        lastPublished = content
-        WidgetCenter.shared.reloadAllTimelines()
-    }
-
-    private static func comparable(_ snapshot: WidgetSnapshot) -> WidgetSnapshot {
-        var copy = snapshot
-        copy.updatedAt = Date(timeIntervalSince1970: 0)
-        return copy
+        lastPublished = snapshot
+        if decision.reload {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
     }
 }
