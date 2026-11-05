@@ -9,6 +9,7 @@ extension BadgeTone {
         case .pending: Color(nsColor: .systemYellow)
         case .warning: Color(nsColor: .systemOrange)
         case .neutral: Color.secondary
+        case .accent: Color.prumoCaramel
         }
     }
 }

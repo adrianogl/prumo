@@ -73,7 +73,7 @@ import Testing
     @Test func reviewRowShowsAuthorCIAndDiff() {
         let pr = PullRequest.fixture(author: "carla", ci: .success(total: 5), additions: 212, deletions: 48)
         let row = RowPresenter.review(pr, now: .fixed)
-        #expect(row.badges == [Badge("carla", .neutral), Badge("✓ CI 5/5", .positive), Badge("+212 \u{2212}48", .neutral)])
+        #expect(row.badges == [Badge("para você", .accent), Badge("carla", .neutral), Badge("✓ CI 5/5", .positive), Badge("+212 \u{2212}48", .neutral)])
         #expect(row.title == pr.title)
         #expect(row.subtitle == "acme/loja #812 · agora")
     }
@@ -193,5 +193,68 @@ import Testing
         let without = RowPresenter.mine(.fixture(), viewer: "adriano", now: .fixed)
         #expect(without.badges.count == withKey.badges.count - 1)
         #expect(!RowPresenter.review(.fixture(), now: .fixed).badges.contains(Badge("ON-1", .neutral)))
+    }
+
+    @Test func reviewRowShowsForYouBadgeFirst() {
+        let row = RowPresenter.review(.fixture(reviewTarget: .you), now: .fixed)
+        #expect(row.badges.first == Badge("para você", .accent))
+    }
+
+    @Test func reviewRowShowsTeamName() {
+        let row = RowPresenter.review(.fixture(reviewTarget: .team(name: "backend")), now: .fixed)
+        #expect(row.badges.first == Badge("time backend", .neutral))
+    }
+
+    @Test func mergeRowBadges() {
+        let pr = PullRequest.fixture(
+            ci: .success(total: 12),
+            reviews: [review("ana", .approved, 1), review("bia", .approved, 2)]
+        )
+        let row = RowPresenter.merge(pr, viewer: "adriano", now: .fixed)
+        #expect(row.badges == [Badge("✓ CI 12/12", .positive), Badge("✓ 2 aprovações", .positive), Badge("sem conflito", .positive)])
+        #expect(row.subtitle == "acme/loja #812 · agora")
+    }
+
+    @Test func mergeRowKeepsJiraBadgeLast() {
+        let row = RowPresenter.merge(.fixture(), viewer: "adriano", now: .fixed, jiraKey: "ON-9")
+        #expect(row.badges.last == Badge("ON-9", .neutral))
+    }
+
+    @Test func compactLineMine() {
+        let pr = PullRequest.fixture(
+            createdAt: Date.fixed.addingTimeInterval(-2 * 3600),
+            ci: .success(total: 3),
+            reviews: [review("ana", .approved, 1)]
+        )
+        #expect(RowPresenter.compactLine(pr, tab: .mine, viewer: "adriano", now: .fixed) == "loja #812 · aprovado · CI ok · 2h")
+    }
+
+    @Test func compactLineOmitsCIWhenNone() {
+        let pr = PullRequest.fixture(createdAt: Date.fixed.addingTimeInterval(-2 * 3600), ci: .none)
+        #expect(RowPresenter.compactLine(pr, tab: .merge, viewer: "adriano", now: .fixed) == "loja #812 · sem review · 2h")
+    }
+
+    @Test func compactLineShowsConflictDraftAndChangesRequested() {
+        let pr = PullRequest.fixture(
+            isDraft: true,
+            ci: .failure(failedChecks: ["x"], total: 2),
+            reviews: [review("ana", .changesRequested, 1)],
+            mergeable: .conflicting
+        )
+        #expect(RowPresenter.compactLine(pr, tab: .mine, viewer: "adriano", now: .fixed) == "loja #812 · alterações pedidas · CI falhou · conflito · draft · agora")
+    }
+
+    @Test func compactLineReview() {
+        let pr = PullRequest.fixture(
+            number: 815,
+            author: "maria",
+            reviewRequestedAt: Date.fixed.addingTimeInterval(-40 * 60)
+        )
+        #expect(RowPresenter.compactLine(pr, tab: .review, viewer: "adriano", now: .fixed) == "loja #815 · maria · para você · 40min")
+    }
+
+    @Test func compactLineReviewForTeam() {
+        let pr = PullRequest.fixture(reviewTarget: .team(name: "backend"))
+        #expect(RowPresenter.compactLine(pr, tab: .review, viewer: "adriano", now: .fixed) == "loja #812 · adriano · time backend · agora")
     }
 }

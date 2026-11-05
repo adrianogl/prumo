@@ -30,9 +30,9 @@ public struct RowPresentation: Equatable, Sendable {
 
 public enum RowPresenter {
     public static func mine(_ pr: PullRequest, viewer: String, now: Date, jiraKey: String? = nil) -> RowPresentation {
-        let verdicts = latestVerdicts(pr.reviews, excluding: viewer)
-        let approvals = verdicts.filter { $0 == .approved }.count
-        let hasChangesRequested = verdicts.contains(.changesRequested)
+        let summary = ReviewSummary(pr, viewer: viewer)
+        let approvals = summary.approvals
+        let hasChangesRequested = summary.hasChangesRequested
 
         var badges: [Badge] = []
         var ciFailureIndex: Int?
@@ -41,7 +41,7 @@ public enum RowPresenter {
             badges.append(ci)
         }
         if approvals > 0 {
-            badges.append(Badge("\(PresentationText.approvalMark) \(approvals) \(approvals == 1 ? PresentationText.approvalSingular : PresentationText.approvalPlural)", .positive))
+            badges.append(approvalsBadge(approvals))
         }
         var changesRequestedIndex: Int?
         if hasChangesRequested {
@@ -74,7 +74,7 @@ public enum RowPresenter {
     }
 
     public static func review(_ pr: PullRequest, now: Date, jiraKey: String? = nil) -> RowPresentation {
-        var badges = [Badge(pr.author, .neutral)]
+        var badges = [requestBadge(pr.reviewTarget), Badge(pr.author, .neutral)]
         if let ci = ciBadge(pr.ci) { badges.append(ci) }
         badges.append(Badge("+\(pr.additions) \(PresentationText.minus)\(pr.deletions)", .neutral))
         if let jiraKey { badges.append(Badge(jiraKey, .neutral)) }
@@ -85,6 +85,55 @@ public enum RowPresenter {
             subtitle: subtitle(pr, from: pr.reviewRequestedAt ?? pr.createdAt, now: now),
             badges: badges
         )
+    }
+
+    public static func merge(_ pr: PullRequest, viewer: String, now: Date, jiraKey: String? = nil) -> RowPresentation {
+        let summary = ReviewSummary(pr, viewer: viewer)
+        var badges: [Badge] = []
+        if let ci = ciBadge(pr.ci) { badges.append(ci) }
+        if summary.approvals > 0 { badges.append(approvalsBadge(summary.approvals)) }
+        badges.append(Badge(PresentationText.noConflict, .positive))
+        if let jiraKey { badges.append(Badge(jiraKey, .neutral)) }
+
+        return RowPresentation(
+            dot: dot(ci: pr.ci, hasChangesRequested: false),
+            title: pr.title,
+            subtitle: subtitle(pr, from: pr.createdAt, now: now),
+            badges: badges
+        )
+    }
+
+    public static func compactLine(_ pr: PullRequest, tab: ListTab, viewer: String, now: Date) -> String {
+        let repo = pr.repository.split(separator: "/").last.map(String.init) ?? pr.repository
+        var parts = ["\(repo) #\(pr.number)"]
+        switch tab {
+        case .review:
+            parts.append(pr.author)
+            switch pr.reviewTarget {
+            case .you: parts.append(PresentationText.forYou)
+            case let .team(name): parts.append("\(PresentationText.teamPrefix) \(name)")
+            }
+            parts.append(RelativeAge.string(from: pr.reviewRequestedAt ?? pr.createdAt, now: now))
+        case .mine, .merge:
+            let summary = ReviewSummary(pr, viewer: viewer)
+            if summary.hasChangesRequested {
+                parts.append(PresentationText.changesRequested)
+            } else if summary.approvals > 0 {
+                parts.append(PresentationText.approved)
+            } else {
+                parts.append(PresentationText.noReview)
+            }
+            switch pr.ci {
+            case .none: break
+            case .success: parts.append(PresentationText.ciOk)
+            case .pending: parts.append(PresentationText.ciRunning)
+            case .failure: parts.append(PresentationText.ciFailed)
+            }
+            if pr.mergeable == .conflicting { parts.append(PresentationText.conflict) }
+            if pr.isDraft { parts.append(PresentationText.draft) }
+            parts.append(RelativeAge.string(from: pr.createdAt, now: now))
+        }
+        return parts.joined(separator: PresentationText.separator)
     }
 
     private static func subtitle(_ pr: PullRequest, from: Date, now: Date) -> String {
@@ -107,12 +156,15 @@ public enum RowPresenter {
         }
     }
 
-    private static func latestVerdicts(_ reviews: [Review], excluding viewer: String) -> [ReviewState] {
-        let relevant = reviews
-            .filter { $0.author != viewer && ($0.state == .approved || $0.state == .changesRequested) }
-            .sorted { $0.submittedAt < $1.submittedAt }
-        var latest: [String: ReviewState] = [:]
-        for review in relevant { latest[review.author] = review.state }
-        return Array(latest.values)
+    private static func approvalsBadge(_ approvals: Int) -> Badge {
+        let noun = approvals == 1 ? PresentationText.approvalSingular : PresentationText.approvalPlural
+        return Badge("\(PresentationText.approvalMark) \(approvals) \(noun)", .positive)
+    }
+
+    private static func requestBadge(_ target: ReviewRequestTarget) -> Badge {
+        switch target {
+        case .you: Badge(PresentationText.forYou, .accent)
+        case let .team(name): Badge("\(PresentationText.teamPrefix) \(name)", .neutral)
+        }
     }
 }

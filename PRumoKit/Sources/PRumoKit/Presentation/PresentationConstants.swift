@@ -10,4 +10,13 @@ enum PresentationText {
     static let ciSuccessMark = "✓ CI"
     static let ciPendingMark = "● CI"
     static let ciFailureMark = "✗"
+    static let forYou = "para você"
+    static let teamPrefix = "time"
+    static let noConflict = "sem conflito"
+    static let approved = "aprovado"
+    static let noReview = "sem review"
+    static let ciOk = "CI ok"
+    static let ciRunning = "CI rodando"
+    static let ciFailed = "CI falhou"
+    static let separator = " · "
 }

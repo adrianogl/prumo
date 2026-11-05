@@ -1,5 +1,5 @@
 public enum BadgeTone: Equatable, Sendable {
-    case positive, negative, pending, warning, neutral
+    case positive, negative, pending, warning, neutral, accent
 }
 
 public enum BadgeIcon: Equatable, Sendable {
