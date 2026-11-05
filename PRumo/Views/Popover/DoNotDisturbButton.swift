@@ -48,7 +48,7 @@ struct DoNotDisturbButton: View {
         case .indefinite:
             return PopoverText.dndUntilIndefinite
         case .until(let end) where end > now:
-            let time = end.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
+            let time = ClockFormat.string(from: end)
             return Calendar.current.isDate(end, inSameDayAs: now)
                 ? PopoverText.dndUntil(time: time)
                 : PopoverText.dndUntilTomorrow(time: time)

@@ -6,15 +6,9 @@ struct MergedRowView: View {
     let item: MergedPullRequest
     @State private var hovering = false
 
-    private static let clock: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = PopoverText.clockFormat
-        return formatter
-    }()
-
     private var subtitle: String {
         PopoverText.mergedSubtitle(
-            repository: item.repository, number: item.number, time: Self.clock.string(from: item.mergedAt))
+            repository: item.repository, number: item.number, time: ClockFormat.string(from: item.mergedAt))
     }
 
     var body: some View {
