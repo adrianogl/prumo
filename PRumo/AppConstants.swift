@@ -21,6 +21,9 @@ enum AppConstants {
     static let ghTokenRetryAttempts = 3
     static let ghTokenRetryDelay: Duration = .seconds(2)
     static let longCommandTimeout: Duration = .seconds(300)
+    static let appGroupIdentifier = "group.dev.aglv.prumo"
+    static let secondsPerHour: TimeInterval = 3600
+    static let widgetFileName = "widget.json"
     static let keychainService = "dev.aglv.prumo"
     static let keychainAccount = "github-token"
     static let launchApprovalMessage = "Aprove em Ajustes do Sistema > Itens de Início"

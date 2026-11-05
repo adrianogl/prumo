@@ -4,6 +4,7 @@ import PRumoKit
 
 @main
 struct PRumoApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var model: AppModel
 
     init() {

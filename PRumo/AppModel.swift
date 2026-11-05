@@ -27,6 +27,7 @@ final class AppModel {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let worktreeRegistry: WorktreeRegistry
     @ObservationIgnored private let reminderStore: ReminderStore
+    @ObservationIgnored private let widgetPublisher: WidgetPublisher?
     @ObservationIgnored private var cleaningWorktrees = false
     @ObservationIgnored private var pruningMarks = false
     @ObservationIgnored private var lastMarksPrune = Date.distantPast
@@ -49,8 +50,10 @@ final class AppModel {
         organization: OrganizationStore? = nil,
         preferences: NotificationPreferencesStore? = nil,
         worktreeRegistry: WorktreeRegistry = WorktreeRegistry(fileURL: WorktreeRegistry.defaultURL()),
-        reminderStore: ReminderStore = ReminderStore(fileURL: ReminderStore.defaultURL())
+        reminderStore: ReminderStore = ReminderStore(fileURL: ReminderStore.defaultURL()),
+        widgetPublisher: WidgetPublisher? = WidgetPublisher.makeDefault()
     ) {
+        self.widgetPublisher = widgetPublisher
         self.worktreeRegistry = worktreeRegistry
         self.reminderStore = reminderStore
         self.notifications = notifications
@@ -217,6 +220,7 @@ final class AppModel {
         let reminderStore = reminderStore
         Task { try? await reminderStore.save(ReminderState()) }
         snapshot = nil
+        widgetPublisher?.publish(.disconnected)
         lastRefresh = nil
         connection = .ok
         login = nil
@@ -274,9 +278,20 @@ final class AppModel {
             organization.learnRepositories(from: fresh)
             cleanUpWorktrees(snapshot: fresh)
             pruneMarks(snapshot: fresh)
+            publishWidget(fresh: fresh)
             await deliverNotifications(fresh: fresh, events: result.events)
         }
         return result.state != .unauthorized
+    }
+
+    private func publishWidget(fresh: Snapshot) {
+        widgetPublisher?.publish(WidgetSummary.make(
+            snapshot: fresh,
+            ignoreDrafts: organization.settings.ignoreDraftsInReview,
+            includeTeam: organization.settings.includeTeamRequests,
+            muted: Set(organization.settings.marks.muted.keys),
+            staleLimit: TimeInterval(preferences.preferences.staleReviewHours) * AppConstants.secondsPerHour,
+            now: .now))
     }
 
     private func deliverNotifications(fresh: Snapshot, events: [NotificationEvent]) async {
