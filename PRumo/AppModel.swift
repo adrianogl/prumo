@@ -19,6 +19,8 @@ final class AppModel {
     @ObservationIgnored private let tokenStore: TokenStore
     @ObservationIgnored private let snapshotStore: SnapshotStore
     @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private let worktreeRegistry: WorktreeRegistry
+    @ObservationIgnored private var cleaningWorktrees = false
     @ObservationIgnored private var coordinator: RefreshCoordinator?
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var sleepTask: Task<Void, Never>?
@@ -29,8 +31,10 @@ final class AppModel {
         tokenStore: TokenStore = KeychainTokenStore(),
         snapshotStore: SnapshotStore = SnapshotStore(fileURL: SnapshotStore.defaultURL()),
         defaults: UserDefaults = .standard,
-        claude: ClaudeSettingsStore? = nil
+        claude: ClaudeSettingsStore? = nil,
+        worktreeRegistry: WorktreeRegistry = WorktreeRegistry(fileURL: WorktreeRegistry.defaultURL())
     ) {
+        self.worktreeRegistry = worktreeRegistry
         self.notifications = notifications
         self.tokenStore = tokenStore
         self.snapshotStore = snapshotStore
@@ -187,6 +191,9 @@ final class AppModel {
         connection = result.state
         if result.state == .ok { lastRefresh = .now }
         notifications.post(result.events)
+        if result.state == .ok, let fresh = result.snapshot {
+            cleanUpWorktrees(snapshot: fresh)
+        }
         return result.state != .unauthorized
     }
 
@@ -218,7 +225,14 @@ final class AppModel {
                 return .failure(error)
             }
         }.value
-        guard case .failure(let error) = result else { return }
+        let error: ClaudeLaunchError
+        switch result {
+        case .success(let directory):
+            await register(directory: directory, pr: pr)
+            return
+        case .failure(let failure):
+            error = failure
+        }
         switch error {
         case .cloneNotFound(let repository):
             guard mayAskForClone else {
@@ -237,6 +251,47 @@ final class AppModel {
         case .launchFailed(let message):
             showAlert(message)
         }
+    }
+
+    private func register(directory: URL, pr: PullRequest) async {
+        let settings = claude.settings
+        let worktreesRoot = Self.expandedURL(settings.worktreesRoot)
+        let overrides = settings.cloneOverrides.reduce(into: [String: URL]()) {
+            $0[$1.key.lowercased()] = Self.expandedURL($1.value)
+        }
+        guard let clone = CloneResolver.pick(repository: pr.repository, scanned: claude.scanned, overrides: overrides),
+              let record = WorktreeRecord.registrable(
+                pr: pr, directory: directory, clone: clone, worktreesRoot: worktreesRoot)
+        else { return }
+        await worktreeRegistry.add(record)
+    }
+
+    private func cleanUpWorktrees(snapshot: Snapshot) {
+        let settings = claude.settings
+        guard settings.removeWorktreeOnClose, !cleaningWorktrees else { return }
+        cleaningWorktrees = true
+        let registry = worktreeRegistry
+        let worktreesRoot = Self.expandedURL(settings.worktreesRoot)
+        Task.detached { [weak self] in
+            let manager = WorktreeManager(runner: SystemProcessRunner(), worktreesRoot: worktreesRoot)
+            let stale = WorktreeCleanup.stale(records: await registry.records(), snapshot: snapshot)
+            for record in stale {
+                let removed = await manager.removeIfClean(
+                    path: URL(fileURLWithPath: record.path),
+                    clone: URL(fileURLWithPath: record.clone),
+                    number: record.number)
+                if removed { await registry.remove(path: record.path) }
+            }
+            await self?.finishWorktreeCleanup()
+        }
+    }
+
+    private func finishWorktreeCleanup() {
+        cleaningWorktrees = false
+    }
+
+    private static func expandedURL(_ path: String) -> URL {
+        URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
     }
 
     private func showAlert(_ message: String) {
