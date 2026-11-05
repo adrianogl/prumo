@@ -9,6 +9,8 @@ final class AppModel {
     var lastRefresh: Date?
     var nextRefresh: Date?
     var needsOnboarding = false
+    var login: String?
+    var origin: TokenOrigin?
 
     @ObservationIgnored private let notifications: NotificationService
     @ObservationIgnored private let tokenStore: TokenStore
@@ -29,6 +31,8 @@ final class AppModel {
         self.tokenStore = tokenStore
         self.snapshotStore = snapshotStore
         self.defaults = defaults
+        login = defaults.string(forKey: AppConstants.accountLoginKey)
+        origin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
     }
 
     private var refreshInterval: TimeInterval {
@@ -38,27 +42,56 @@ final class AppModel {
 
     func start() {
         startupTask?.cancel()
-        let notifications = notifications
-        Task { _ = await notifications.requestAuthorization() }
         startupTask = Task {
             let resolver = TokenResolver(store: tokenStore, gh: GhCLITokenSource(runner: SystemProcessRunner()))
             let resolved = await resolver.resolve()
             guard !Task.isCancelled else { return }
-            guard let resolved else {
+            let onboarded = defaults.bool(forKey: AppConstants.onboardingDoneKey)
+            guard let resolved, resolved.origin == .pasted || onboarded else {
                 needsOnboarding = true
                 return
             }
             needsOnboarding = false
-            let client = GitHubClient(token: resolved.token)
-            coordinator = RefreshCoordinator(
-                fetch: { () async throws(GitHubError) -> Snapshot in try await client.fetchSnapshot() },
-                store: snapshotStore
-            )
-            let stored = await snapshotStore.load()
-            guard !Task.isCancelled else { return }
-            snapshot = stored
-            startPolling()
+            if origin != resolved.origin {
+                origin = resolved.origin
+                defaults.set(resolved.origin.rawValue, forKey: AppConstants.tokenOriginKey)
+            }
+            defaults.set(true, forKey: AppConstants.onboardingDoneKey)
+            await begin(token: resolved.token)
         }
+    }
+
+    func connect(token: String, origin: TokenOrigin, login: String) throws {
+        if origin == .pasted {
+            try tokenStore.write(token)
+        } else {
+            try? tokenStore.delete()
+        }
+        startupTask?.cancel()
+        self.login = login
+        self.origin = origin
+        defaults.set(login, forKey: AppConstants.accountLoginKey)
+        defaults.set(origin.rawValue, forKey: AppConstants.tokenOriginKey)
+        defaults.set(true, forKey: AppConstants.onboardingDoneKey)
+        needsOnboarding = false
+        connection = .ok
+        startupTask = Task { await begin(token: token) }
+    }
+
+    func requestNotificationPermission() async -> Bool {
+        await notifications.requestAuthorization()
+    }
+
+    private func begin(token: String) async {
+        let client = GitHubClient(token: token)
+        coordinator = RefreshCoordinator(
+            fetch: { () async throws(GitHubError) -> Snapshot in try await client.fetchSnapshot() },
+            store: snapshotStore
+        )
+        let stored = await snapshotStore.load()
+        guard !Task.isCancelled else { return }
+        snapshot = stored
+        startPolling()
     }
 
     func refreshNow() {
@@ -85,6 +118,11 @@ final class AppModel {
         snapshot = nil
         lastRefresh = nil
         connection = .ok
+        login = nil
+        origin = nil
+        defaults.removeObject(forKey: AppConstants.accountLoginKey)
+        defaults.removeObject(forKey: AppConstants.tokenOriginKey)
+        defaults.set(false, forKey: AppConstants.onboardingDoneKey)
         needsOnboarding = true
     }
 
@@ -116,6 +154,10 @@ final class AppModel {
         let result = await coordinator.refresh()
         guard !Task.isCancelled else { return false }
         snapshot = result.snapshot
+        if let viewer = result.snapshot?.viewer, viewer != login {
+            login = viewer
+            defaults.set(viewer, forKey: AppConstants.accountLoginKey)
+        }
         connection = result.state
         if result.state == .ok { lastRefresh = .now }
         notifications.post(result.events)

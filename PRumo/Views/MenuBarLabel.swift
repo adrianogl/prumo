@@ -4,6 +4,7 @@ import PRumoKit
 
 struct MenuBarLabel: View {
     let model: AppModel
+    @Environment(\.openWindow) private var openWindow
 
     private var reviewCount: Int { model.snapshot?.toReview.count ?? 0 }
     private var hasFailure: Bool {
@@ -21,6 +22,12 @@ struct MenuBarLabel: View {
             }
             if hasFailure {
                 Image(nsImage: Self.failureDot)
+            }
+        }
+        .onChange(of: model.needsOnboarding, initial: true) {
+            if model.needsOnboarding {
+                openWindow(id: OnboardingText.id)
+                NSApp.activate(ignoringOtherApps: true)
             }
         }
     }

@@ -19,6 +19,8 @@ enum PopoverText {
     static let updating = "Atualizando…"
     static let reconnect = "Conectar de novo"
     static let invalidToken = "Token inválido."
+    static let connectPrompt = "Conecte sua conta do GitHub"
+    static let connectAction = "Conectar"
     static let onboardingWindowID = "onboarding"
 
     static func updatedAgo(seconds: Int) -> String {

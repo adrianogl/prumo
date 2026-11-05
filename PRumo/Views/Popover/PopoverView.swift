@@ -5,18 +5,17 @@ struct PopoverView: View {
     let model: AppModel
     @State private var tab: PopoverTab = .mine
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     private var mine: [PullRequest] { model.snapshot?.mine ?? [] }
     private var review: [PullRequest] { model.snapshot?.toReview ?? [] }
-    private var isLoading: Bool { model.snapshot == nil && model.connection == .ok }
+    private var isLoading: Bool { model.snapshot == nil && model.connection == .ok && !model.needsOnboarding }
 
     var body: some View {
         VStack(spacing: 0) {
             header
             tabs
-            StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh) {
-                openWindow(id: PopoverText.onboardingWindowID)
-            }
+            StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
             Divider()
             list
             Divider()
@@ -24,6 +23,16 @@ struct PopoverView: View {
         }
         .frame(width: PopoverMetrics.width)
         .background(Color.prumoPopoverBackground)
+    }
+
+    private func showOnboarding() {
+        openWindow(id: PopoverText.onboardingWindowID)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func showSettings() {
+        openSettings()
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     private var header: some View {
@@ -79,11 +88,24 @@ struct PopoverView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     @ViewBuilder
     private var list: some View {
-        if isLoading {
+        if model.needsOnboarding {
+            VStack(spacing: 10) {
+                Text(PopoverText.connectPrompt)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                Button(PopoverText.connectAction, action: showOnboarding)
+                    .buttonStyle(PrimaryButtonStyle())
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 28)
+        } else if model.snapshot == nil && model.connection != .ok {
+            EmptyView()
+        } else if isLoading {
             VStack(spacing: 0) {
                 ForEach(0..<3, id: \.self) { _ in PRRowSkeleton() }
             }
@@ -130,7 +152,7 @@ struct PopoverView: View {
                 }
             }
             Spacer()
-            SettingsLink {
+            Button(action: showSettings) {
                 Label(PopoverText.settings, systemImage: "gearshape")
             }
             .buttonStyle(.plain)

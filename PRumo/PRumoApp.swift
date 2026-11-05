@@ -21,5 +21,14 @@ struct PRumoApp: App {
             MenuBarLabel(model: model)
         }
         .menuBarExtraStyle(.window)
+
+        Window(OnboardingText.windowTitle, id: OnboardingText.id) {
+            OnboardingView(app: model)
+        }
+        .windowResizability(.contentSize)
+
+        Settings {
+            SettingsView(model: model)
+        }
     }
 }
