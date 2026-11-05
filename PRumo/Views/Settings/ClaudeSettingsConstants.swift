@@ -16,6 +16,8 @@ enum ClaudeSettingsText {
     static let reviewVariables = "Variáveis: {numero} {url} {repo} {branch} {titulo}"
     static let ciTemplate = "Corrigir CI"
     static let ciVariables = "Variáveis: as de cima + {job} {run}"
+    static let conflictTemplate = "Resolver conflito"
+    static let conflictVariables = "Variáveis: {numero} {url} {repo} {branch} {base} {titulo}"
     static let flags = "Flags do claude"
     static let flagsPlaceholder = "--model opus"
     static let terminal = "Terminal"

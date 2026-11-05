@@ -6,18 +6,22 @@ struct RowMenuItems: View {
     let pr: PullRequest
     let actions: RowActions
 
+    private static let shortcut = KeyboardShortcut(KeyEquivalent(Character(ClaudeText.shortcutKey)), modifiers: .command)
+
     var body: some View {
-        if let purpose = actions.claudePurpose {
-            Button {
-                actions.launch(purpose)
-            } label: {
-                Label {
-                    Text(purpose == .review ? ClaudeText.review : ClaudeText.fixCI)
-                } icon: {
-                    Image(nsImage: ClaudeMarkImage.menuIcon)
+        if !actions.claudePurposes.isEmpty {
+            ForEach(Array(actions.claudePurposes.enumerated()), id: \.offset) { index, purpose in
+                Button {
+                    actions.launch(purpose)
+                } label: {
+                    Label {
+                        Text(purpose.menuTitle)
+                    } icon: {
+                        Image(nsImage: ClaudeMarkImage.menuIcon)
+                    }
                 }
+                .keyboardShortcut(index == 0 ? Self.shortcut : nil)
             }
-            .keyboardShortcut(KeyEquivalent(Character(ClaudeText.shortcutKey)), modifiers: .command)
             Divider()
         }
         Button(ClaudeText.openInBrowser) {

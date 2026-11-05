@@ -12,6 +12,7 @@ struct ClaudeSettingsView: View {
             Section {
                 templateField(ClaudeSettingsText.reviewTemplate, hint: ClaudeSettingsText.reviewVariables, text: $store.settings.reviewTemplate)
                 templateField(ClaudeSettingsText.ciTemplate, hint: ClaudeSettingsText.ciVariables, text: $store.settings.ciTemplate)
+                templateField(ClaudeSettingsText.conflictTemplate, hint: ClaudeSettingsText.conflictVariables, text: $store.settings.conflictTemplate)
                 TextField(ClaudeSettingsText.flags, text: $store.settings.extraFlags, prompt: Text(ClaudeSettingsText.flagsPlaceholder))
                     .font(.system(.body, design: .monospaced))
             }

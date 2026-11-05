@@ -20,6 +20,8 @@ enum ClaudeText {
     static let review = "Revisar com Claude"
     static let fixCI = "Corrigir CI com Claude"
     static let fixBadge = "corrigir"
+    static let resolveConflict = "Resolver conflito com Claude"
+    static let resolveBadge = "resolver"
     static let openInBrowser = "Abrir no navegador"
     static let copyLink = "Copiar link"
     static let moreActions = "Mais ações"

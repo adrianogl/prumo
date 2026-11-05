@@ -10,19 +10,15 @@ struct PRRowView: View {
     @State private var hovering = false
     @State private var menuOpen = false
 
-    private var claudePurpose: SessionPurpose? {
-        switch tab {
-        case .review: .review
-        case .mine: pr.hasFailedCI ? .fixCI : nil
-        }
-    }
-
     private var actions: RowActions {
-        RowActions(claudePurpose: claudePurpose) { model.launchClaude(pr: pr, purpose: $0) }
+        RowActions(claudePurposes: pr.claudePurposes(in: tab)) { model.launchClaude(pr: pr, purpose: $0) }
     }
 
-    private func offersFix(badgeAt index: Int) -> Bool {
-        tab == .mine && presentation.ciFailureBadgeIndex == index
+    private func purpose(forBadgeAt index: Int) -> SessionPurpose? {
+        guard tab == .mine else { return nil }
+        if presentation.ciFailureBadgeIndex == index { return .fixCI }
+        if presentation.conflictBadgeIndex == index { return .resolveConflict }
+        return nil
     }
 
     private var accessibilitySummary: String {
@@ -76,8 +72,8 @@ struct PRRowView: View {
                     HStack(spacing: 5) {
                         ForEach(Array(presentation.badges.enumerated()), id: \.offset) { index, badge in
                             BadgeView(badge: badge).allowsHitTesting(false).accessibilityHidden(true)
-                            if offersFix(badgeAt: index), let purpose = claudePurpose {
-                                fixButton(purpose)
+                            if let purpose = purpose(forBadgeAt: index) {
+                                claudeButton(purpose)
                             }
                         }
                     }
@@ -91,7 +87,7 @@ struct PRRowView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func fixButton(_ purpose: SessionPurpose) -> some View {
+    private func claudeButton(_ purpose: SessionPurpose) -> some View {
         Button {
             model.launchClaude(pr: pr, purpose: purpose)
         } label: {
@@ -105,13 +101,13 @@ struct PRRowView: View {
                         .resizable()
                         .frame(width: ClaudeMetrics.markSize, height: ClaudeMetrics.markSize)
                 }
-                Text(ClaudeText.fixBadge)
+                Text(purpose.badgeTitle)
             }
         }
         .buttonStyle(ClaudeButtonStyle())
         .disabled(model.isLaunching(pr))
-        .help(ClaudeText.fixCI)
-        .accessibilityLabel(ClaudeText.fixCI)
+        .help(purpose.menuTitle)
+        .accessibilityLabel(purpose.menuTitle)
     }
 }
 

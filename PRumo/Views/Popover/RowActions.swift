@@ -1,6 +1,6 @@
 import PRumoKit
 
 struct RowActions {
-    let claudePurpose: SessionPurpose?
+    let claudePurposes: [SessionPurpose]
     let launch: (SessionPurpose) -> Void
 }
