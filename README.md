@@ -40,10 +40,10 @@ Como funciona:
 - O app encontra o clone do repositório em `~/Code` pelo `remote`. Se não achar, pergunta a pasta uma vez e confere se ela é mesmo do repositório.
 - Cria uma worktree em `~/Code/.prumo-worktrees/<repo>-<n>`. Seu clone principal não muda de branch. Revisão e PR de fork usam worktree destacada; CI, conflito e comentários no seu PR usam a branch real, sem resetar commits locais.
 - Abre o terminal configurado rodando um script em `~/Library/Caches/PRumo/sessions/`. Nenhum texto do PR (título, nome de job, branch) é digitado no terminal ou montado numa linha de shell.
-- A sessão roda com `zsh -il`, então uma função ou alias do seu `.zshrc` continua valendo. O comando é `claude` por padrão e pode ser trocado (por exemplo, `claude-ems`) em Ajustes › Claude.
+- A sessão roda com `zsh -il`, então uma função ou alias do seu `.zshrc` continua valendo. O comando é `claude` por padrão e pode ser trocado (por exemplo, `claude-ems`) em Ajustes › IA.
 - A worktree é apagada quando o GitHub confirma que o PR foi fechado ou mergeado, e só se estiver limpa e sem commits não enviados.
 
-Os prompts, o comando e as flags do `claude`, o terminal (Ghostty, Terminal, iTerm ou comando próprio) e as pastas ficam em Ajustes › Claude.
+Os prompts, o comando e as flags do `claude`, o terminal (Ghostty, Terminal, iTerm ou comando próprio) e as pastas ficam em Ajustes › IA.
 
 ## Requisitos
 

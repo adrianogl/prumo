@@ -280,10 +280,10 @@ Sem rede ou com erro da API, o popover mantém os últimos dados com um aviso ("
 Cada etapa termina com o app usável.
 
 1. **Núcleo**: projeto Xcode, identidade (ícone, logotipo, cores), onboarding e token, leitura pela API, abas Meus PRs e Revisar, linha detalhada, abrir no navegador, notificações de CI, aprovado, alterações pedidas, comentário e review pedido, estado persistido, ajustes básicos, abrir ao iniciar.
-2. **Claude no terminal**: menu `⋯` da linha (com abrir no navegador e copiar link), "Revisar com Claude", "Corrigir CI com Claude" e "Resolver conflito com Claude", "Resolver comentários com Claude", "corrigir" no badge de CI, "resolver" nos badges de conflito e de comentários, botão na notificação de CI falhou, descoberta de clones, worktrees com limpeza, aba Claude nos Ajustes.
-3. **Organização**: aba Merge e mergeados hoje, barra de repositórios, filtros e ordem, visões salvas, linha compacta, silenciar, fixar, ignorar drafts, para você/time, marcador de novo.
-4. **Ruído sob controle**: Não perturbe, horário de trabalho, review parado, notificações de pronto para merge e conflito, toggles por tipo.
-5. **Ações**: demais itens do menu `⋯` (re-rodar job, copiar checkout, Jira) e demais botões nas notificações.
+2. **Claude no terminal**: menu `⋯` da linha (com abrir no navegador e copiar link), "Revisar com Claude", "Corrigir CI com Claude" e "Resolver conflito com Claude", "Resolver comentários com Claude", "corrigir" no badge de CI, "resolver" nos badges de conflito e de comentários, botão na notificação de CI falhou, descoberta de clones, worktrees com limpeza, aba IA nos Ajustes.
+3. **Ações**: demais itens do menu `⋯` (re-rodar job, copiar checkout, Jira), aba Integrações nos Ajustes, botões "Abrir" e "Re-rodar" nas notificações e comando do claude configurável (ex.: `claude-ems`).
+4. **Organização**: aba Merge e mergeados hoje, barra de repositórios, filtros e ordem, visões salvas, linha compacta, silenciar, fixar, ignorar drafts, para você/time, marcador de novo.
+5. **Ruído sob controle**: Não perturbe, horário de trabalho, review parado, notificações de pronto para merge e conflito, toggles por tipo.
 6. **Teclado**: atalho global, busca, navegação por teclado.
 7. **Widget**, se o App Group funcionar com conta gratuita.
 
