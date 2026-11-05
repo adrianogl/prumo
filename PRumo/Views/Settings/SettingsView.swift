@@ -6,7 +6,7 @@ struct SettingsView: View {
     @AppStorage(AppConstants.refreshIntervalKey) private var interval = AppConstants.defaultRefreshInterval
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var launchError: String?
-    @State private var selection = SettingsTab.account
+    @State private var selection = SettingsTab.accounts
 
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
@@ -14,6 +14,7 @@ struct SettingsView: View {
 
     private var height: CGFloat {
         switch selection {
+        case .accounts: AccountsSettingsMetrics.height
         case .general: SettingsMetrics.generalHeight
         case .notifications: NotificationsSettingsMetrics.height
         case .comments: CommentsSettingsMetrics.height
@@ -21,7 +22,6 @@ struct SettingsView: View {
         case .claude: ClaudeSettingsMetrics.height
         case .integrations: IntegrationsSettingsMetrics.height
         case .about: SettingsMetrics.aboutHeight
-        default: SettingsMetrics.height
         }
     }
 
@@ -32,7 +32,9 @@ struct SettingsView: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            Tab(SettingsText.account, systemImage: SettingsSymbol.account, value: SettingsTab.account) { account }
+            Tab(AccountsSettingsText.tab, systemImage: AccountsSettingsSymbol.tab, value: SettingsTab.accounts) {
+                AccountsSettingsView(model: model)
+            }
             Tab(SettingsText.general, systemImage: SettingsSymbol.general, value: SettingsTab.general) { general }
             Tab(NotificationsSettingsText.tab, systemImage: NotificationsSettingsSymbol.tab, value: SettingsTab.notifications) {
                 NotificationsSettingsView(store: model.preferences)
@@ -52,26 +54,6 @@ struct SettingsView: View {
             Tab(SettingsText.about, systemImage: SettingsSymbol.about, value: SettingsTab.about) { about }
         }
         .frame(width: SettingsMetrics.width, height: height)
-    }
-
-    private var account: some View {
-        Form {
-            LabeledContent(SettingsText.login, value: model.login.map { "@\($0)" } ?? SettingsText.notConnected)
-            LabeledContent(SettingsText.origin, value: originText)
-            Button(SettingsText.disconnect, role: .destructive) {
-                model.signOut()
-            }
-            .disabled(model.needsOnboarding)
-        }
-        .formStyle(.grouped)
-    }
-
-    private var originText: String {
-        switch model.origin {
-        case .ghCLI: SettingsText.originGh
-        case .pasted: SettingsText.originPasted
-        case nil: "—"
-        }
     }
 
     private var general: some View {

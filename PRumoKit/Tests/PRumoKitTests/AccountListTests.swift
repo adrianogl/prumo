@@ -80,4 +80,11 @@ import Testing
         #expect(AccountLabel.forRow(accountID: "a2", accounts: two)?.text == "adriano-globex")
         #expect(AccountLabel.make(account("a3", login: "adriano", host: "gitlab.empresa.com")).text == "adriano · gitlab.empresa.com")
     }
+
+    @Test func publicHostIgnoresCase() {
+        #expect(account("a1", login: "adrianogl").isPublicHost)
+        #expect(account("a2", login: "adrianogl", host: "GitHub.com").isPublicHost)
+        #expect(account("a3", login: "adriano", host: "gitlab.com").isPublicHost)
+        #expect(!account("a4", login: "adriano", host: "gitlab.empresa.com").isPublicHost)
+    }
 }

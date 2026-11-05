@@ -118,6 +118,9 @@ struct OnboardingView: View {
             Text(OnboardingText.readyNote)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
+            Text(OnboardingText.otherAccounts)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
             HStack {
                 Spacer()
                 Button(OnboardingText.start) { dismissWindow(id: OnboardingText.id) }

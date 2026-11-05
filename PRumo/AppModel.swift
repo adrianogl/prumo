@@ -260,7 +260,11 @@ final class AppModel {
             try store.delete()
         }
         guard accounts.list.accounts.count <= 1 else {
-            connectAlongside(account, token: token, replacing: existing != nil)
+            let replacing = existing != nil
+            Task {
+                await waitForStartup()
+                connectAlongside(account, token: token, replacing: replacing)
+            }
             return
         }
         startupTask?.cancel()
@@ -292,7 +296,8 @@ final class AppModel {
         resumePolling()
     }
 
-    func addAccount(_ account: Account, token: String) throws {
+    func addAccount(_ account: Account, token: String) async throws {
+        await waitForStartup()
         guard !accounts.list.accounts.contains(where: { $0.isSameIdentity(as: account) }) else {
             throw DuplicateAccountError()
         }
@@ -323,12 +328,13 @@ final class AppModel {
     }
 
     func reconnect(id: String) {
-        guard let account = accounts.list.account(id: id) else { return }
-        sessions.removeValue(forKey: id)?.gate.stop()
-        accounts.statuses[id] = AccountStatus(lastSuccess: accounts.statuses[id]?.lastSuccess)
-        updateConnection()
         let resolver = tokenResolver
         Task {
+            await waitForStartup()
+            guard let account = accounts.list.account(id: id) else { return }
+            sessions.removeValue(forKey: id)?.gate.stop()
+            accounts.statuses[id] = AccountStatus(lastSuccess: accounts.statuses[id]?.lastSuccess)
+            updateConnection()
             let token = await Self.resolveToken(account, resolver: resolver)
             guard let current = accounts.list.account(id: id), sessions[id] == nil else { return }
             guard let token else {
@@ -338,6 +344,24 @@ final class AppModel {
             }
             sessions[id] = makeSession(current, token: token)
             resumePolling()
+        }
+    }
+
+    func replaceToken(id: String, token: String) async throws {
+        await waitForStartup()
+        guard let account = accounts.list.account(id: id) else { return }
+        try tokenStore(id).write(token)
+        sessions.removeValue(forKey: id)?.gate.stop()
+        accounts.statuses[id] = AccountStatus(lastSuccess: accounts.statuses[id]?.lastSuccess)
+        sessions[id] = makeSession(account, token: token)
+        updateConnection()
+        resumePolling()
+    }
+
+    private func waitForStartup() async {
+        while let task = startupTask {
+            await task.value
+            if task == startupTask { return }
         }
     }
 

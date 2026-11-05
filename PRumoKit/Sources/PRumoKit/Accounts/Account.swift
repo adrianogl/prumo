@@ -36,6 +36,10 @@ public struct Account: Codable, Equatable, Identifiable, Sendable {
         nickname.isEmpty ? "@\(login)" : "\(nickname) · @\(login)"
     }
 
+    public var isPublicHost: Bool {
+        AccountConstants.publicHosts.contains(host.lowercased())
+    }
+
     public func isSameIdentity(as other: Account) -> Bool {
         provider == other.provider
             && host.caseInsensitiveCompare(other.host) == .orderedSame
