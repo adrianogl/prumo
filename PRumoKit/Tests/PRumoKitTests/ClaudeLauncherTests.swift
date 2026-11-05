@@ -45,7 +45,7 @@ private func launcher(
     scanned: [String: [URL]] = ["acme/loja": [clone]],
     sessionsDir: URL = sessions,
     uuid: String = "u1",
-    claude: String? = "/h/.local/bin/claude"
+    claude: Bool = true
 ) -> ClaudeLauncher {
     ClaudeLauncher(
         settings: settings,
@@ -70,8 +70,8 @@ private func launcher(
         #expect(sink.written.count == 1)
         #expect(sink.written[0].url.path == "/h/Library/Caches/PRumo/sessions/u1.zsh")
         #expect(sink.written[0].contents.contains("cd '\(worktree)' || exit 1\n"))
-        #expect(sink.written[0].contents.contains("'/h/.local/bin/claude' '/code-review 812'\n"))
-        #expect(runner.commands.last == "/usr/bin/open -na Ghostty --args --working-directory=\(worktree) -e /bin/zsh -l /h/Library/Caches/PRumo/sessions/u1.zsh")
+        #expect(sink.written[0].contents.contains("'claude' '/code-review 812'\n"))
+        #expect(runner.commands.last == "/usr/bin/open -na Ghostty --args --working-directory=\(worktree) -e /bin/zsh -il /h/Library/Caches/PRumo/sessions/u1.zsh")
         #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add --detach \(worktree) refs/prumo/pull/812"))
     }
 
@@ -125,30 +125,29 @@ private func launcher(
         }
     }
 
-    @Test func scriptWrittenWithClaudeAbsolutePath() async throws {
+    @Test func scriptCallsClaudeByName() async throws {
         let sink = ScriptSink()
-        _ = try await launcher(FakeRunner(), sink: sink, claude: "/opt/homebrew/bin/claude")
-            .launch(pr: .fixture(), purpose: .review)
-        #expect(sink.written[0].contents.contains("\n'/opt/homebrew/bin/claude' '/code-review 812'\n"))
-        #expect(sink.written[0].contents.contains("status=$?\n"))
+        _ = try await launcher(FakeRunner(), sink: sink).launch(pr: .fixture(), purpose: .review)
+        #expect(sink.written[0].contents.contains("\n'claude' '/code-review 812'\nrc=$?\n"))
     }
 
     @Test func invalidCachePathRejected() async {
         let runner = FakeRunner()
         let sink = ScriptSink()
         let bad = URL(fileURLWithPath: "/h/Library/Caches/PR umo/sessions")
-        await #expect(throws: ClaudeLaunchError.launchFailed("Caminho de cache inválido: /h/Library/Caches/PR umo/sessions/u1.zsh")) {
+        await #expect(throws: ClaudeLaunchError.launchFailed("O caminho de cache do PRumo tem espaço ou acento (/h/Library/Caches/PR umo/sessions/u1.zsh); o PRumo não consegue abrir o terminal com segurança nesse caso.")) {
             try await launcher(runner, sink: sink, sessionsDir: bad).launch(pr: .fixture(), purpose: .review)
         }
         #expect(sink.written.isEmpty)
         #expect(!runner.commands.contains { $0.hasPrefix("/usr/bin/open") })
+        #expect(!runner.commands.contains { $0.contains("worktree add") })
     }
 
     @Test func claudeNotFoundFails() async {
         let runner = FakeRunner()
         let sink = ScriptSink()
         await #expect(throws: ClaudeLaunchError.launchFailed("Não encontrei o comando claude no PATH do seu shell.")) {
-            try await launcher(runner, sink: sink, claude: nil).launch(pr: .fixture(), purpose: .review)
+            try await launcher(runner, sink: sink, claude: false).launch(pr: .fixture(), purpose: .review)
         }
         #expect(sink.written.isEmpty)
         #expect(!runner.commands.contains { $0.contains("worktree add") })
@@ -162,11 +161,48 @@ private func launcher(
         #expect(sink.cleaned[0].date == fixedNow)
     }
 
-    @Test func defaultClaudeLocatorUsesInteractiveZshAndTrims() async {
-        let runner = FakeRunner { $0 == "/bin/zsh -ilc command -v claude" ? (0, "/h/bin/claude\n", "") : (1, "", "") }
-        let path = await ClaudeExecutableLocator.locate(runner: runner)
-        #expect(path == "/h/bin/claude")
-        let missing = await ClaudeExecutableLocator.locate(runner: FakeRunner { _ in (1, "", "") })
-        #expect(missing == nil)
+    @Test func launchFailureRemovesCreatedWorktree() async {
+        let runner = FakeRunner { $0.hasPrefix("/usr/bin/open") ? (1, "", "x") : (0, "", "") }
+        await #expect(throws: ClaudeLaunchError.launchFailed("x")) {
+            try await launcher(runner).launch(pr: .fixture(), purpose: .review)
+        }
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/.prumo-worktrees/loja-812 status --porcelain"))
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree remove \(worktree)"))
+    }
+
+    @Test func writeFailureRemovesCreatedWorktree() async {
+        let runner = FakeRunner()
+        let failing = ClaudeLauncher(
+            settings: .defaults, scanned: ["acme/loja": [clone]], runner: runner, home: home,
+            sessionsDir: sessions, writeScript: { _, _ in throw CocoaError(.fileWriteNoPermission) },
+            cleanupOldScripts: { _, _ in }, uuid: { "u1" }, now: { fixedNow }, claudeLocator: { true })
+        await #expect(throws: ClaudeLaunchError.self) {
+            try await failing.launch(pr: .fixture(), purpose: .review)
+        }
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree remove \(worktree)"))
+    }
+
+    @Test func emptyStderrGetsReadableMessage() async {
+        let runner = FakeRunner { $0.hasPrefix("/usr/bin/open") ? (2, "", "") : (0, "", "") }
+        await #expect(throws: ClaudeLaunchError.launchFailed("O terminal não abriu (código 2).")) {
+            try await launcher(runner).launch(pr: .fixture(), purpose: .review)
+        }
+    }
+
+    @Test func locatorTimeoutIsReported() async {
+        let timing = ClaudeLauncher(
+            settings: .defaults, scanned: ["acme/loja": [clone]], runner: FakeRunner(), home: home,
+            sessionsDir: sessions, writeScript: { _, _ in }, cleanupOldScripts: { _, _ in },
+            uuid: { "u1" }, now: { fixedNow }, claudeLocator: { throw ProcessRunnerError.timedOut })
+        await #expect(throws: ClaudeLaunchError.launchFailed("O shell demorou demais para responder ao procurar o claude.")) {
+            try await timing.launch(pr: .fixture(), purpose: .review)
+        }
+    }
+
+    @Test func locatorChecksWhenceClaude() async throws {
+        let ok = FakeRunner { $0 == "/bin/zsh -ilc whence claude" ? (0, "claude () {...}\n", "") : (1, "", "") }
+        #expect(try await ClaudeExecutableLocator.isAvailable(runner: ok))
+        #expect(try await !ClaudeExecutableLocator.isAvailable(runner: FakeRunner { _ in (1, "", "") }))
+        #expect(try await !ClaudeExecutableLocator.isAvailable(runner: FakeRunner { _ in (0, "\n", "") }))
     }
 }

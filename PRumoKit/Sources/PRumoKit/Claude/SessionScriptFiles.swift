@@ -8,11 +8,24 @@ public enum SessionScriptFiles {
     }
 
     public static func write(_ contents: String, to url: URL) throws {
+        let manager = FileManager.default
         let directory = url.deletingLastPathComponent()
-        try FileManager.default.createDirectory(
+        try manager.createDirectory(
             at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-        try Data(contents.utf8).write(to: url, options: .atomic)
-        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: url.path)
+        try manager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
+        let temporary = directory.appendingPathComponent(".\(UUID().uuidString).tmp")
+        guard manager.createFile(
+            atPath: temporary.path, contents: Data(contents.utf8), attributes: [.posixPermissions: 0o700])
+        else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        do {
+            if manager.fileExists(atPath: url.path) { try manager.removeItem(at: url) }
+            try manager.moveItem(at: temporary, to: url)
+        } catch {
+            try? manager.removeItem(at: temporary)
+            throw error
+        }
     }
 
     public static func cleanup(in directory: URL, now: Date) {

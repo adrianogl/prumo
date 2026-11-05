@@ -5,7 +5,7 @@ import Testing
 @Suite struct TerminalCommandTests {
     let directory = URL(fileURLWithPath: "/Users/ana/Code/loja")
     let scriptPath = URL(fileURLWithPath: "/Users/ana/Library/Caches/PRumo/sessions/abc.zsh")
-    static let tail = "status=$?\n[ $status -ne 0 ] && read -k1 \"?claude saiu com erro $status. Pressione uma tecla.\"\n"
+    static let tail = "rc=$?\nif [ $rc -ne 0 ]; then read -k1 \"?claude saiu com erro $rc. Pressione uma tecla.\"; fi\nexit $rc\n"
     let hostile = "Fix \"it\" $(rm -rf ~) `x` it's PWNED"
 
     @Test func scriptQuotesHostilePrompt() {
@@ -18,6 +18,33 @@ import Testing
         let script = TerminalCommand.scriptContents(
             directory: directory, prompt: "oi", extraFlags: "", claudeExecutable: "/Users/ana/.local/bin/claude")
         #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'/Users/ana/.local/bin/claude' 'oi'\n" + Self.tail)
+    }
+
+    @Test(arguments: [(0, Int32(0)), (3, Int32(3))])
+    func scriptRunsUnderZshWithStub(stubExit: Int, expected: Int32) throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("prumo-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let stub = dir.appendingPathComponent("claude-stub")
+        try "#!/bin/sh\nexit \(stubExit)\n".write(to: stub, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: stub.path)
+        let script = dir.appendingPathComponent("session.zsh")
+        try TerminalCommand.scriptContents(
+            directory: dir, prompt: hostile, extraFlags: "", claudeExecutable: stub.path
+        ).write(to: script, atomically: true, encoding: .utf8)
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-f", script.path]
+        process.standardInput = FileHandle.nullDevice
+        let errors = Pipe()
+        process.standardError = errors
+        process.standardOutput = Pipe()
+        try process.run()
+        let stderr = errors.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == expected)
+        if expected == 0 { #expect(stderr.isEmpty) }
     }
 
     @Test func scriptSanitizesControls() {
@@ -44,7 +71,7 @@ import Testing
         #expect(command == LaunchCommand(
             executable: "/usr/bin/open",
             arguments: ["-na", "Ghostty", "--args", "--working-directory=/Users/ana/Code/loja",
-                        "-e", "/bin/zsh", "-l", scriptPath.path]))
+                        "-e", "/bin/zsh", "-il", scriptPath.path]))
     }
 
     @Test func terminalAppleScriptTypesOnlyRunLine() {
@@ -52,7 +79,7 @@ import Testing
         #expect(command == LaunchCommand(
             executable: "/usr/bin/osascript",
             arguments: [
-                "-e", "tell application \"Terminal\" to do script \"/bin/zsh -l '\(scriptPath.path)'\"",
+                "-e", "tell application \"Terminal\" to do script \"/bin/zsh -il '\(scriptPath.path)'\"",
                 "-e", "tell application \"Terminal\" to activate",
             ]))
     }
@@ -65,7 +92,7 @@ import Testing
                 "-e", "tell application \"iTerm\"",
                 "-e", "activate",
                 "-e", "create window with default profile",
-                "-e", "tell current session of current window to write text \"/bin/zsh -l '\(scriptPath.path)'\"",
+                "-e", "tell current session of current window to write text \"/bin/zsh -il '\(scriptPath.path)'\"",
                 "-e", "end tell",
             ]))
     }
@@ -76,13 +103,13 @@ import Testing
             kind: .custom(template: "kitty --directory {dir} -e {cmd}"), directory: spaced, scriptPath: scriptPath)
         #expect(command == LaunchCommand(
             executable: "/bin/zsh",
-            arguments: ["-lc", "kitty --directory '/Users/ana/Code/minha loja' -e /bin/zsh -l '\(scriptPath.path)'"]))
+            arguments: ["-lc", "kitty --directory '/Users/ana/Code/minha loja' -e /bin/zsh -il '\(scriptPath.path)'"]))
     }
 
     @Test func customTemplateWithQuotedCmdStillSafe() {
         let command = TerminalCommand.build(
             kind: .custom(template: "sh -c \"{cmd}\""), directory: directory, scriptPath: scriptPath)
-        #expect(command.arguments == ["-lc", "sh -c \"/bin/zsh -l '\(scriptPath.path)'\""])
+        #expect(command.arguments == ["-lc", "sh -c \"/bin/zsh -il '\(scriptPath.path)'\""])
     }
 
     @Test func noKindCarriesPromptText() {

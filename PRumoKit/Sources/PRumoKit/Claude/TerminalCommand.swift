@@ -23,21 +23,22 @@ public enum TerminalCommand {
         return [
             "cd \(ShellQuote.single(directory.path)) || exit 1",
             claude,
-            "status=$?",
-            "[ $status -ne 0 ] && read -k1 \"?claude saiu com erro $status. Pressione uma tecla.\"",
+            "rc=$?",
+            "if [ $rc -ne 0 ]; then read -k1 \"?claude saiu com erro $rc. Pressione uma tecla.\"; fi",
+            "exit $rc",
             "",
         ].joined(separator: "\n")
     }
 
     public static func build(kind: TerminalKind, directory: URL, scriptPath: URL) -> LaunchCommand {
         let dir = directory.path
-        let runLine = "/bin/zsh -l \(ShellQuote.single(scriptPath.path))"
+        let runLine = "/bin/zsh -il \(ShellQuote.single(scriptPath.path))"
         switch kind {
         case .ghostty:
             return LaunchCommand(
                 executable: "/usr/bin/open",
                 arguments: ["-na", "Ghostty", "--args", "--working-directory=\(dir)",
-                            "-e", "/bin/zsh", "-l", scriptPath.path])
+                            "-e", "/bin/zsh", "-il", scriptPath.path])
         case .terminal:
             return LaunchCommand(
                 executable: "/usr/bin/osascript",

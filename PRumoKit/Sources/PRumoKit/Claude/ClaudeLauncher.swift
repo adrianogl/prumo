@@ -13,7 +13,8 @@ public struct ClaudeLauncher: Sendable {
     private let cleanupOldScripts: @Sendable (URL, Date) -> Void
     private let uuid: @Sendable () -> String
     private let now: @Sendable () -> Date
-    private let claudeLocator: @Sendable () async -> String?
+    private let exists: @Sendable (URL) -> Bool
+    private let claudeLocator: @Sendable () async throws -> Bool
 
     public init(
         settings: ClaudeSettings,
@@ -25,7 +26,8 @@ public struct ClaudeLauncher: Sendable {
         cleanupOldScripts: @escaping @Sendable (URL, Date) -> Void = { SessionScriptFiles.cleanup(in: $0, now: $1) },
         uuid: @escaping @Sendable () -> String = { UUID().uuidString },
         now: @escaping @Sendable () -> Date = { Date() },
-        claudeLocator: (@Sendable () async -> String?)? = nil
+        exists: @escaping @Sendable (URL) -> Bool = { FileManager.default.fileExists(atPath: $0.path) },
+        claudeLocator: (@Sendable () async throws -> Bool)? = nil
     ) {
         self.settings = settings
         self.scanned = scanned
@@ -36,7 +38,10 @@ public struct ClaudeLauncher: Sendable {
         self.cleanupOldScripts = cleanupOldScripts
         self.uuid = uuid
         self.now = now
-        self.claudeLocator = claudeLocator ?? { await ClaudeExecutableLocator.cached(runner: runner) }
+        self.exists = exists
+        self.claudeLocator = claudeLocator ?? {
+            try await ClaudeExecutableLocator.cached(runner: SystemProcessRunner(timeout: .seconds(15)))
+        }
     }
 
     public func launch(pr: PullRequest, purpose: SessionPurpose) async throws(ClaudeLaunchError) -> URL {
@@ -49,20 +54,33 @@ public struct ClaudeLauncher: Sendable {
 
         let scriptURL = sessionsDir.appendingPathComponent("\(uuid()).zsh")
         guard !scriptURL.path.isEmpty, scriptURL.path.allSatisfy(Self.safePathCharacters.contains) else {
-            throw .launchFailed("Caminho de cache inválido: \(scriptURL.path)")
+            throw .launchFailed("O caminho de cache do PRumo tem espaço ou acento (\(scriptURL.path)); o PRumo não consegue abrir o terminal com segurança nesse caso.")
         }
-        guard let claude = await claudeLocator() else {
+        let claudeFound: Bool
+        do {
+            claudeFound = try await claudeLocator()
+        } catch ProcessRunnerError.timedOut {
+            throw .launchFailed("O shell demorou demais para responder ao procurar o claude.")
+        } catch {
+            throw .launchFailed(Self.message(for: error))
+        }
+        guard claudeFound else {
             throw .launchFailed("Não encontrei o comando claude no PATH do seu shell.")
         }
 
+        let worktrees = WorktreeManager(runner: runner, worktreesRoot: expand(settings.worktreesRoot), exists: exists)
+        let repoName = pr.repository.split(separator: "/").last.map(String.init) ?? pr.repository
+        let expectedTarget = expand(settings.worktreesRoot).appendingPathComponent("\(repoName)-\(pr.number)")
+        let preexisting = exists(expectedTarget)
         let directory: URL
         do {
-            directory = try await WorktreeManager(runner: runner, worktreesRoot: expand(settings.worktreesRoot))
-                .prepare(pr: pr, clone: clone, purpose: purpose)
+            directory = try await worktrees.prepare(pr: pr, clone: clone, purpose: purpose)
         } catch {
-            guard case .gitFailed(let message) = error else { throw .worktree(String(describing: error)) }
-            throw .worktree(message)
+            switch error {
+            case .gitFailed(let message): throw .worktree(message)
+            }
         }
+        let created = !preexisting && directory.standardizedFileURL.path == expectedTarget.standardizedFileURL.path
 
         var prompt: String
         switch purpose {
@@ -74,26 +92,45 @@ public struct ClaudeLauncher: Sendable {
         }
 
         let script = TerminalCommand.scriptContents(
-            directory: directory, prompt: prompt, extraFlags: settings.extraFlags, claudeExecutable: claude)
+            directory: directory, prompt: prompt, extraFlags: settings.extraFlags)
         cleanupOldScripts(sessionsDir, now())
         do {
             try writeScript(script, scriptURL)
         } catch {
-            throw .launchFailed(error.localizedDescription)
+            await discard(created: created, worktrees: worktrees, directory: directory, clone: clone, number: pr.number)
+            throw .launchFailed(Self.message(for: error))
         }
 
         let command = TerminalCommand.build(kind: settings.terminal, directory: directory, scriptPath: scriptURL)
+        let failure: String?
         do {
             let result = try await runner.run(command.executable, command.arguments)
-            guard result.status == 0 else {
-                throw ClaudeLaunchError.launchFailed(result.stderr.trimmingCharacters(in: .whitespacesAndNewlines))
+            if result.status == 0 {
+                failure = nil
+            } else {
+                let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+                failure = stderr.isEmpty ? "O terminal não abriu (código \(result.status))." : stderr
             }
-        } catch let error as ClaudeLaunchError {
-            throw error
         } catch {
-            throw .launchFailed(String(describing: error))
+            failure = Self.message(for: error)
+        }
+        if let failure {
+            await discard(created: created, worktrees: worktrees, directory: directory, clone: clone, number: pr.number)
+            throw .launchFailed(failure)
         }
         return directory
+    }
+
+    private func discard(created: Bool, worktrees: WorktreeManager, directory: URL, clone: URL, number: Int) async {
+        guard created else { return }
+        _ = await worktrees.removeIfClean(path: directory, clone: clone, number: number)
+    }
+
+    private static func message(for error: Error) -> String {
+        if let runnerError = error as? ProcessRunnerError, runnerError == .timedOut {
+            return "O comando demorou demais para responder."
+        }
+        return error.localizedDescription
     }
 
     private func expand(_ path: String) -> URL {
