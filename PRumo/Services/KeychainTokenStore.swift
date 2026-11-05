@@ -3,11 +3,17 @@ import Security
 import PRumoKit
 
 struct KeychainTokenStore: TokenStore {
+    private let account: String
+
+    init(account: String = AppConstants.keychainAccount) {
+        self.account = account
+    }
+
     private var baseQuery: [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: AppConstants.keychainService,
-            kSecAttrAccount as String: AppConstants.keychainAccount
+            kSecAttrAccount as String: account
         ]
     }
 

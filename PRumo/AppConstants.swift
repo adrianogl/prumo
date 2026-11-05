@@ -8,6 +8,8 @@ enum AppConstants {
     static let accountLoginKey = "accountLogin"
     static let tokenOriginKey = "tokenOrigin"
     static let onboardingDoneKey = "onboardingDone"
+    static let accountsKey = "accounts"
+    static let accountsCorruptFileName = "accounts.corrupt.json"
     static let claudeSettingsKey = "claudeSettings"
     static let jiraSettingsKey = "jiraSettings"
     static let organizationKey = "organization"

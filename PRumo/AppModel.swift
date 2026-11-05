@@ -10,8 +10,7 @@ final class AppModel {
     var lastRefresh: Date?
     var nextRefresh: Date?
     var needsOnboarding = false
-    var login: String?
-    var origin: TokenOrigin?
+    let accounts: AccountsStore
     let claude: ClaudeSettingsStore
     let integrations: IntegrationSettingsStore
     let organization: OrganizationStore
@@ -21,9 +20,11 @@ final class AppModel {
     private(set) var hotKey: HotKeyCombo
     private(set) var hotKeyRegistered = true
 
+    private var sessions: [String: AccountSession] = [:]
+
     @ObservationIgnored private let notifications: NotificationService
-    @ObservationIgnored private let tokenStore: TokenStore
-    @ObservationIgnored private let snapshotStore: SnapshotStore
+    @ObservationIgnored private let tokenStore: @Sendable (String) -> TokenStore
+    @ObservationIgnored private let tokenResolver: AccountTokenResolver
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let worktreeRegistry: WorktreeRegistry
     @ObservationIgnored private let reminderStore: ReminderStore
@@ -31,10 +32,9 @@ final class AppModel {
     @ObservationIgnored private var cleaningWorktrees = false
     @ObservationIgnored private var pruningMarks = false
     @ObservationIgnored private var lastMarksPrune = Date.distantPast
-    @ObservationIgnored private var activityBaseline: Snapshot?
+    @ObservationIgnored private var lastSnapshots: [String: Snapshot] = [:]
+    @ObservationIgnored private var activityBaselines: [String: Snapshot] = [:]
     @ObservationIgnored private var reminders: ReminderState?
-    @ObservationIgnored private var githubClient: GitHubClient?
-    @ObservationIgnored private var coordinator: RefreshCoordinator?
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var sleepTask: Task<Void, Never>?
     @ObservationIgnored private var startupTask: Task<Void, Never>?
@@ -42,9 +42,11 @@ final class AppModel {
 
     init(
         notifications: NotificationService,
-        tokenStore: TokenStore = KeychainTokenStore(),
-        snapshotStore: SnapshotStore = SnapshotStore(fileURL: SnapshotStore.defaultURL()),
+        tokenStore: @escaping @Sendable (String) -> TokenStore = {
+            KeychainTokenStore(account: AccountStorage.keychainAccount(for: $0))
+        },
         defaults: UserDefaults = .standard,
+        accounts: AccountsStore? = nil,
         claude: ClaudeSettingsStore? = nil,
         integrations: IntegrationSettingsStore? = nil,
         organization: OrganizationStore? = nil,
@@ -58,14 +60,13 @@ final class AppModel {
         self.reminderStore = reminderStore
         self.notifications = notifications
         self.tokenStore = tokenStore
-        self.snapshotStore = snapshotStore
+        tokenResolver = AccountTokenResolver(tokenStore: tokenStore, gh: .system())
         self.defaults = defaults
+        self.accounts = accounts ?? AccountsStore(defaults: defaults)
         self.claude = claude ?? ClaudeSettingsStore(defaults: defaults)
         self.integrations = integrations ?? IntegrationSettingsStore(defaults: defaults)
         self.organization = organization ?? OrganizationStore(defaults: defaults)
         self.preferences = preferences ?? NotificationPreferencesStore(defaults: defaults)
-        login = defaults.string(forKey: AppConstants.accountLoginKey)
-        origin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
         hotKey = defaults.data(forKey: AppConstants.hotKeyKey)
             .flatMap { try? JSONDecoder().decode(HotKeyCombo.self, from: $0) }
             .flatMap { $0.isValid ? $0 : nil } ?? .standard
@@ -100,36 +101,122 @@ final class AppModel {
         return stored > 0 ? stored : AppConstants.defaultRefreshInterval
     }
 
+    var login: String? {
+        accounts.list.accounts.first?.login
+    }
+
+    var origin: TokenOrigin? {
+        accounts.list.accounts.first?.origin
+    }
+
+    func session(for pr: PullRequest) -> AccountSession? {
+        sessions[pr.accountID]
+    }
+
+    func accountLabel(for pr: PullRequest) -> AccountLabel? {
+        AccountLabel.forRow(accountID: pr.accountID, accounts: accounts.list.accounts)
+    }
+
     func start() {
         Task { await claude.rescan() }
         startupTask?.cancel()
         startupTask = Task {
-            let resolver = TokenResolver(store: tokenStore, gh: GhCLITokenSource(runner: SystemProcessRunner()))
-            let onboarded = defaults.bool(forKey: AppConstants.onboardingDoneKey)
-            var resolved = await resolver.resolve()
-            if resolved == nil, onboarded, origin == .ghCLI {
-                for _ in 0..<AppConstants.ghTokenRetryAttempts {
-                    try? await Task.sleep(for: AppConstants.ghTokenRetryDelay)
-                    guard !Task.isCancelled else { return }
-                    resolved = await resolver.resolve()
-                    if resolved != nil { break }
-                }
+            var known: [String: String] = [:]
+            if !accounts.hasStoredList, let migrated = await migrateLegacyAccount() {
+                known[migrated.account.id] = migrated.token
             }
             guard !Task.isCancelled else { return }
-            guard let resolved, resolved.origin == .pasted || onboarded else {
+            let list = accounts.list.accounts
+            guard let first = list.first else {
+                needsOnboarding = true
+                return
+            }
+            let tokens = await resolveTokens(list, known: known)
+            guard !Task.isCancelled else { return }
+            if list.count == 1, tokens[first.id] == nil {
+                accounts.statuses[first.id] = AccountStatus(state: .unauthorized)
                 needsOnboarding = true
                 return
             }
             needsOnboarding = false
-            if origin != resolved.origin {
-                origin = resolved.origin
-                defaults.set(resolved.origin.rawValue, forKey: AppConstants.tokenOriginKey)
-            }
             defaults.set(true, forKey: AppConstants.onboardingDoneKey)
             let notifications = notifications
             Task.detached { _ = await notifications.requestAuthorization() }
-            await begin(token: resolved.token)
+            await begin(tokens: tokens)
         }
+    }
+
+    private func migrateLegacyAccount() async -> (account: Account, token: String)? {
+        let onboarded = defaults.bool(forKey: AppConstants.onboardingDoneKey)
+        let storedOrigin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
+        let resolver = TokenResolver(
+            store: tokenStore(AccountMigration.legacyAccountID), gh: GhCLITokenSource(runner: SystemProcessRunner()))
+        var resolved = await resolver.resolve()
+        if resolved == nil, onboarded, storedOrigin == .ghCLI {
+            for _ in 0..<AppConstants.ghTokenRetryAttempts {
+                try? await Task.sleep(for: AppConstants.ghTokenRetryDelay)
+                guard !Task.isCancelled else { return nil }
+                resolved = await resolver.resolve()
+                if resolved != nil { break }
+            }
+        }
+        guard !Task.isCancelled, let resolved else { return nil }
+        let legacy = LegacyAccountState(
+            login: await legacyLogin(token: resolved.token),
+            origin: resolved.origin,
+            onboardingDone: onboarded || resolved.origin == .pasted)
+        guard !Task.isCancelled, let account = AccountMigration.account(from: legacy, existing: nil) else { return nil }
+        accounts.list = AccountList(accounts: [account])
+        accounts.save()
+        let migrated = AccountMigration.reminders(await reminderStore.load(), migrated: account)
+        reminders = migrated
+        try? await reminderStore.save(migrated)
+        return (account, resolved.token)
+    }
+
+    private func legacyLogin(token: String) async -> String? {
+        if let stored = defaults.string(forKey: AppConstants.accountLoginKey), !stored.isEmpty { return stored }
+        let url = AccountStorage.snapshotURL(for: AccountMigration.legacyAccountID)
+        if let viewer = await SnapshotStore(fileURL: url).load()?.viewer, !viewer.isEmpty { return viewer }
+        let client = GitHubClient(token: token)
+        let fetched = await Task.detached { () -> String? in
+            do throws(GitHubError) {
+                return try await client.viewerLogin()
+            } catch {
+                return nil
+            }
+        }.value
+        guard let fetched, !fetched.isEmpty else { return nil }
+        return fetched
+    }
+
+    private func resolveTokens(_ list: [Account], known: [String: String]) async -> [String: String] {
+        let resolver = tokenResolver
+        return await withTaskGroup(of: (String, String?).self) { group in
+            for account in list {
+                let token = known[account.id]
+                group.addTask {
+                    if let token { return (account.id, token) }
+                    return (account.id, await Self.resolveToken(account, resolver: resolver))
+                }
+            }
+            var tokens: [String: String] = [:]
+            for await (id, token) in group {
+                if let token { tokens[id] = token }
+            }
+            return tokens
+        }
+    }
+
+    nonisolated private static func resolveToken(_ account: Account, resolver: AccountTokenResolver) async -> String? {
+        if let token = await resolver.token(for: account) { return token }
+        guard account.origin == .ghCLI else { return nil }
+        for _ in 0..<AppConstants.ghTokenRetryAttempts {
+            try? await Task.sleep(for: AppConstants.ghTokenRetryDelay)
+            guard !Task.isCancelled else { return nil }
+            if let token = await resolver.token(for: account) { return token }
+        }
+        return nil
     }
 
     func registerHotKey() {
@@ -159,38 +246,178 @@ final class AppModel {
     }
 
     func connect(token: String, origin: TokenOrigin, login: String) throws {
+        let candidate = Account(id: UUID().uuidString.lowercased(), login: login, origin: origin)
+        var account = accounts.list.accounts.first { $0.isSameIdentity(as: candidate) } ?? candidate
+        account.origin = origin
+        let store = tokenStore(account.id)
         if origin == .pasted {
-            try tokenStore.write(token)
+            try store.write(token)
         } else {
-            try tokenStore.delete()
+            try store.delete()
         }
         startupTask?.cancel()
-        self.login = login
-        self.origin = origin
-        defaults.set(login, forKey: AppConstants.accountLoginKey)
-        defaults.set(origin.rawValue, forKey: AppConstants.tokenOriginKey)
+        for other in accounts.list.accounts where other.id != account.id {
+            discard(other.id)
+        }
+        accounts.list = AccountList(accounts: [account])
+        accounts.statuses = [account.id: AccountStatus()]
+        accounts.save()
         defaults.set(true, forKey: AppConstants.onboardingDoneKey)
         needsOnboarding = false
         connection = .ok
-        startupTask = Task { await begin(token: token) }
+        startupTask = Task { await begin(tokens: [account.id: token]) }
+    }
+
+    func addAccount(_ account: Account, token: String) throws {
+        guard !accounts.list.accounts.contains(where: { $0.isSameIdentity(as: account) }) else {
+            throw DuplicateAccountError()
+        }
+        if account.origin == .pasted {
+            try tokenStore(account.id).write(token)
+        }
+        accounts.list.add(account)
+        accounts.statuses[account.id] = AccountStatus()
+        accounts.save()
+        sessions[account.id] = makeSession(account, token: token)
+        defaults.set(true, forKey: AppConstants.onboardingDoneKey)
+        needsOnboarding = false
+        updateConnection()
+        resumePolling()
+    }
+
+    func removeAccount(id: String) {
+        guard accounts.list.account(id: id) != nil else { return }
+        guard accounts.list.accounts.count > 1 else {
+            signOut()
+            return
+        }
+        discard(id)
+        accounts.save()
+        recombine()
+        updateConnection()
+        if let snapshot { publishWidget(fresh: snapshot) }
+    }
+
+    func reconnect(id: String) {
+        guard let account = accounts.list.account(id: id) else { return }
+        sessions.removeValue(forKey: id)?.gate.stop()
+        accounts.statuses[id] = AccountStatus(lastSuccess: accounts.statuses[id]?.lastSuccess)
+        updateConnection()
+        let resolver = tokenResolver
+        Task {
+            let token = await Self.resolveToken(account, resolver: resolver)
+            guard let current = accounts.list.account(id: id), sessions[id] == nil else { return }
+            guard let token else {
+                accounts.statuses[id]?.state = .unauthorized
+                updateConnection()
+                return
+            }
+            sessions[id] = makeSession(current, token: token)
+            resumePolling()
+        }
+    }
+
+    func renameAccount(id: String, nickname: String) {
+        accounts.list.rename(id: id, nickname: nickname)
+        accounts.save()
+        refreshSessionAccount(id: id)
     }
 
     func requestNotificationPermission() async -> Bool {
         await notifications.requestAuthorization()
     }
 
-    private func begin(token: String) async {
-        let client = GitHubClient(token: token)
-        githubClient = client
-        coordinator = RefreshCoordinator(
-            fetch: { () async throws(GitHubError) -> Snapshot in try await client.fetchSnapshot() },
-            store: snapshotStore
-        )
-        let stored = await snapshotStore.load()
+    private func begin(tokens: [String: String]) async {
+        stopSessions()
+        let list = accounts.list.accounts
+        for account in list {
+            let lastSuccess = accounts.statuses[account.id]?.lastSuccess
+            if let token = tokens[account.id] {
+                sessions[account.id] = makeSession(account, token: token)
+                accounts.statuses[account.id] = AccountStatus(lastSuccess: lastSuccess)
+            } else {
+                accounts.statuses[account.id] = AccountStatus(state: .unauthorized, lastSuccess: lastSuccess)
+            }
+        }
+        var stored: [String: Snapshot] = [:]
+        for account in list {
+            let url = AccountStorage.snapshotURL(for: account.id)
+            stored[account.id] = await SnapshotStore(fileURL: url).load()?.stamped(accountID: account.id)
+        }
         guard !Task.isCancelled else { return }
-        snapshot = stored
-        activityBaseline = stored
+        lastSnapshots = stored
+        activityBaselines = stored
+        recombine()
+        updateConnection()
         startPolling()
+    }
+
+    private func makeSession(_ account: Account, token: String) -> AccountSession {
+        let client = GitHubClient(token: token)
+        let gate = SessionGate()
+        let coordinator = RefreshCoordinator(
+            accountID: account.id,
+            fetch: { () async throws(GitHubError) -> Snapshot in
+                try gate.check()
+                let fetched = try await client.fetchSnapshot()
+                try gate.check()
+                return fetched
+            },
+            store: SnapshotStore(fileURL: AccountStorage.snapshotURL(for: account.id)))
+        return AccountSession(account: account, token: token, client: client, coordinator: coordinator, gate: gate)
+    }
+
+    private func stopSessions() {
+        for session in sessions.values {
+            session.gate.stop()
+        }
+        sessions = [:]
+    }
+
+    private func discard(_ id: String) {
+        let session = sessions.removeValue(forKey: id)
+        session?.gate.stop()
+        try? tokenStore(id).delete()
+        accounts.list.remove(id: id)
+        accounts.statuses.removeValue(forKey: id)
+        lastSnapshots.removeValue(forKey: id)
+        activityBaselines.removeValue(forKey: id)
+        let url = AccountStorage.snapshotURL(for: id)
+        Task { await Self.purge(session, snapshotURL: url) }
+    }
+
+    nonisolated private static func purge(_ session: AccountSession?, snapshotURL: URL) async {
+        if let session { _ = await session.coordinator.refresh() }
+        await SnapshotStore(fileURL: snapshotURL).delete()
+    }
+
+    private func refreshSessionAccount(id: String) {
+        guard let account = accounts.list.account(id: id), let session = sessions[id] else { return }
+        sessions[id] = session.with(account: account)
+    }
+
+    private func recombine() {
+        let parts = accounts.list.accounts.compactMap { account in
+            lastSnapshots[account.id].map { AccountPart(accountID: account.id, snapshot: $0) }
+        }
+        snapshot = AccountMerge.combine(parts)
+    }
+
+    private func updateConnection() {
+        let list = accounts.list.accounts
+        guard list.count == 1, let only = list.first else {
+            connection = .ok
+            return
+        }
+        connection = accounts.statuses[only.id]?.state ?? .ok
+    }
+
+    private func resumePolling() {
+        if pollingTask == nil {
+            startPolling()
+        } else {
+            sleepTask?.cancel()
+        }
     }
 
     func refreshNow() {
@@ -205,17 +432,24 @@ final class AppModel {
     func signOut() {
         startupTask?.cancel()
         startupTask = nil
-        let stopping = pollingTask
         stopPolling()
-        try? tokenStore.delete()
-        let store = snapshotStore
-        Task {
-            await stopping?.value
-            await store.delete()
+        let stopped = Array(sessions.values)
+        stopSessions()
+        let ids = Set(accounts.list.accounts.map(\.id) + [AccountMigration.legacyAccountID])
+        for id in ids {
+            try? tokenStore(id).delete()
         }
-        coordinator = nil
-        githubClient = nil
-        activityBaseline = nil
+        Task {
+            for session in stopped {
+                _ = await session.coordinator.refresh()
+            }
+            for id in ids {
+                await SnapshotStore(fileURL: AccountStorage.snapshotURL(for: id)).delete()
+            }
+        }
+        accounts.clear()
+        lastSnapshots = [:]
+        activityBaselines = [:]
         reminders = ReminderState()
         let reminderStore = reminderStore
         Task { try? await reminderStore.save(ReminderState()) }
@@ -223,8 +457,6 @@ final class AppModel {
         widgetPublisher?.publish(.disconnected)
         lastRefresh = nil
         connection = .ok
-        login = nil
-        origin = nil
         defaults.removeObject(forKey: AppConstants.accountLoginKey)
         defaults.removeObject(forKey: AppConstants.tokenOriginKey)
         defaults.set(false, forKey: AppConstants.onboardingDoneKey)
@@ -258,30 +490,56 @@ final class AppModel {
     }
 
     private func runRefresh() async -> Bool {
-        guard let coordinator else { return false }
+        let active = accounts.list.accounts.compactMap { sessions[$0.id] }
+        guard !active.isEmpty else { return false }
         let options = TransitionOptions(
             ignoreDraftReviews: organization.settings.ignoreDraftsInReview,
             includeTeamRequests: organization.settings.includeTeamRequests,
             ignoredCommentAuthors: organization.settings.commentAuthorFilter.ignoredAuthors
         )
-        let result = await coordinator.refresh(options: options)
+        let results = await ParallelRefresh.run(
+            active.map { (accountID: $0.account.id, coordinator: $0.coordinator) },
+            previous: accounts.statuses.compactMapValues(\.state),
+            options: options,
+            now: .now)
         guard !Task.isCancelled else { return false }
-        snapshot = result.snapshot
-        if let viewer = result.snapshot?.viewer, viewer != login {
-            login = viewer
-            defaults.set(viewer, forKey: AppConstants.accountLoginKey)
+        let now = Date.now
+        let gates = Dictionary(active.map { ($0.account.id, $0.gate) }, uniquingKeysWith: { first, _ in first })
+        var perAccount: [(accountID: String, events: [NotificationEvent])] = []
+        var refreshed = false
+        for result in results {
+            let id = result.accountID
+            guard let gate = gates[id], !gate.isStopped, accounts.list.account(id: id) != nil else { continue }
+            var status = accounts.statuses[id] ?? AccountStatus()
+            status.state = result.state
+            if result.state == .ok { status.lastSuccess = now }
+            accounts.statuses[id] = status
+            if let part = result.snapshot { lastSnapshots[id] = part.stamped(accountID: id) }
+            perAccount.append((accountID: id, events: result.events))
+            guard result.state == .ok, let fresh = result.snapshot else { continue }
+            refreshed = true
+            updateLogin(accountID: id, viewer: fresh.viewer)
+            trackActivity(accountID: id, fresh: fresh, events: result.events)
         }
-        connection = result.state
-        if result.state == .ok { lastRefresh = .now }
-        if result.state == .ok, let fresh = result.snapshot {
-            trackActivity(fresh: fresh, events: result.events)
-            organization.learnRepositories(from: fresh)
-            cleanUpWorktrees(snapshot: fresh)
-            pruneMarks(snapshot: fresh)
-            publishWidget(fresh: fresh)
-            await deliverNotifications(fresh: fresh, events: result.events)
+        recombine()
+        updateConnection()
+        if refreshed, let combined = snapshot {
+            lastRefresh = now
+            organization.pruneActivity(snapshot: combined)
+            organization.learnRepositories(from: combined)
+            cleanUpWorktrees(snapshot: combined)
+            pruneMarks(snapshot: combined)
+            publishWidget(fresh: combined)
+            await deliverNotifications(fresh: combined, events: AccountMerge.events(perAccount, combined: combined))
         }
-        return result.state != .unauthorized
+        return accounts.list.accounts.contains { accounts.statuses[$0.id]?.state != .unauthorized }
+    }
+
+    private func updateLogin(accountID: String, viewer: String) {
+        guard !viewer.isEmpty, let account = accounts.list.account(id: accountID), account.login != viewer else { return }
+        accounts.list.updateLogin(id: accountID, login: viewer)
+        accounts.save()
+        refreshSessionAccount(id: accountID)
     }
 
     private func publishWidget(fresh: Snapshot) {
@@ -314,13 +572,12 @@ final class AppModel {
         notifications.post(outcome.deliver, grouped: preferences.preferences.groupByPullRequest)
     }
 
-    private func trackActivity(fresh: Snapshot, events: [NotificationEvent]) {
-        let baseline = activityBaseline.flatMap { $0.viewer == fresh.viewer ? $0 : nil }
+    private func trackActivity(accountID: String, fresh: Snapshot, events: [NotificationEvent]) {
+        let baseline = activityBaselines[accountID].flatMap { $0.viewer == fresh.viewer ? $0 : nil }
         let marks = organization.settings.marks
         let touched = ActivityTracker.touched(old: baseline, new: fresh, events: events)
         organization.recordActivity(touched.filter { !marks.isMuted($0) })
-        organization.pruneActivity(snapshot: fresh)
-        activityBaseline = fresh
+        activityBaselines[accountID] = fresh
     }
 
     func perform(_ entry: RowMenuEntry, on pr: PullRequest) {
@@ -351,13 +608,13 @@ final class AppModel {
     }
 
     func rerunFailedJobs(pr: PullRequest, runID: Int) {
-        guard !rerunning.contains(pr.id), let client = githubClient else { return }
+        guard !rerunning.contains(pr.id), let client = session(for: pr)?.client else { return }
         rerunning.insert(pr.id)
         let repository = pr.repository
         Task {
             let failure = await Task.detached { () -> GitHubError? in
                 do throws(GitHubError) {
-                    try await client.rerunFailedJobs(repository: repository, runID: runID)
+                    try await client.rerunFailedJobs(pr: pr)
                     return nil
                 } catch {
                     return error
@@ -455,8 +712,10 @@ final class AppModel {
 
     private func cleanUpWorktrees(snapshot: Snapshot) {
         let settings = claude.settings
-        guard settings.removeWorktreeOnClose, !cleaningWorktrees, let client = githubClient else { return }
+        guard settings.removeWorktreeOnClose, !cleaningWorktrees, !sessions.isEmpty else { return }
         cleaningWorktrees = true
+        let clients = sessions.mapValues(\.client)
+        let fallback = accounts.list.accounts.first { $0.provider == .github }?.id ?? ""
         let registry = worktreeRegistry
         let worktreesRoot = Self.expandedURL(settings.worktreesRoot)
         Task.detached { [weak self] in
@@ -471,8 +730,12 @@ final class AppModel {
                     await registry.remove(path: record.path)
                 }
             }
-            if !present.isEmpty, let states = try? await client.pullRequestStates(ids: present.map(\.pullRequestID)) {
-                for record in WorktreeCleanup.confirmedClosed(candidates: present, states: states) {
+            let owners = Dictionary(grouping: present) { $0.accountID ?? fallback }
+            for (accountID, records) in owners {
+                guard let client = clients[accountID],
+                      let states = try? await client.pullRequestStates(ids: records.map(\.pullRequestID))
+                else { continue }
+                for record in WorktreeCleanup.confirmedClosed(candidates: records, states: states) {
                     let removed = await manager.removeIfClean(
                         path: URL(fileURLWithPath: record.path),
                         clone: URL(fileURLWithPath: record.clone),
@@ -489,14 +752,19 @@ final class AppModel {
         let marked = marks.pinned.union(marks.muted.keys)
         let present = Set((snapshot.mine + snapshot.toReview).map(\.id))
         let absent = marked.subtracting(present)
-        guard !absent.isEmpty, !pruningMarks, let client = githubClient,
+        let clients = accounts.list.accounts.compactMap { sessions[$0.id]?.client }
+        guard !absent.isEmpty, !pruningMarks, !clients.isEmpty,
               Date.now.timeIntervalSince(lastMarksPrune) >= AppConstants.marksPruneInterval
         else { return }
         pruningMarks = true
         lastMarksPrune = .now
         let ids = absent.sorted()
         Task.detached { [weak self] in
-            let states = try? await client.pullRequestStates(ids: ids)
+            var states: [String: PRState]?
+            for client in clients {
+                guard let found = try? await client.pullRequestStates(ids: ids) else { continue }
+                states = (states ?? [:]).merging(found) { current, _ in current }
+            }
             await self?.finishMarksPrune(states: states)
         }
     }
