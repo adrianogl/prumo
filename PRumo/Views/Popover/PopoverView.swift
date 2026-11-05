@@ -35,7 +35,7 @@ struct PopoverView: View {
                 FilterBar(organization: organization, snapshot: model.snapshot, tab: tab, staleHours: model.preferences.preferences.staleReviewHours, isPresentingPicker: $isPresentingPicker)
             }
             if !model.needsOnboarding {
-                SearchField(text: $query, focus: $focus)
+                SearchField(text: $query, focus: $focus, onListKey: { handleListKey($0) ?? .ignored })
             }
             StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
             Divider()
@@ -91,12 +91,25 @@ struct PopoverView: View {
 
     private func close() {
         isOpen = false
+        selectedID = nil
         clearSearch()
     }
 
     private var exitCommand: (() -> Void)? {
         if query.isEmpty { return nil }
-        return { clearSearch() }
+        return {
+            if isRowMenuShortcut(NSApp.currentEvent) {
+                _ = showRowMenu()
+            } else {
+                clearSearch()
+            }
+        }
+    }
+
+    private func isRowMenuShortcut(_ event: NSEvent?) -> Bool {
+        guard let event, event.type == .keyDown else { return false }
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting([.capsLock, .numericPad, .function])
+        return modifiers == .command && event.charactersIgnoringModifiers == String(PopoverKey.rowMenu)
     }
 
     private func clearSearch() {
@@ -206,7 +219,7 @@ struct PopoverView: View {
         else { return .ignored }
         let y = view.isFlipped ? frame.maxY : view.bounds.height - frame.maxY
         let entries = menuEntries(for: pr)
-        RowMenuNSMenu.show(entries: entries, at: NSPoint(x: frame.minX, y: y), in: view) { entry in
+        RowMenuNSMenu.show(entries: entries, isRerunning: model.isRerunning(pr), at: NSPoint(x: frame.minX, y: y), in: view) { entry in
             model.perform(entry, on: pr)
         }
         return .handled
@@ -454,12 +467,14 @@ struct PopoverView: View {
 
     private var footer: some View {
         HStack {
-            if selectedID != nil {
-                Text(PopoverText.keyboardHint)
-                    .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
-                    .lineLimit(1)
-            } else {
-                HStack(spacing: PopoverMetrics.footerSpacing) {
+            HStack(spacing: PopoverMetrics.footerSpacing) {
+                if selectedID != nil {
+                    Text(PopoverText.keyboardHint)
+                        .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Text(PopoverText.footerSeparator)
+                } else {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
                         if let status = footerStatus(now: context.date) {
                             HStack(spacing: PopoverMetrics.footerSpacing) {
@@ -468,15 +483,17 @@ struct PopoverView: View {
                             }
                         }
                     }
-                    Text(model.hotKey.display)
-                        .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
                 }
+                Text(model.hotKey.display)
+                    .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
+                    .fixedSize()
             }
             Spacer()
             Button(action: showSettings) {
                 Label(PopoverText.settings, systemImage: PopoverSymbol.settings)
             }
             .buttonStyle(.plain)
+            .fixedSize()
         }
         .font(.system(size: PopoverMetrics.footerFontSize))
         .foregroundStyle(.secondary)

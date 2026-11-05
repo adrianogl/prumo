@@ -3,6 +3,7 @@ import SwiftUI
 struct SearchField: View {
     @Binding var text: String
     var focus: FocusState<PopoverFocus?>.Binding
+    let onListKey: (KeyPress) -> KeyPress.Result
     @State private var selection: TextSelection?
 
     var body: some View {
@@ -12,6 +13,7 @@ struct SearchField: View {
             TextField(PopoverText.searchPlaceholder, text: $text, selection: $selection)
                 .textFieldStyle(.plain)
                 .focused(focus, equals: .search)
+                .onKeyPress(phases: .down, action: onListKey)
             if !text.isEmpty {
                 Button {
                     text = ""
