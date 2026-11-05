@@ -27,4 +27,23 @@ import Testing
             CheckoutWarning.text(account: account, activeLogin: nil, accountCount: 2)
                 == "O gh não está logado. Rode gh auth login antes de colar o comando.")
     }
+
+    private let gitlabAccount = Account(
+        id: "g", provider: .gitlab, host: "gitlab.acme.com", login: "Adriano", origin: .pasted)
+
+    @Test func gitlabWarningWhenGlabNotLogged() {
+        #expect(
+            CheckoutWarning.text(account: gitlabAccount, activeLogin: nil, accountCount: 2)
+                == "O glab não está logado em gitlab.acme.com. Rode glab auth login --hostname gitlab.acme.com antes de colar o comando.")
+    }
+
+    @Test func gitlabWarningWhenOtherLogin() {
+        #expect(
+            CheckoutWarning.text(account: gitlabAccount, activeLogin: "outra", accountCount: 2)
+                == "O glab está logado em gitlab.acme.com como @outra. Rode glab auth login --hostname gitlab.acme.com com o token de @Adriano antes de colar o comando.")
+    }
+
+    @Test func noGitlabWarningWhenSameLogin() {
+        #expect(CheckoutWarning.text(account: gitlabAccount, activeLogin: "adriano", accountCount: 2) == nil)
+    }
 }

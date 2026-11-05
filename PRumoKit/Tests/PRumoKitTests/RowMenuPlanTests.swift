@@ -26,6 +26,16 @@ import Testing
         ])
     }
 
+    @Test func gitlabCheckoutCommand() {
+        let entries = RowMenuPlan.entries(pr: .fixture(number: 341, provider: .gitlab), claudePurposes: [], jira: nil)
+        #expect(entries.contains(.copyCheckout(command: "glab mr checkout 341", warning: nil)))
+    }
+
+    @Test func githubCheckoutUnchanged() {
+        let entries = RowMenuPlan.entries(pr: .fixture(provider: .github), claudePurposes: [], jira: nil)
+        #expect(entries.contains(.copyCheckout(command: "gh pr checkout 812", warning: nil)))
+    }
+
     @Test func pinAndMuteEntriesComeLast() {
         let entries = RowMenuPlan.entries(pr: .fixture(), claudePurposes: [], jira: nil)
         #expect(entries.suffix(4) == [

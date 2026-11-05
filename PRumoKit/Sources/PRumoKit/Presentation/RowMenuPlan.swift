@@ -22,10 +22,17 @@ public enum RowMenuPlan {
             entries.append(.rerunFailedJobs(jobName: pr.failedRunName ?? (pr.provider == .gitlab ? Self.pipelineLabel : ""), runID: runID, disabledReason: rerunDisabledReason))
         }
         entries.append(.copyLink)
-        entries.append(.copyCheckout(command: "gh pr checkout \(pr.number)", warning: checkoutWarning))
+        entries.append(.copyCheckout(command: checkoutCommand(for: pr), warning: checkoutWarning))
         entries.append(.separator)
         entries.append(.pin(isPinned: isPinned))
         entries.append(.mute(isMuted: isMuted))
         return entries
+    }
+
+    private static func checkoutCommand(for pr: PullRequest) -> String {
+        switch pr.provider {
+        case .github: "gh pr checkout \(pr.number)"
+        case .gitlab: "glab mr checkout \(pr.number)"
+        }
     }
 }
