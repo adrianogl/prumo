@@ -4,8 +4,10 @@ import PRumoKit
 @main
 struct PRumoApp: App {
     var body: some Scene {
-        MenuBarExtra("PRumo", systemImage: "arrow.triangle.pull") {
+        MenuBarExtra {
             Text("PRumo")
+        } label: {
+            Image("MenuBarGlyph")
         }
         .menuBarExtraStyle(.window)
     }
