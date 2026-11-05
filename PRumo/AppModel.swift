@@ -122,8 +122,8 @@ final class AppModel {
         startupTask?.cancel()
         startupTask = Task {
             var known: [String: String] = [:]
-            if !accounts.hasStoredList, let migrated = await migrateLegacyAccount() {
-                known[migrated.account.id] = migrated.token
+            if !accounts.hasStoredList, let migrated = await migrateLegacyAccount(), let token = migrated.token {
+                known[migrated.account.id] = token
             }
             guard !Task.isCancelled else { return }
             let list = accounts.list.accounts
@@ -133,7 +133,7 @@ final class AppModel {
             }
             let tokens = await resolveTokens(list, known: known)
             guard !Task.isCancelled else { return }
-            if list.count == 1, tokens[first.id] == nil {
+            if list.count == 1, tokens[first.id] == nil, first.origin == .pasted {
                 accounts.statuses[first.id] = AccountStatus(state: .unauthorized)
                 needsOnboarding = true
                 return
@@ -146,7 +146,7 @@ final class AppModel {
         }
     }
 
-    private func migrateLegacyAccount() async -> (account: Account, token: String)? {
+    private func migrateLegacyAccount() async -> (account: Account, token: String?)? {
         let onboarded = defaults.bool(forKey: AppConstants.onboardingDoneKey)
         let storedOrigin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
         let resolver = TokenResolver(
@@ -160,24 +160,27 @@ final class AppModel {
                 if resolved != nil { break }
             }
         }
-        guard !Task.isCancelled, let resolved else { return nil }
-        let legacy = LegacyAccountState(
-            login: await legacyLogin(token: resolved.token),
-            origin: resolved.origin,
-            onboardingDone: onboarded || resolved.origin == .pasted)
-        guard !Task.isCancelled, let account = AccountMigration.account(from: legacy, existing: nil) else { return nil }
+        guard !Task.isCancelled else { return nil }
+        let onboardingDone = onboarded || resolved?.origin == .pasted
+        guard onboardingDone, let origin = resolved?.origin ?? storedOrigin else { return nil }
+        let login = await legacyLogin(token: resolved?.token)
+        guard !Task.isCancelled else { return nil }
+        guard login != nil || (resolved != nil && origin == .pasted) else { return nil }
+        let legacy = LegacyAccountState(login: login, origin: origin, onboardingDone: onboardingDone)
+        guard let account = AccountMigration.account(from: legacy, existing: nil) else { return nil }
         accounts.list = AccountList(accounts: [account])
         accounts.save()
         let migrated = AccountMigration.reminders(await reminderStore.load(), migrated: account)
         reminders = migrated
         try? await reminderStore.save(migrated)
-        return (account, resolved.token)
+        return (account, resolved?.token)
     }
 
-    private func legacyLogin(token: String) async -> String? {
+    private func legacyLogin(token: String?) async -> String? {
         if let stored = defaults.string(forKey: AppConstants.accountLoginKey), !stored.isEmpty { return stored }
         let url = AccountStorage.snapshotURL(for: AccountMigration.legacyAccountID)
         if let viewer = await SnapshotStore(fileURL: url).load()?.viewer, !viewer.isEmpty { return viewer }
+        guard let token else { return nil }
         let client = GitHubClient(token: token)
         let fetched = await Task.detached { () -> String? in
             do throws(GitHubError) {
@@ -247,13 +250,18 @@ final class AppModel {
 
     func connect(token: String, origin: TokenOrigin, login: String) throws {
         let candidate = Account(id: UUID().uuidString.lowercased(), login: login, origin: origin)
-        var account = accounts.list.accounts.first { $0.isSameIdentity(as: candidate) } ?? candidate
+        let existing = accounts.list.accounts.first { $0.isSameIdentity(as: candidate) }
+        var account = existing ?? candidate
         account.origin = origin
         let store = tokenStore(account.id)
         if origin == .pasted {
             try store.write(token)
         } else {
             try store.delete()
+        }
+        guard accounts.list.accounts.count <= 1 else {
+            connectAlongside(account, token: token, replacing: existing != nil)
+            return
         }
         startupTask?.cancel()
         for other in accounts.list.accounts where other.id != account.id {
@@ -266,6 +274,22 @@ final class AppModel {
         needsOnboarding = false
         connection = .ok
         startupTask = Task { await begin(tokens: [account.id: token]) }
+    }
+
+    private func connectAlongside(_ account: Account, token: String, replacing: Bool) {
+        if replacing {
+            accounts.list.accounts = accounts.list.accounts.map { $0.id == account.id ? account : $0 }
+        } else {
+            accounts.list.add(account)
+        }
+        sessions.removeValue(forKey: account.id)?.gate.stop()
+        accounts.statuses[account.id] = AccountStatus(lastSuccess: accounts.statuses[account.id]?.lastSuccess)
+        accounts.save()
+        sessions[account.id] = makeSession(account, token: token)
+        defaults.set(true, forKey: AppConstants.onboardingDoneKey)
+        needsOnboarding = false
+        updateConnection()
+        resumePolling()
     }
 
     func addAccount(_ account: Account, token: String) throws {
