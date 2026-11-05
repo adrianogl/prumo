@@ -5,17 +5,37 @@ public actor RefreshCoordinator {
 
     private let fetch: Fetch
     private let store: SnapshotStore
+    private var lastKnown: Snapshot?
+    private var tail: Task<RefreshResult, Never>?
 
     public init(fetch: @escaping Fetch, store: SnapshotStore) {
         self.fetch = fetch
         self.store = store
     }
 
-    public func refresh() async -> (snapshot: Snapshot?, events: [NotificationEvent], state: ConnectionState) {
-        let stored = await store.load()
+    public typealias RefreshResult = (snapshot: Snapshot?, events: [NotificationEvent], state: ConnectionState)
+
+    public func refresh() async -> RefreshResult {
+        let previous = tail
+        let task = Task { () -> RefreshResult in
+            _ = await previous?.value
+            return await self.perform()
+        }
+        tail = task
+        return await task.value
+    }
+
+    private func perform() async -> RefreshResult {
+        let stored: Snapshot?
+        if let lastKnown {
+            stored = lastKnown
+        } else {
+            stored = await store.load()
+        }
         do {
             let fresh = try await fetch()
             let events = TransitionEngine.events(from: stored, to: fresh)
+            lastKnown = fresh
             try? await store.save(fresh)
             return (fresh, events, .ok)
         } catch {

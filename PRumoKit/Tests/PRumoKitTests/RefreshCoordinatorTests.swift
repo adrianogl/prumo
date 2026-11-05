@@ -21,6 +21,10 @@ private func temporaryStore() -> (SnapshotStore, URL) {
     return (SnapshotStore(fileURL: directory.appendingPathComponent("snapshot.json")), directory)
 }
 
+private func temporaryDirectory() -> URL {
+    FileManager.default.temporaryDirectory.appendingPathComponent("prumo-tests-\(UUID().uuidString)")
+}
+
 private func coordinator(_ steps: [Result<Snapshot, GitHubError>], store: SnapshotStore) -> RefreshCoordinator {
     let script = Script(steps)
     return RefreshCoordinator(fetch: { () async throws(GitHubError) -> Snapshot in try script.next() }, store: store)
@@ -96,5 +100,34 @@ private func failed(at date: Date) -> Snapshot {
         let back = await sut.refresh()
         #expect(back.state == .ok)
         #expect(back.events.map(\.kind) == [.ciFailed])
+    }
+
+    @Test func concurrentRefreshesEmitEachEventOnce() async {
+        let (store, directory) = temporaryStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sut = coordinator([.success(pending()), .success(failed(at: t1)), .success(failed(at: t2))], store: store)
+        _ = await sut.refresh()
+        async let first = sut.refresh()
+        async let second = sut.refresh()
+        let all = await [first, second].flatMap(\.events)
+        #expect(all.map(\.kind) == [.ciFailed])
+    }
+
+    @Test func failedSaveStillAdvancesBaseline() async throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let blocker = directory.appendingPathComponent("blocker")
+        try Data().write(to: blocker)
+        let store = SnapshotStore(fileURL: blocker.appendingPathComponent("snapshot.json"))
+        let sut = coordinator(
+            [.success(pending()), .success(failed(at: t1)), .success(failed(at: t2))],
+            store: store
+        )
+        _ = await sut.refresh()
+        let second = await sut.refresh()
+        #expect(second.events.map(\.kind) == [.ciFailed])
+        let third = await sut.refresh()
+        #expect(third.events.isEmpty)
     }
 }
