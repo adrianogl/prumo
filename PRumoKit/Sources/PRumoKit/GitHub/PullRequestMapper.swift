@@ -19,7 +19,7 @@ public enum PullRequestMapper {
             toReview: review.data.search.pullRequests.compactMap { node in
                 reviewTarget(node, viewer: viewer).map { map(node, viewer: viewer, target: $0) }
             },
-            mergedToday: try mergedJSON.map(mapMerged) ?? [],
+            mergedToday: (try? mergedJSON.map(mapMerged)) ?? [],
             fetchedAt: now
         )
     }

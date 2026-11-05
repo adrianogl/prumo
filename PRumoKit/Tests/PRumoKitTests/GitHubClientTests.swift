@@ -66,6 +66,47 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
         #expect(!snapshot.toReview.isEmpty)
     }
 
+    @Test func mergedSearchServerErrorKeepsSnapshot() async throws {
+        let transport = FakeTransport { request in
+            if variableQuery(request) == Queries.merged(since: .fixed, timeZone: .current) {
+                return (Data(), httpResponse(500))
+            }
+            return respond(request)
+        }
+        let snapshot = try await client(transport).fetchSnapshot()
+
+        #expect(!snapshot.mine.isEmpty)
+        #expect(!snapshot.toReview.isEmpty)
+        #expect(snapshot.mergedToday == [])
+    }
+
+    @Test func mergedSearchGraphQLErrorsWithoutDataKeepSnapshot() async throws {
+        let transport = FakeTransport { request in
+            if variableQuery(request) == Queries.merged(since: .fixed, timeZone: .current) {
+                return (Data(#"{"errors":[{"message":"boom"}]}"#.utf8), httpResponse(200))
+            }
+            return respond(request)
+        }
+        let snapshot = try await client(transport).fetchSnapshot()
+
+        #expect(!snapshot.mine.isEmpty)
+        #expect(!snapshot.toReview.isEmpty)
+        #expect(snapshot.mergedToday == [])
+    }
+
+    @Test func mergedSearchMalformedPayloadKeepsSnapshot() async throws {
+        let transport = FakeTransport { request in
+            if variableQuery(request) == Queries.merged(since: .fixed, timeZone: .current) {
+                return (Data(#"{"data":{"search":"x"}}"#.utf8), httpResponse(200))
+            }
+            return respond(request)
+        }
+        let snapshot = try await client(transport).fetchSnapshot()
+
+        #expect(!snapshot.mine.isEmpty)
+        #expect(snapshot.mergedToday == [])
+    }
+
     @Test func maps401ToUnauthorized() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
         await #expect(throws: GitHubError.unauthorized) { try await client(transport).fetchSnapshot() }

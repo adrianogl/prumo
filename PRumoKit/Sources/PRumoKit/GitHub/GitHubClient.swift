@@ -27,7 +27,7 @@ public struct GitHubClient: Sendable {
         }
         let mineData = try await mine.get()
         let reviewData = try await review.get()
-        let mergedData = try await merged.get()
+        let mergedData = try? await merged.get()
         do {
             return try PullRequestMapper.snapshot(mineJSON: mineData, reviewJSON: reviewData, mergedJSON: mergedData, now: moment)
         } catch {
