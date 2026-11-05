@@ -10,4 +10,11 @@ public struct SavedView: Codable, Equatable, Identifiable, Sendable {
         self.name = name
         self.filter = filter
     }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = c.decodeLossy(String.self, forKey: .name, default: "")
+        filter = c.decodeLossy(RowFilter.self, forKey: .filter, default: .empty)
+    }
 }

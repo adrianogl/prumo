@@ -9,8 +9,8 @@ public struct RowMarks: Codable, Equatable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        pinned = try c.decodeIfPresent(Set<String>.self, forKey: .pinned) ?? []
-        muted = try c.decodeIfPresent([String: MutedPullRequest].self, forKey: .muted) ?? [:]
+        pinned = c.decodeLossy(Set<String>.self, forKey: .pinned, default: [])
+        muted = c.decodeLossyDictionary(MutedPullRequest.self, forKey: .muted)
     }
 
     public func isPinned(_ id: String) -> Bool { pinned.contains(id) }

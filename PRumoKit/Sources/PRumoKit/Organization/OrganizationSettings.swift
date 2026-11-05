@@ -38,16 +38,16 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        filter = try c.decodeIfPresent(RowFilter.self, forKey: .filter) ?? .empty
-        orderings = try c.decodeIfPresent([String: TabOrdering].self, forKey: .orderings) ?? [:]
-        views = try c.decodeIfPresent([SavedView].self, forKey: .views) ?? []
-        favorites = try c.decodeIfPresent(Set<String>.self, forKey: .favorites) ?? []
-        knownRepositories = try c.decodeIfPresent(Set<String>.self, forKey: .knownRepositories) ?? []
-        hideEmptyRepositories = try c.decodeIfPresent(Bool.self, forKey: .hideEmptyRepositories) ?? false
-        rowStyle = try c.decodeIfPresent(RowStyle.self, forKey: .rowStyle) ?? .detailed
-        ignoreDraftsInReview = try c.decodeIfPresent(Bool.self, forKey: .ignoreDraftsInReview) ?? true
-        includeTeamRequests = try c.decodeIfPresent(Bool.self, forKey: .includeTeamRequests) ?? false
-        marks = try c.decodeIfPresent(RowMarks.self, forKey: .marks) ?? RowMarks()
+        filter = c.decodeLossy(RowFilter.self, forKey: .filter, default: .empty)
+        orderings = c.decodeLossyDictionary(TabOrdering.self, forKey: .orderings)
+        views = c.decodeLossyArray(SavedView.self, forKey: .views)
+        favorites = c.decodeLossy(Set<String>.self, forKey: .favorites, default: [])
+        knownRepositories = c.decodeLossy(Set<String>.self, forKey: .knownRepositories, default: [])
+        hideEmptyRepositories = c.decodeLossy(Bool.self, forKey: .hideEmptyRepositories, default: false)
+        rowStyle = c.decodeLossy(RowStyle.self, forKey: .rowStyle, default: .detailed)
+        ignoreDraftsInReview = c.decodeLossy(Bool.self, forKey: .ignoreDraftsInReview, default: true)
+        includeTeamRequests = c.decodeLossy(Bool.self, forKey: .includeTeamRequests, default: false)
+        marks = c.decodeLossy(RowMarks.self, forKey: .marks, default: RowMarks())
     }
 
     public func ordering(for tab: ListTab) -> TabOrdering {

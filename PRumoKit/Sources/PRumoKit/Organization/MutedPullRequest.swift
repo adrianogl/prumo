@@ -14,4 +14,13 @@ public struct MutedPullRequest: Codable, Equatable, Sendable {
         self.repository = repository
         self.mutedAt = mutedAt
     }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        number = c.decodeLossy(Int.self, forKey: .number, default: 0)
+        title = c.decodeLossy(String.self, forKey: .title, default: "")
+        repository = c.decodeLossy(String.self, forKey: .repository, default: "")
+        mutedAt = c.decodeLossy(Date.self, forKey: .mutedAt, default: Date(timeIntervalSince1970: 0))
+    }
 }

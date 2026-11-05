@@ -61,4 +61,50 @@ import Testing
         #expect(pruned.isMuted("open"))
         #expect(!pruned.isMuted("closed"))
     }
+
+    @Test func unknownEnumValuesAreDiscardedWithoutLosingTheRest() throws {
+        let json = #"{"orderings":{"review":{"order":"futuro","groupByRepository":true}},"rowStyle":"x","filter":{"ci":["failing","novo"],"review":["desconhecido"]},"marks":{"pinned":["a"]}}"#
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(json.utf8))
+        #expect(settings.marks.isPinned("a"))
+        #expect(settings.rowStyle == .detailed)
+        #expect(settings.ordering(for: .review) == TabOrdering(order: .recentActivity, groupByRepository: true))
+        #expect(settings.filter.ci == [.failing])
+        #expect(settings.filter.review.isEmpty)
+    }
+
+    @Test func topLevelUnknownOrderIsDiscarded() throws {
+        let json = #"{"orderings":{"review":{"order":"futuro"},"merge":{"order":"diffSize"}},"marks":{"pinned":["a"]}}"#
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(json.utf8))
+        #expect(settings.ordering(for: .review).order == .recentActivity)
+        #expect(settings.ordering(for: .merge).order == .diffSize)
+        #expect(settings.marks.isPinned("a"))
+    }
+
+    @Test func invalidSavedViewsAreDroppedIndividually() throws {
+        let valid = UUID()
+        let json = """
+        {"views":[
+        {"id":"\(valid.uuidString)","name":"Boa","filter":{"ci":["failing"]}},
+        {"id":"\(UUID().uuidString)","name":"Ruim","filter":"quebrado"},
+        {"name":"Sem id","filter":{}},
+        {"id":"nao-e-uuid","name":"Id ruim"}
+        ],"marks":{"pinned":["a"]}}
+        """
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(json.utf8))
+        #expect(settings.views.map(\.id).contains(valid))
+        #expect(settings.views.map(\.name).contains("Boa"))
+        #expect(!settings.views.contains { $0.name == "Sem id" || $0.name == "Id ruim" })
+        #expect(settings.views.first { $0.id == valid }?.filter.ci == [.failing])
+        #expect(settings.marks.isPinned("a"))
+    }
+
+    @Test func invalidMutedItemsAreDroppedIndividually() throws {
+        let json = #"{"marks":{"muted":{"ok":{"id":"ok","number":3,"title":"T","repository":"o/r","mutedAt":1000},"semId":{"number":1,"title":"x"},"lixo":42,"parcial":{"id":"parcial"}}}}"#
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(json.utf8))
+        #expect(settings.marks.isMuted("ok"))
+        #expect(settings.marks.muted["ok"]?.number == 3)
+        #expect(settings.marks.isMuted("parcial"))
+        #expect(!settings.marks.isMuted("semId"))
+        #expect(!settings.marks.isMuted("lixo"))
+    }
 }

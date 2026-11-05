@@ -30,11 +30,11 @@ public struct RowFilter: Codable, Equatable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        repositories = try c.decodeIfPresent(Set<String>.self, forKey: .repositories) ?? []
-        ci = try c.decodeIfPresent(Set<CIFilter>.self, forKey: .ci) ?? []
-        review = try c.decodeIfPresent(Set<ReviewFilter>.self, forKey: .review) ?? []
-        state = try c.decodeIfPresent(Set<StateFilter>.self, forKey: .state) ?? []
-        request = try c.decodeIfPresent(Set<RequestFilter>.self, forKey: .request) ?? []
-        authors = try c.decodeIfPresent(Set<String>.self, forKey: .authors) ?? []
+        repositories = c.decodeLossy(Set<String>.self, forKey: .repositories, default: [])
+        ci = c.decodeLossySet(CIFilter.self, forKey: .ci)
+        review = c.decodeLossySet(ReviewFilter.self, forKey: .review)
+        state = c.decodeLossySet(StateFilter.self, forKey: .state)
+        request = c.decodeLossySet(RequestFilter.self, forKey: .request)
+        authors = c.decodeLossy(Set<String>.self, forKey: .authors, default: [])
     }
 }

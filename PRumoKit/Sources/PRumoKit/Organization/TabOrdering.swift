@@ -9,7 +9,7 @@ public struct TabOrdering: Codable, Equatable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        order = try c.decodeIfPresent(SortOrder.self, forKey: .order) ?? .recentActivity
-        groupByRepository = try c.decodeIfPresent(Bool.self, forKey: .groupByRepository) ?? false
+        order = c.decodeLossy(SortOrder.self, forKey: .order, default: .recentActivity)
+        groupByRepository = c.decodeLossy(Bool.self, forKey: .groupByRepository, default: false)
     }
 }
