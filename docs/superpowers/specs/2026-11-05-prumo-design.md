@@ -169,13 +169,14 @@ Cada tipo pode ser ligado e desligado nos Ajustes.
 
 ### Claude no terminal
 
-Uso principal: revisar PR, corrigir CI quebrada e resolver conflito sem montar o ambiente na mão. O PRumo abre uma sessão do Claude Code no terminal, já na branch do PR e com o prompt pronto. Mockup em `docs/mockups/claude.html` (opções A e C).
+Uso principal: revisar PR, corrigir CI quebrada, resolver conflito e tratar comentários de review sem montar o ambiente na mão. O PRumo abre uma sessão do Claude Code no terminal, já na branch do PR e com o prompt pronto. Mockup em `docs/mockups/claude.html` (opções A e C).
 
 Onde aparece:
 
-- **Menu `⋯` da linha** (e `⌘K` com o PR selecionado): primeiro item. Nos meus PRs com CI falhando, "Corrigir CI com Claude". Nos meus PRs com conflito (`mergeable == CONFLICTING`), "Resolver conflito com Claude"; com CI falhando e conflito juntos, os dois itens aparecem, CI primeiro, e o `⌘K` fica só no primeiro. Na aba Revisar, "Revisar com Claude".
+- **Menu `⋯` da linha** (e `⌘K` com o PR selecionado): primeiro item. Nos meus PRs com CI falhando, "Corrigir CI com Claude". Nos meus PRs com conflito (`mergeable == CONFLICTING`), "Resolver conflito com Claude"; "Resolver comentários com Claude" aparece quando o PR tem o badge de comentários ou o de "alterações pedidas". Com mais de uma condição, os itens aparecem na ordem CI, conflito, comentários, e o `⌘K` fica só no primeiro. Na aba Revisar, "Revisar com Claude".
 - **Badge de CI falhando**: o badge `✗ <job>` ganha um "corrigir" ao lado, que abre direto a correção.
 - **Badge de conflito**: nos meus PRs, o badge de conflito ganha um "resolver" ao lado, com o mesmo estilo do "corrigir".
+- **Badge de comentários**: nos meus PRs, o badge de comentários ganha um "resolver" ao lado. Se não houver comentários mas houver "alterações pedidas", o botão fica nesse badge.
 - **Notificação "CI falhou em #n"**: botão "Corrigir com Claude", ao lado de "Abrir" e "Silenciar".
 
 Revisar não ganha atalho fora do menu `⋯`, para a aba Revisar não ficar carregada.
@@ -196,6 +197,10 @@ Prompts são templates com variáveis `{numero}`, `{url}`, `{repo}`, `{branch}`,
 - resolver conflito (padrão): `O PR #{numero} ({repo}) está em conflito com {base}. Atualize a branch com git fetch origin {base} e git merge origin/{base}, resolva os conflitos mantendo a intenção das duas partes, rode os testes e faça commit do merge.`
 
 O conflito é resolvido com merge, não com rebase, para o push do resultado ser um push normal, sem force push. Em PR de fork, o prompt ganha o aviso de não fazer push, como na correção de CI.
+
+Resolver comentários segue as mesmas regras de worktree. O prompt manda ler os comentários com `gh`, aplicar o que fizer sentido, rodar os testes e fazer commit, sem responder nem resolver as conversas no GitHub, e mostrar um resumo do que mudou e do que não foi aplicado. Variáveis: as mesmas de revisar. Padrão:
+
+- resolver comentários (padrão): `O PR #{numero} ({repo}) recebeu comentários de review. Leia os comentários com gh pr view {numero} --comments e gh api repos/{repo}/pulls/{numero}/comments, aplique as alterações pedidas que fizerem sentido, rode os testes e faça commit. Não responda nem resolva as conversas no GitHub; me mostre um resumo do que mudou e do que você não aplicou.`
 
 O app não passa `--dangerously-skip-permissions` por padrão; o Claude pede confirmação antes de editar ou rodar comandos.
 
@@ -275,7 +280,7 @@ Sem rede ou com erro da API, o popover mantém os últimos dados com um aviso ("
 Cada etapa termina com o app usável.
 
 1. **Núcleo**: projeto Xcode, identidade (ícone, logotipo, cores), onboarding e token, leitura pela API, abas Meus PRs e Revisar, linha detalhada, abrir no navegador, notificações de CI, aprovado, alterações pedidas, comentário e review pedido, estado persistido, ajustes básicos, abrir ao iniciar.
-2. **Claude no terminal**: menu `⋯` da linha (com abrir no navegador e copiar link), "Revisar com Claude", "Corrigir CI com Claude" e "Resolver conflito com Claude", "corrigir" no badge de CI, "resolver" no badge de conflito, botão na notificação de CI falhou, descoberta de clones, worktrees com limpeza, aba Claude nos Ajustes.
+2. **Claude no terminal**: menu `⋯` da linha (com abrir no navegador e copiar link), "Revisar com Claude", "Corrigir CI com Claude" e "Resolver conflito com Claude", "Resolver comentários com Claude", "corrigir" no badge de CI, "resolver" nos badges de conflito e de comentários, botão na notificação de CI falhou, descoberta de clones, worktrees com limpeza, aba Claude nos Ajustes.
 3. **Organização**: aba Merge e mergeados hoje, barra de repositórios, filtros e ordem, visões salvas, linha compacta, silenciar, fixar, ignorar drafts, para você/time, marcador de novo.
 4. **Ruído sob controle**: Não perturbe, horário de trabalho, review parado, notificações de pronto para merge e conflito, toggles por tipo.
 5. **Ações**: demais itens do menu `⋯` (re-rodar job, copiar checkout, Jira) e demais botões nas notificações.
