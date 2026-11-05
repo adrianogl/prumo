@@ -26,6 +26,7 @@ enum FiltersMetrics {
     static let pickerRowCornerRadius: CGFloat = 5
     static let pickerListMaxHeight: CGFloat = 320
     static let groupTitleFontSize: CGFloat = 10
+    static let sectionTitleFontSize: CGFloat = 13
     static let groupTitleTracking: CGFloat = 0.7
     static let checkboxSize: CGFloat = 13
     static let checkboxCornerRadius: CGFloat = 4

@@ -36,7 +36,7 @@ struct PopoverView: View {
             }
             tabs
             if !model.needsOnboarding {
-                FilterBar(organization: organization, snapshot: model.snapshot, tab: tab, staleHours: model.preferences.preferences.staleReviewHours, isPresentingPicker: $isPresentingPicker)
+                FilterBar(organization: organization, snapshot: model.snapshot, accounts: model.accounts.list.accounts, tab: tab, staleHours: model.preferences.preferences.staleReviewHours, isPresentingPicker: $isPresentingPicker)
             }
             if !model.needsOnboarding {
                 SearchField(text: $query, focus: $focus, onListKey: { handleListKey($0) ?? .ignored })

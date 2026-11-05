@@ -146,4 +146,18 @@ import Testing
         #expect(!settings.marks.isMuted("semId"))
         #expect(!settings.marks.isMuted("lixo"))
     }
+
+    @Test func oldOrganizationJSONWithoutRepositoryAccountsDecodes() throws {
+        let json = #"{"favorites":["acme/web"],"knownRepositories":["acme/web"]}"#
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(json.utf8))
+        #expect(settings.repositoryAccounts.isEmpty)
+        #expect(settings.favorites == ["acme/web"])
+    }
+
+    @Test func repositoryAccountsRoundTrips() throws {
+        var settings = OrganizationSettings()
+        settings.repositoryAccounts = ["acme/web": "a"]
+        let decoded = try JSONDecoder().decode(OrganizationSettings.self, from: JSONEncoder().encode(settings))
+        #expect(decoded.repositoryAccounts == ["acme/web": "a"])
+    }
 }

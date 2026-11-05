@@ -53,4 +53,73 @@ import Testing
         #expect(groups.map(\.title) == ["GLOBEX"])
         #expect(groups[0].entries.map(\.name) == ["globex/web-app"])
     }
+
+    private let accountA = Account(id: "a", login: "ana", origin: .pasted)
+    private let accountB = Account(id: "b", login: "bia", origin: .pasted)
+
+    private func multiAccountGroups(
+        snapshot: Snapshot, known: Set<String> = [], favorites: Set<String> = [],
+        repositoryAccounts: [String: String] = [:]
+    ) -> [RepositoryGroup] {
+        RepositoryCatalog.groups(
+            snapshot: snapshot, known: known, favorites: favorites, hideEmpty: false, search: "",
+            accounts: [accountA, accountB], repositoryAccounts: repositoryAccounts)
+    }
+
+    @Test func singleAccountGroupsUnchanged() {
+        let plain = RepositoryCatalog.groups(
+            snapshot: snapshot, known: ["contoso/menu-sso"], favorites: ["contoso/backend"], hideEmpty: false, search: "")
+        let single = RepositoryCatalog.groups(
+            snapshot: snapshot, known: ["contoso/menu-sso"], favorites: ["contoso/backend"], hideEmpty: false, search: "",
+            accounts: [accountA], repositoryAccounts: [:])
+        #expect(single == plain)
+        #expect(single.allSatisfy { $0.section == nil })
+    }
+
+    @Test func groupsByAccountThenOrg() {
+        let multi = Snapshot.fixture(
+            mine: [
+                .fixture(id: "1", repository: "acme/web", accountID: "a"),
+                .fixture(id: "2", repository: "acme/api", accountID: "a"),
+                .fixture(id: "3", repository: "globex/portal", accountID: "b")
+            ])
+        let groups = multiAccountGroups(snapshot: multi)
+        #expect(groups.map(\.title) == ["ACME", "GLOBEX"])
+        #expect(groups.map(\.section) == [accountA.displayName, accountB.displayName])
+        #expect(groups[0].entries.map(\.name) == ["acme/api", "acme/web"])
+        #expect(groups[1].entries.map(\.name) == ["globex/portal"])
+    }
+
+    @Test func knownRepoWithoutPRsUsesLearnedAccount() {
+        let multi = Snapshot.fixture(mine: [.fixture(id: "1", repository: "acme/web", accountID: "a")])
+        let groups = multiAccountGroups(
+            snapshot: multi, known: ["globex/legado", "acme/orfao"], repositoryAccounts: ["globex/legado": "b"])
+        let globex = groups.first { $0.title == "GLOBEX" }
+        #expect(globex?.section == accountB.displayName)
+        let orphan = groups.first { $0.entries.contains { $0.name == "acme/orfao" } }
+        #expect(orphan?.section == accountA.displayName)
+    }
+
+    @Test func repoVisibleByTwoAccountsListedOnce() {
+        let multi = Snapshot.fixture(
+            mine: [.fixture(id: "1", repository: "acme/web", accountID: "b")],
+            toReview: [.fixture(id: "2", repository: "acme/web", accountID: "a")])
+        let groups = multiAccountGroups(snapshot: multi)
+        #expect(groups.flatMap(\.entries).map(\.name) == ["acme/web"])
+        #expect(groups[0].section == accountB.displayName)
+    }
+
+    @Test func favoritesStayOnTop() {
+        let multi = Snapshot.fixture(
+            mine: [
+                .fixture(id: "1", repository: "acme/web", accountID: "a"),
+                .fixture(id: "3", repository: "globex/portal", accountID: "b")
+            ])
+        let groups = multiAccountGroups(snapshot: multi, favorites: ["globex/portal"])
+        #expect(groups.map(\.title) == ["FAVORITOS", "ACME", "GLOBEX"])
+        #expect(groups[0].section == nil)
+        #expect(groups[0].entries.map(\.name) == ["globex/portal"])
+        #expect(groups[2].section == accountB.displayName)
+        #expect(groups[2].entries.map(\.name) == ["globex/portal"])
+    }
 }

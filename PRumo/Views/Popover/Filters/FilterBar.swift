@@ -4,6 +4,7 @@ import PRumoKit
 struct FilterBar: View {
     let organization: OrganizationStore
     let snapshot: Snapshot?
+    let accounts: [Account]
     let tab: ListTab
     let staleHours: Int
     @State private var showsRepositories = false
@@ -29,7 +30,7 @@ struct FilterBar: View {
                     FiltersText.withCount(FiltersText.repositories, count: settings.filter.repositories.count),
                     isPresented: $showsRepositories
                 ) {
-                    RepositoryPicker(organization: organization, snapshot: snapshot)
+                    RepositoryPicker(organization: organization, snapshot: snapshot, accounts: accounts)
                 }
                 barButton(
                     FiltersText.withCount(FiltersText.filters, count: settings.filter.criteriaCount),

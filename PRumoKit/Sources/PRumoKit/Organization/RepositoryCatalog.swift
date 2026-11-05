@@ -2,12 +2,17 @@ import Foundation
 
 public enum RepositoryCatalog {
     public static func groups(
-        snapshot: Snapshot, known: Set<String>, favorites: Set<String>, hideEmpty: Bool, search: String
+        snapshot: Snapshot, known: Set<String>, favorites: Set<String>, hideEmpty: Bool, search: String,
+        accounts: [Account] = [], repositoryAccounts: [String: String] = [:]
     ) -> [RepositoryGroup] {
         var seen = Set<String>()
         var counts: [String: Int] = [:]
+        var snapshotAccounts: [String: String] = [:]
         for pr in snapshot.mine + snapshot.toReview where seen.insert(pr.id).inserted {
             counts[pr.repository, default: 0] += 1
+            if !pr.accountID.isEmpty, snapshotAccounts[pr.repository] == nil {
+                snapshotAccounts[pr.repository] = pr.accountID
+            }
         }
         let names = known.union(favorites).union(counts.keys)
         let query = search.trimmingCharacters(in: .whitespaces)
@@ -22,12 +27,26 @@ public enum RepositoryCatalog {
         if !favoriteEntries.isEmpty {
             groups.append(RepositoryGroup(title: OrganizationText.favoritesTitle, entries: favoriteEntries))
         }
-        let byOrg = Dictionary(grouping: entries, by: organization)
-        let orgs = byOrg.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        for org in orgs {
-            groups.append(RepositoryGroup(title: org.uppercased(), entries: byOrg[org] ?? []))
+        if accounts.count > 1 {
+            let known = Set(accounts.map(\.id))
+            let owners = Dictionary(grouping: entries) { entry -> String in
+                [snapshotAccounts[entry.name], repositoryAccounts[entry.name]]
+                    .compactMap { $0 }.first { known.contains($0) } ?? accounts[0].id
+            }
+            for account in accounts {
+                groups += orgGroups(owners[account.id] ?? [], section: account.displayName)
+            }
+        } else {
+            groups += orgGroups(entries, section: nil)
         }
         return groups
+    }
+
+    private static func orgGroups(_ entries: [RepositoryEntry], section: String?) -> [RepositoryGroup] {
+        let byOrg = Dictionary(grouping: entries, by: organization)
+        return byOrg.keys
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+            .map { RepositoryGroup(title: $0.uppercased(), entries: byOrg[$0] ?? [], section: section) }
     }
 
     private static func organization(_ entry: RepositoryEntry) -> String {

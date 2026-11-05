@@ -123,3 +123,17 @@ struct PickerFooterButton: View {
         .buttonStyle(.plain)
     }
 }
+
+struct PickerSectionTitle: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: FiltersMetrics.sectionTitleFontSize, weight: .semibold))
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .padding(.horizontal, FiltersMetrics.pickerRowHorizontalPadding)
+            .padding(.top, FiltersMetrics.pickerPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}

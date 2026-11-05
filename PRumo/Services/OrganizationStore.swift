@@ -67,9 +67,16 @@ final class OrganizationStore {
     }
 
     func learnRepositories(from snapshot: Snapshot) {
-        let found = Set((snapshot.mine + snapshot.toReview).map(\.repository))
-        guard !found.isSubset(of: settings.knownRepositories) else { return }
+        let pullRequests = snapshot.mine + snapshot.toReview
+        let found = Set(pullRequests.map(\.repository))
+        var accountByRepository: [String: String] = [:]
+        for pr in pullRequests where !pr.accountID.isEmpty && accountByRepository[pr.repository] == nil {
+            accountByRepository[pr.repository] = pr.accountID
+        }
+        let newAccounts = accountByRepository.filter { settings.repositoryAccounts[$0.key] != $0.value }
+        guard !found.isSubset(of: settings.knownRepositories) || !newAccounts.isEmpty else { return }
         settings.knownRepositories.formUnion(found)
+        settings.repositoryAccounts.merge(newAccounts) { _, new in new }
     }
 
     private func persistSettings() {

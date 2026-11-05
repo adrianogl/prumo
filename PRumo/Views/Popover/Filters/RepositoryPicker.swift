@@ -4,6 +4,7 @@ import PRumoKit
 struct RepositoryPicker: View {
     let organization: OrganizationStore
     let snapshot: Snapshot?
+    let accounts: [Account]
     @State private var search = ""
 
     private var settings: OrganizationSettings { organization.settings }
@@ -12,7 +13,8 @@ struct RepositoryPicker: View {
         guard let snapshot else { return [] }
         return RepositoryCatalog.groups(
             snapshot: snapshot, known: settings.knownRepositories, favorites: settings.favorites,
-            hideEmpty: settings.hideEmptyRepositories, search: search)
+            hideEmpty: settings.hideEmptyRepositories, search: search,
+            accounts: accounts, repositoryAccounts: settings.repositoryAccounts)
     }
 
     var body: some View {
@@ -20,7 +22,10 @@ struct RepositoryPicker: View {
             PickerSearchField(prompt: FiltersText.searchRepository, text: $search)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(groups, id: \.title) { group in
+                    ForEach(groups, id: \.pickerID) { group in
+                        if let section = sectionHeader(for: group) {
+                            PickerSectionTitle(title: section)
+                        }
                         PickerGroupTitle(title: group.title)
                         ForEach(group.entries, id: \.name) { entry in
                             row(entry)
@@ -41,6 +46,12 @@ struct RepositoryPicker: View {
         }
         .padding(FiltersMetrics.pickerPadding)
         .frame(width: FiltersMetrics.pickerWidth)
+    }
+
+    private func sectionHeader(for group: RepositoryGroup) -> String? {
+        guard let section = group.section, let index = groups.firstIndex(of: group) else { return nil }
+        let previous = index > 0 ? groups[index - 1].section : nil
+        return previous == section ? nil : section
     }
 
     private var hideEmpty: Binding<Bool> {
