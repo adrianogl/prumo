@@ -10,7 +10,6 @@ struct PopoverView: View {
     @State private var window: NSWindow?
     @State private var isPresentingPicker = false
     @State private var query = ""
-    @State private var isSearchVisible = false
     @FocusState private var focus: PopoverFocus?
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
@@ -33,7 +32,7 @@ struct PopoverView: View {
             if !model.needsOnboarding {
                 FilterBar(organization: organization, snapshot: model.snapshot, tab: tab, staleHours: model.preferences.preferences.staleReviewHours, isPresentingPicker: $isPresentingPicker)
             }
-            if isSearchVisible && !model.needsOnboarding {
+            if !model.needsOnboarding {
                 SearchField(text: $query, focus: $focus)
             }
             StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
@@ -48,6 +47,7 @@ struct PopoverView: View {
         .focusEffectDisabled()
         .focused($focus, equals: .list)
         .onKeyPress(phases: .down, action: handleKeyPress)
+        .onExitCommand(perform: exitCommand)
         .background(WindowReader { reached in
             window = reached
             if reached?.isKeyWindow == true { open() }
@@ -83,27 +83,30 @@ struct PopoverView: View {
         clearSearch()
     }
 
+    private var exitCommand: (() -> Void)? {
+        if query.isEmpty { return nil }
+        return { clearSearch() }
+    }
+
     private func clearSearch() {
         query = ""
-        isSearchVisible = false
         focus = .list
     }
 
     private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
         if press.key == .escape {
-            guard isSearchVisible && !query.isEmpty else { return .ignored }
+            guard !query.isEmpty else { return .ignored }
             clearSearch()
             return .handled
         }
-        guard !isSearchVisible, !model.needsOnboarding,
+        guard focus != .search, !model.needsOnboarding,
               press.modifiers.isDisjoint(with: [.command, .control]),
               let first = press.characters.unicodeScalars.first,
               !CharacterSet.controlCharacters.contains(first),
               !CharacterSet.whitespacesAndNewlines.contains(first),
               !(0xF700...0xF8FF).contains(first.value)
         else { return .ignored }
-        query = press.characters
-        isSearchVisible = true
+        query += press.characters
         focus = .search
         return .handled
     }
