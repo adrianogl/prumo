@@ -27,6 +27,7 @@ public enum PullRequestMapper {
 
     private static func map(_ node: GraphQLResponse.PullRequestNode, viewer: String) -> PullRequest {
         let commit = node.commits.nodes.first?.commit
+        let failedRun = failedRun(commit?.statusCheckRollup)
         return PullRequest(
             id: node.id,
             number: node.number,
@@ -52,7 +53,8 @@ public enum PullRequestMapper {
             headRefName: node.headRefName ?? "",
             baseRefName: node.baseRefName ?? "",
             isCrossRepository: node.isCrossRepository ?? false,
-            failedRunID: failedRunID(commit?.statusCheckRollup)
+            failedRunID: failedRun?.id,
+            failedRunName: failedRun?.name
         )
     }
 
@@ -97,11 +99,13 @@ public enum PullRequestMapper {
         return .success(total: total)
     }
 
-    private static func failedRunID(_ rollup: GraphQLResponse.Rollup?) -> Int? {
+    private static func failedRun(_ rollup: GraphQLResponse.Rollup?) -> (id: Int, name: String)? {
         guard let rollup, let failed = rollup.contexts.nodes.first(where: isFailedCheckRun),
+              let name = failed.name,
               let details = failed.detailsUrl,
-              let match = details.firstMatch(of: /\/actions\/runs\/(\d+)\//) else { return nil }
-        return Int(match.1)
+              let match = details.firstMatch(of: /\/actions\/runs\/(\d+)\//),
+              let id = Int(match.1) else { return nil }
+        return (id, name)
     }
 
     private static func isFailedCheckRun(_ context: GraphQLResponse.Context) -> Bool {

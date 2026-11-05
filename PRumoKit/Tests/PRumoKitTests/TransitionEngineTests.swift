@@ -51,6 +51,25 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         #expect(events[0].threadID == "PR_812")
     }
 
+    @Test func ciFailedEventCarriesRunID() {
+        let old = Snapshot.fixture(mine: [.fixture(ci: .pending(done: 1, total: 3))])
+        let new = Snapshot.fixture(
+            mine: [.fixture(ci: .failure(failedChecks: ["unit-tests"], total: 3), failedRunID: 555, failedRunName: "unit-tests")],
+            fetchedAt: t1
+        )
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(events.count == 1)
+        #expect(events[0].failedRunID == 555)
+    }
+
+    @Test func ciSucceededEventHasNoRunID() {
+        let old = Snapshot.fixture(mine: [.fixture(ci: .pending(done: 11, total: 12))])
+        let new = Snapshot.fixture(mine: [.fixture(ci: .success(total: 12), failedRunID: 555)], fetchedAt: t1)
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(events.count == 1)
+        #expect(events[0].failedRunID == nil)
+    }
+
     @Test func ciSuccessUsesTotalInTitle() {
         let old = Snapshot.fixture(mine: [.fixture(ci: .pending(done: 11, total: 12))])
         let new = Snapshot.fixture(mine: [.fixture(ci: .success(total: 12))], fetchedAt: t1)

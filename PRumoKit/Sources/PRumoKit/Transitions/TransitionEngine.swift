@@ -37,7 +37,8 @@ public enum TransitionEngine {
             let first = failedChecks.first.map { " · \($0)" } ?? ""
             return [NotificationEvent(
                 kind: .ciFailed, pullRequestID: new.id,
-                title: "CI falhou em #\(new.number)", body: "\(new.title)\(first)", url: checksURL
+                title: "CI falhou em #\(new.number)", body: "\(new.title)\(first)", url: checksURL,
+                failedRunID: new.failedRunID
             )]
         case .none, .pending:
             return []

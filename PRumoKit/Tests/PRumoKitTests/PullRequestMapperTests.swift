@@ -112,6 +112,24 @@ struct PullRequestMapperTests {
         #expect(s.mine[1].failedRunID == nil)
     }
 
+    @Test func failedRunNameMatchesRunCheck() throws {
+        let json = String(decoding: try fixture("search-mine"), as: UTF8.self)
+            .replacingOccurrences(of: "\"nodes\": [\n                        {\n                          \"__typename\": \"CheckRun\",\n                          \"name\": \"unit-tests\"", with: "\"nodes\": [\n                        {\"__typename\": \"StatusContext\", \"context\": \"lint\", \"state\": \"FAILURE\"},\n                        {\n                          \"__typename\": \"CheckRun\",\n                          \"name\": \"unit-tests\"")
+            .replacingOccurrences(of: "https://github.com/acme/api/actions/runs/102001/job/1021", with: "https://github.com/acme/loja/actions/runs/555/job/9")
+        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), now: .fixed)
+        #expect(s.mine[1].ci == .failure(failedChecks: ["lint", "unit-tests"], total: 12))
+        #expect(s.mine[1].failedRunID == 555)
+        #expect(s.mine[1].failedRunName == "unit-tests")
+    }
+
+    @Test func failedRunNameNilForExternalCI() throws {
+        let json = String(decoding: try fixture("search-mine"), as: UTF8.self)
+            .replacingOccurrences(of: "https://github.com/acme/api/actions/runs/102001/job/1021", with: "https://ci.example.com/builds/9876")
+        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), now: .fixed)
+        #expect(s.mine[1].failedRunID == nil)
+        #expect(s.mine[1].failedRunName == nil)
+    }
+
     @Test func ciIsTerminal() {
         #expect(!CIStatus.none.isTerminal)
         #expect(!CIStatus.pending(done: 1, total: 2).isTerminal)

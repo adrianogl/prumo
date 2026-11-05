@@ -63,6 +63,16 @@ struct SnapshotStoreTests {
         #expect(pr.id == "PR_812")
     }
 
+    @Test func oldSnapshotWithoutFailedRunNameDecodes() throws {
+        let data = try JSONEncoder().encode(PullRequest.fixture(failedRunID: 7, failedRunName: "build"))
+        var object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        object.removeValue(forKey: "failedRunName")
+        let old = try JSONSerialization.data(withJSONObject: object)
+        let pr = try JSONDecoder().decode(PullRequest.self, from: old)
+        #expect(pr.failedRunName == nil)
+        #expect(pr.failedRunID == 7)
+    }
+
     @Test func missingFileReturnsNil() async {
         let directory = temporaryDirectory()
         let store = SnapshotStore(fileURL: directory.appendingPathComponent("snapshot.json"))

@@ -152,6 +152,46 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
         #expect(transport.requests.isEmpty)
     }
 
+    @Test func rerunPostsToRESTEndpoint() async throws {
+        let transport = FakeTransport { _ in (Data(), httpResponse(201)) }
+        try await client(transport).rerunFailedJobs(repository: "acme/loja", runID: 555)
+        #expect(transport.requests.count == 1)
+        let request = transport.requests[0]
+        #expect(request.httpMethod == "POST")
+        #expect(request.url?.absoluteString == "https://api.github.com/repos/acme/loja/actions/runs/555/rerun-failed-jobs")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "bearer t0k")
+        #expect(request.value(forHTTPHeaderField: "Accept") == "application/vnd.github+json")
+        #expect(request.value(forHTTPHeaderField: "X-GitHub-Api-Version") == "2022-11-28")
+    }
+
+    @Test func rerunMaps403ToServer() async {
+        let transport = FakeTransport { _ in (Data(), httpResponse(403)) }
+        await #expect(throws: GitHubError.server(status: 403)) {
+            try await client(transport).rerunFailedJobs(repository: "acme/loja", runID: 555)
+        }
+    }
+
+    @Test func rerunMaps404ToServer() async {
+        let transport = FakeTransport { _ in (Data(), httpResponse(404)) }
+        await #expect(throws: GitHubError.server(status: 404)) {
+            try await client(transport).rerunFailedJobs(repository: "acme/loja", runID: 555)
+        }
+    }
+
+    @Test func rerunMaps401ToUnauthorized() async {
+        let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
+        await #expect(throws: GitHubError.unauthorized) {
+            try await client(transport).rerunFailedJobs(repository: "acme/loja", runID: 555)
+        }
+    }
+
+    @Test func rerunMapsTransportErrorToNetwork() async {
+        let transport = FakeTransport { _ in throw URLError(.notConnectedToInternet) }
+        await #expect(throws: GitHubError.network) {
+            try await client(transport).rerunFailedJobs(repository: "acme/loja", runID: 555)
+        }
+    }
+
     @Test func pullRequestStatesMaps401ToUnauthorized() async {
         let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
         await #expect(throws: GitHubError.unauthorized) { try await client(transport).pullRequestStates(ids: ["A"]) }

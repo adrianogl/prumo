@@ -2,6 +2,7 @@ import Foundation
 
 public struct GitHubClient: Sendable {
     private static let endpoint = URL(string: "https://api.github.com/graphql")!
+    private static let restBase = "https://api.github.com"
 
     private let token: String
     private let transport: HTTPTransport
@@ -48,6 +49,17 @@ public struct GitHubClient: Sendable {
         }
     }
 
+    public func rerunFailedJobs(repository: String, runID: Int) async throws(GitHubError) {
+        guard let url = URL(string: "\(Self.restBase)/repos/\(repository)/actions/runs/\(runID)/rerun-failed-jobs") else {
+            throw .unexpectedResponse
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        _ = try await send(request)
+    }
+
     private func search(_ query: String) async throws(GitHubError) -> Data {
         try await post(query: Queries.searchQuery, variables: ["q": query])
     }
@@ -55,11 +67,18 @@ public struct GitHubClient: Sendable {
     private func post(query: String, variables: [String: Any]) async throws(GitHubError) -> Data {
         var request = URLRequest(url: Self.endpoint)
         request.httpMethod = "POST"
-        request.setValue("bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let body: [String: Any] = ["query": query, "variables": variables]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
+        let data = try await send(request)
+        try checkGraphQLErrors(data)
+        return data
+    }
+
+    private func send(_ original: URLRequest) async throws(GitHubError) -> Data {
+        var request = original
+        request.setValue("bearer \(token)", forHTTPHeaderField: "Authorization")
         let data: Data
         let response: HTTPURLResponse
         do {
@@ -68,7 +87,6 @@ public struct GitHubClient: Sendable {
             throw .network
         }
         try check(response)
-        try checkGraphQLErrors(data)
         return data
     }
 
