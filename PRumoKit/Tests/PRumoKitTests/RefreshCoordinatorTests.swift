@@ -102,6 +102,17 @@ private func failed(at date: Date) -> Snapshot {
         #expect(back.events.map(\.kind) == [.ciFailed])
     }
 
+    @Test func unexpectedResponseIsNotReportedAsOffline() async {
+        let (store, directory) = temporaryStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sut = coordinator([.success(pending()), .failure(.unexpectedResponse)], store: store)
+        _ = await sut.refresh()
+        let result = await sut.refresh()
+        #expect(result.state == .unexpectedResponse(lastSuccess: .fixed))
+        #expect(result.snapshot == pending())
+        #expect(result.events.isEmpty)
+    }
+
     @Test func concurrentRefreshesEmitEachEventOnce() async {
         let (store, directory) = temporaryStore()
         defer { try? FileManager.default.removeItem(at: directory) }

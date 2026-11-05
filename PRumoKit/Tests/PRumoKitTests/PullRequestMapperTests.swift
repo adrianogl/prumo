@@ -49,6 +49,23 @@ struct PullRequestMapperTests {
         #expect(try snapshot().toReview[1].author == "ghost")
     }
 
+    @Test func malformedPullRequestNodeIsSkipped() throws {
+        var object = try JSONSerialization.jsonObject(with: fixture("search-mine")) as! [String: Any]
+        var data = object["data"] as! [String: Any]
+        var search = data["search"] as! [String: Any]
+        var nodes = search["nodes"] as! [Any]
+        var broken = nodes[0] as! [String: Any]
+        broken.removeValue(forKey: "number")
+        nodes[0] = broken
+        nodes.append([String: Any]())
+        search["nodes"] = nodes
+        data["search"] = search
+        object["data"] = data
+        let mine = try JSONSerialization.data(withJSONObject: object)
+        let s = try PullRequestMapper.snapshot(mineJSON: mine, reviewJSON: fixture("search-review"), now: .fixed)
+        #expect(s.mine.map(\.id) == ["PR_102", "PR_103", "PR_104"])
+    }
+
     @Test func ciIsTerminal() {
         #expect(!CIStatus.none.isTerminal)
         #expect(!CIStatus.pending(done: 1, total: 2).isTerminal)

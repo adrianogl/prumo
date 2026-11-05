@@ -92,6 +92,24 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
         await #expect(throws: GitHubError.graphQL(messages: ["x"])) { try await client(transport).fetchSnapshot() }
     }
 
+    @Test func nullNodesFromSSOProtectedOrgAreSkipped() async throws {
+        let transport = FakeTransport { request in
+            let isMine = variableQuery(request) == Queries.mine
+            return (fixture(isMine ? "search-mine-sso" : "search-review"), httpResponse(200))
+        }
+        let snapshot = try await client(transport).fetchSnapshot()
+        #expect(snapshot.viewer == "adriano")
+        #expect(snapshot.mine.map(\.id) == ["PR_101", "PR_103", "PR_104"])
+        #expect(snapshot.toReview.count == 2)
+    }
+
+    @Test func malformedResponseIsUnexpectedNotNetwork() async {
+        let transport = FakeTransport { _ in
+            (Data(#"{"data":{"search":{"nodes":[]}}}"#.utf8), httpResponse(200))
+        }
+        await #expect(throws: GitHubError.unexpectedResponse) { try await client(transport).fetchSnapshot() }
+    }
+
     @Test func partialDataWithErrorsStillMaps() async throws {
         let transport = FakeTransport { request in
             let isMine = variableQuery(request) == Queries.mine

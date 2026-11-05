@@ -86,6 +86,7 @@ final class OnboardingModel {
         switch error {
         case .unauthorized: OnboardingText.invalidToken
         case .network: OnboardingText.offline
+        case .unexpectedResponse: OnboardingText.unexpectedResponse
         default: OnboardingText.unavailable
         }
     }

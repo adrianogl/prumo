@@ -13,7 +13,9 @@ struct GraphQLResponse: Decodable {
     }
 
     struct Search: Decodable {
-        let nodes: [PullRequestNode]
+        let nodes: [LossyNode<PullRequestNode>]
+
+        var pullRequests: [PullRequestNode] { nodes.compactMap(\.value) }
     }
 
     struct Nodes<T: Decodable>: Decodable {

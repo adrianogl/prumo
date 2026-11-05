@@ -25,7 +25,7 @@ public struct GitHubClient: Sendable {
         do {
             return try PullRequestMapper.snapshot(mineJSON: mineData, reviewJSON: reviewData, now: now())
         } catch {
-            throw .graphQL(messages: ["Resposta inesperada do GitHub"])
+            throw .unexpectedResponse
         }
     }
 

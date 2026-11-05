@@ -6,4 +6,5 @@ public enum GitHubError: Error, Equatable {
     case network
     case server(status: Int)
     case graphQL(messages: [String])
+    case unexpectedResponse
 }

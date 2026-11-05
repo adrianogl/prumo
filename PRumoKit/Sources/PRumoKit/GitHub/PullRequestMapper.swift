@@ -12,8 +12,8 @@ public enum PullRequestMapper {
         let viewer = mine.data.viewer.login
         return Snapshot(
             viewer: viewer,
-            mine: mine.data.search.nodes.map { map($0, viewer: viewer) },
-            toReview: review.data.search.nodes.map { map($0, viewer: viewer) },
+            mine: mine.data.search.pullRequests.map { map($0, viewer: viewer) },
+            toReview: review.data.search.pullRequests.map { map($0, viewer: viewer) },
             fetchedAt: now
         )
     }

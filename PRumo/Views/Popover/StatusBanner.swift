@@ -17,12 +17,9 @@ struct StatusBanner: View {
         case .ok:
             EmptyView()
         case let .offline(lastSuccess):
-            banner {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    let remaining = max(0, Int((nextRefresh ?? context.date).timeIntervalSince(context.date).rounded(.up)))
-                    Text(PopoverText.offline(lastSuccess: lastSuccess.map(Self.clock.string(from:)), retryIn: remaining))
-                }
-            }
+            retryBanner { PopoverText.offline(lastSuccess: lastSuccess.map(Self.clock.string(from:)), retryIn: $0) }
+        case let .unexpectedResponse(lastSuccess):
+            retryBanner { PopoverText.unexpectedResponse(lastSuccess: lastSuccess.map(Self.clock.string(from:)), retryIn: $0) }
         case .unauthorized:
             banner {
                 HStack(spacing: 4) {
@@ -33,6 +30,15 @@ struct StatusBanner: View {
             }
         case let .rateLimited(resetAt):
             banner { Text(PopoverText.rateLimited(resetAt: resetAt.map(Self.clock.string(from:)))) }
+        }
+    }
+
+    private func retryBanner(_ message: @escaping (Int) -> String) -> some View {
+        banner {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let remaining = max(0, Int((nextRefresh ?? context.date).timeIntervalSince(context.date).rounded(.up)))
+                Text(message(remaining))
+            }
         }
     }
 
