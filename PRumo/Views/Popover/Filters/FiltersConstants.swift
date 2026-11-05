@@ -38,11 +38,14 @@ enum FiltersMetrics {
     static let searchCornerRadius: CGFloat = 6
     static let searchHorizontalPadding: CGFloat = 8
     static let searchVerticalPadding: CGFloat = 4
-    static let sectionHeaderFontSize: CGFloat = 10.5
-    static let sectionHeaderTracking: CGFloat = 0.6
+    static let sectionHeaderFontSize: CGFloat = 12
+    static let sectionHeaderSpacing: CGFloat = 8
     static let sectionHeaderHorizontalPadding: CGFloat = 12
-    static let sectionHeaderTopPadding: CGFloat = 6
-    static let sectionHeaderBottomPadding: CGFloat = 2
+    static let sectionHeaderVerticalPadding: CGFloat = 6
+    static let sectionHeaderBackgroundOpacity: Double = 0.05
+    static let sectionCountFontSize: CGFloat = 10.5
+    static let sectionCountHorizontalPadding: CGFloat = 6
+    static let sectionCountVerticalPadding: CGFloat = 1
     static let barButtonContentSpacing: CGFloat = 4
     static let barHorizontalPadding: CGFloat = 12
     static let barBottomPadding: CGFloat = 8
@@ -112,8 +115,10 @@ enum FiltersText {
         count > 0 ? "\(title)\(separator)\(count)" : title
     }
 
+    static let sectionOwnerSeparator = " / "
+
     static func sectionHeader(repository: String, count: Int) -> String {
-        "\(repository.uppercased())\(separator)\(count)"
+        "\(repository)\(separator)\(count)"
     }
 
     static func label(_ value: CIFilter) -> String {
