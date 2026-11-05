@@ -23,11 +23,23 @@ enum PopoverMetrics {
     static let footerSpacing: CGFloat = 4
     static let searchSpacing: CGFloat = 6
     static let searchVerticalPadding: CGFloat = 5
+    static let selectionLineWidth: CGFloat = 1.5
+    static let selectionCornerRadius: CGFloat = 6
 }
 
 enum PopoverFocus: Hashable {
     case list
     case search
+}
+
+enum PopoverKey {
+    static let mineTab: Character = "1"
+    static let reviewTab: Character = "2"
+    static let mergeTab: Character = "3"
+    static let rowMenu: Character = "."
+    static let claude = Character(ClaudeText.shortcutKey)
+    static let openJira = RowMenuKey.openJira
+    static let copy = RowMenuKey.copy
 }
 
 enum PopoverSymbol {
@@ -75,6 +87,7 @@ enum PopoverText {
     static let footerSeparator = "·"
     static let searchPlaceholder = "Buscar por título, repositório ou número"
     static let clearSearch = "Limpar busca"
+    static let keyboardHint = "↑↓ navegar · ↵ abrir · ⌘. menu · ⌘K Claude"
 
     static func nothingFound(query: String) -> String { "Nada encontrado para “\(query)”" }
 

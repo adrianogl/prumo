@@ -8,6 +8,7 @@ struct PRRowView: View {
     let compactLine: String?
     let tab: ListTab
     let isHighlighted: Bool
+    let isSelected: Bool
     let model: AppModel
     @State private var hovering = false
     @State private var menuOpen = false
@@ -23,11 +24,16 @@ struct PRRowView: View {
     private var showsMenu: Bool { hovering || menuOpen || model.isLaunching(pr) }
 
     private var actions: RowActions {
-        let purposes = pr.claudePurposes(in: tab, offersComments: presentation.commentsBadgeIndex != nil)
-        let entries = RowMenuPlan.entries(
-            pr: pr, claudePurposes: purposes, jira: model.integrations.link(for: pr),
-            isPinned: isPinned, isMuted: muted != nil)
+        let entries = Self.menuEntries(pr: pr, tab: tab, presentation: presentation, model: model)
         return RowActions(entries: entries) { model.perform($0, on: pr) }
+    }
+
+    static func menuEntries(pr: PullRequest, tab: ListTab, presentation: RowPresentation, model: AppModel) -> [RowMenuEntry] {
+        let marks = model.organization.settings.marks
+        let purposes = pr.claudePurposes(in: tab, offersComments: presentation.commentsBadgeIndex != nil)
+        return RowMenuPlan.entries(
+            pr: pr, claudePurposes: purposes, jira: model.integrations.link(for: pr),
+            isPinned: marks.isPinned(pr.id), isMuted: marks.muted[pr.id] != nil)
     }
 
     private func purpose(forBadgeAt index: Int) -> SessionPurpose? {
@@ -73,6 +79,13 @@ struct PRRowView: View {
             }
         }
         .background(hovering ? Color.primary.opacity(0.04) : Color.clear)
+        .overlay {
+            if isSelected {
+                RoundedRectangle(cornerRadius: PopoverMetrics.selectionCornerRadius)
+                    .strokeBorder(Color.prumoCaramel, lineWidth: PopoverMetrics.selectionLineWidth)
+                    .allowsHitTesting(false)
+            }
+        }
         .onHover { hovering = $0 }
         .contextMenu { RowMenuItems(actions: actions, isRerunning: model.isRerunning(pr)) }
     }

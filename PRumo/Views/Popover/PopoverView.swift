@@ -10,6 +10,8 @@ struct PopoverView: View {
     @State private var window: NSWindow?
     @State private var isPresentingPicker = false
     @State private var query = ""
+    @State private var selectedID: String?
+    @State private var rowFrames: [String: CGRect] = [:]
     @FocusState private var focus: PopoverFocus?
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
@@ -48,6 +50,15 @@ struct PopoverView: View {
         .focused($focus, equals: .list)
         .onKeyPress(phases: .down, action: handleKeyPress)
         .onExitCommand(perform: exitCommand)
+        .onPreferenceChange(RowFramePreference.self) { frames in
+            MainActor.assumeIsolated { rowFrames = frames }
+        }
+        .onChange(of: visibleIDs) { _, ids in
+            selectedID = KeyboardSelection.validated(selectedID, in: ids)
+        }
+        .onChange(of: tab) {
+            selectedID = nil
+        }
         .background(WindowReader { reached in
             window = reached
             if reached?.isKeyWindow == true { open() }
@@ -99,6 +110,7 @@ struct PopoverView: View {
             clearSearch()
             return .handled
         }
+        if let result = handleListKey(press) { return result }
         guard focus != .search, !model.needsOnboarding,
               press.modifiers.isDisjoint(with: [.command, .control]),
               let first = press.characters.unicodeScalars.first,
@@ -108,6 +120,95 @@ struct PopoverView: View {
         else { return .ignored }
         query += press.characters
         focus = .search
+        return .handled
+    }
+
+    private func handleListKey(_ press: KeyPress) -> KeyPress.Result? {
+        let modifiers = press.modifiers.intersection([.command, .shift, .option, .control])
+        if modifiers.isEmpty {
+            switch press.key {
+            case .downArrow: return moveSelection(.down)
+            case .upArrow: return moveSelection(.up)
+            case .return: return perform { _ in .openInBrowser }
+            default: return nil
+            }
+        }
+        let key = Character(press.key.character.lowercased())
+        if modifiers == [.command, .shift] {
+            guard key == PopoverKey.copy, focus != .search else { return nil }
+            return perform { entries in entries.first { if case .copyCheckout = $0 { true } else { false } } }
+        }
+        guard modifiers == .command else { return nil }
+        switch key {
+        case PopoverKey.mineTab: return switchTab(.mine)
+        case PopoverKey.reviewTab: return switchTab(.review)
+        case PopoverKey.mergeTab: return switchTab(.merge)
+        case PopoverKey.rowMenu: return showRowMenu()
+        case PopoverKey.claude: return launchClaude()
+        case PopoverKey.openJira:
+            guard focus != .search else { return nil }
+            return perform { entries in entries.first { if case .openJira = $0 { true } else { false } } }
+        case PopoverKey.copy:
+            guard focus != .search else { return nil }
+            return perform { _ in .copyLink }
+        default: return nil
+        }
+    }
+
+    private var visiblePullRequests: [PullRequest] {
+        guard model.snapshot != nil, !model.needsOnboarding else { return [] }
+        return sections(for: tab, now: .now).flatMap(\.items)
+    }
+
+    private var visibleIDs: [String] { visiblePullRequests.map(\.id) }
+
+    private var selectedPullRequest: PullRequest? {
+        guard let selectedID else { return nil }
+        return visiblePullRequests.first { $0.id == selectedID }
+    }
+
+    private func menuEntries(for pr: PullRequest) -> [RowMenuEntry] {
+        PRRowView.menuEntries(pr: pr, tab: tab, presentation: presentation(for: pr, now: .now), model: model)
+    }
+
+    private func moveSelection(_ direction: MoveDirection) -> KeyPress.Result {
+        let ids = visibleIDs
+        guard !ids.isEmpty else { return .ignored }
+        selectedID = KeyboardSelection.move(from: selectedID, in: ids, direction: direction)
+        return .handled
+    }
+
+    private func switchTab(_ target: ListTab) -> KeyPress.Result {
+        tab = target
+        selectedID = nil
+        return .handled
+    }
+
+    private func perform(_ pick: ([RowMenuEntry]) -> RowMenuEntry?) -> KeyPress.Result {
+        guard let pr = selectedPullRequest, let entry = pick(menuEntries(for: pr)) else { return .ignored }
+        model.perform(entry, on: pr)
+        return .handled
+    }
+
+    private func launchClaude() -> KeyPress.Result {
+        guard let pr = selectedPullRequest else { return .ignored }
+        guard let entry = menuEntries(for: pr).first(where: { if case .claude = $0 { true } else { false } }) else {
+            NSSound.beep()
+            return .handled
+        }
+        model.perform(entry, on: pr)
+        return .handled
+    }
+
+    private func showRowMenu() -> KeyPress.Result {
+        guard let pr = selectedPullRequest, let frame = rowFrames[pr.id],
+              let view = window?.contentView
+        else { return .ignored }
+        let y = view.isFlipped ? frame.maxY : view.bounds.height - frame.maxY
+        let entries = menuEntries(for: pr)
+        RowMenuNSMenu.show(entries: entries, at: NSPoint(x: frame.minX, y: y), in: view) { entry in
+            model.perform(entry, on: pr)
+        }
         return .handled
     }
 
@@ -243,18 +344,24 @@ struct PopoverView: View {
                 if sections.isEmpty && merged.isEmpty {
                     emptyState
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            if sections.isEmpty { emptyState }
-                            ForEach(sections, id: \.repository) { section in
-                                sectionView(section, isFirst: section.repository == sections.first?.repository, now: context.date)
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            LazyVStack(spacing: 0) {
+                                if sections.isEmpty { emptyState }
+                                ForEach(sections, id: \.repository) { section in
+                                    sectionView(section, isFirst: section.repository == sections.first?.repository, now: context.date)
+                                }
+                                if !merged.isEmpty { mergedSection(merged) }
                             }
-                            if !merged.isEmpty { mergedSection(merged) }
+                        }
+                        .id(openGeneration)
+                        .frame(maxHeight: PopoverMetrics.listMaxHeight)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .onChange(of: selectedID) { _, id in
+                            guard let id else { return }
+                            proxy.scrollTo(id)
                         }
                     }
-                    .id(openGeneration)
-                    .frame(maxHeight: PopoverMetrics.listMaxHeight)
-                    .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -268,6 +375,7 @@ struct PopoverView: View {
         }
         ForEach(section.items) { pr in
             row(pr, now: now)
+                .id(pr.id)
             if pr.id != section.items.last?.id { Divider() }
         }
     }
@@ -291,13 +399,22 @@ struct PopoverView: View {
 
     private func row(_ pr: PullRequest, now: Date) -> some View {
         let compact = organization.settings.rowStyle == .compact
+        let isSelected = selectedID == pr.id
         return PRRowView(
             pr: pr,
             presentation: presentation(for: pr, now: now),
             compactLine: compact ? RowPresenter.compactLine(pr, tab: tab, viewer: viewer, now: now) : nil,
             tab: tab,
             isHighlighted: highlighted.contains(pr.id),
+            isSelected: isSelected,
             model: model)
+            .background {
+                GeometryReader { geometry in
+                    Color.clear.preference(
+                        key: RowFramePreference.self,
+                        value: isSelected ? [pr.id: geometry.frame(in: .global)] : [:])
+                }
+            }
             .onAppear {
                 guard isOpen else { return }
                 organization.markSeen([pr.id])
@@ -337,17 +454,23 @@ struct PopoverView: View {
 
     private var footer: some View {
         HStack {
-            HStack(spacing: PopoverMetrics.footerSpacing) {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    if let status = footerStatus(now: context.date) {
-                        HStack(spacing: PopoverMetrics.footerSpacing) {
-                            Text(status)
-                            Text(PopoverText.footerSeparator)
+            if selectedID != nil {
+                Text(PopoverText.keyboardHint)
+                    .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
+                    .lineLimit(1)
+            } else {
+                HStack(spacing: PopoverMetrics.footerSpacing) {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        if let status = footerStatus(now: context.date) {
+                            HStack(spacing: PopoverMetrics.footerSpacing) {
+                                Text(status)
+                                Text(PopoverText.footerSeparator)
+                            }
                         }
                     }
+                    Text(model.hotKey.display)
+                        .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
                 }
-                Text(model.hotKey.display)
-                    .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
             }
             Spacer()
             Button(action: showSettings) {

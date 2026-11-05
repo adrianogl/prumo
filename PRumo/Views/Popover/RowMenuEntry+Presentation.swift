@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import PRumoKit
 
 extension RowMenuEntry {
@@ -25,5 +26,19 @@ extension RowMenuEntry {
         case .copyCheckout: KeyboardShortcut(KeyEquivalent(RowMenuKey.copy), modifiers: [.command, .shift])
         case .openInBrowser, .rerunFailedJobs, .separator, .pin, .mute: nil
         }
+    }
+
+    var menuKeyEquivalent: String {
+        keyboardShortcut.map { String($0.key.character) } ?? ""
+    }
+
+    var menuKeyModifiers: NSEvent.ModifierFlags {
+        guard let modifiers = keyboardShortcut?.modifiers else { return [] }
+        var flags: NSEvent.ModifierFlags = []
+        if modifiers.contains(.command) { flags.insert(.command) }
+        if modifiers.contains(.shift) { flags.insert(.shift) }
+        if modifiers.contains(.option) { flags.insert(.option) }
+        if modifiers.contains(.control) { flags.insert(.control) }
+        return flags
     }
 }
