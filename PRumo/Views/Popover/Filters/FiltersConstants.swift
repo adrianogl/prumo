@@ -56,6 +56,7 @@ enum FiltersMetrics {
     static let groupTitleBottomPadding: CGFloat = 3
     static let rowSpacing: CGFloat = 8
     static let rowSpacerMinLength: CGFloat = 4
+    static let saveViewSpacing: CGFloat = 6
 }
 
 enum FiltersSymbol {
@@ -75,8 +76,8 @@ enum FiltersText {
     static let searchRepository = "Buscar repositório"
     static let hideEmptyRepositories = "Esconder repositórios sem PR"
     static let saveAsView = "Salvar como visão…"
-    static let saveViewTitle = "Salvar como visão"
-    static let viewName = "Nome"
+    static let viewNamePlaceholder = "Nome da visão"
+    static let viewNameTaken = "Já existe uma visão com esse nome"
     static let save = "Salvar"
     static let cancel = "Cancelar"
     static let clear = "Limpar"

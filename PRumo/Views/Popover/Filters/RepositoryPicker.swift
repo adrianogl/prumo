@@ -4,7 +4,6 @@ import PRumoKit
 struct RepositoryPicker: View {
     let organization: OrganizationStore
     let snapshot: Snapshot?
-    let onSaveView: () -> Void
     @State private var search = ""
 
     private var settings: OrganizationSettings { organization.settings }
@@ -38,7 +37,7 @@ struct RepositoryPicker: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, FiltersMetrics.pickerRowHorizontalPadding)
                 .padding(.vertical, FiltersMetrics.pickerRowVerticalPadding)
-            PickerFooterButton(title: FiltersText.saveAsView, action: onSaveView)
+            SaveViewRow(organization: organization)
         }
         .padding(FiltersMetrics.pickerPadding)
         .frame(width: FiltersMetrics.pickerWidth)

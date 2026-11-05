@@ -8,8 +8,6 @@ struct FilterBar: View {
     @State private var showsRepositories = false
     @State private var showsFilters = false
     @State private var showsOrder = false
-    @State private var isSavingView = false
-    @State private var viewName = ""
     @Binding var isPresentingPicker: Bool
 
     private var settings: OrganizationSettings { organization.settings }
@@ -20,15 +18,7 @@ struct FilterBar: View {
     }
 
     private var isPickerOpen: Bool {
-        showsRepositories || showsFilters || showsOrder || isSavingView
-    }
-
-    private var isViewNameTaken: Bool {
-        settings.views.contains { $0.name.caseInsensitiveCompare(trimmedViewName) == .orderedSame }
-    }
-
-    private var trimmedViewName: String {
-        viewName.trimmingCharacters(in: .whitespacesAndNewlines)
+        showsRepositories || showsFilters || showsOrder
     }
 
     var body: some View {
@@ -38,17 +28,13 @@ struct FilterBar: View {
                     FiltersText.withCount(FiltersText.repositories, count: settings.filter.repositories.count),
                     isPresented: $showsRepositories
                 ) {
-                    RepositoryPicker(organization: organization, snapshot: snapshot) {
-                        startSavingView { showsRepositories = false }
-                    }
+                    RepositoryPicker(organization: organization, snapshot: snapshot)
                 }
                 barButton(
                     FiltersText.withCount(FiltersText.filters, count: settings.filter.criteriaCount),
                     isPresented: $showsFilters
                 ) {
-                    FilterPicker(organization: organization, snapshot: snapshot, tab: tab) {
-                        startSavingView { showsFilters = false }
-                    }
+                    FilterPicker(organization: organization, snapshot: snapshot, tab: tab)
                 }
                 Spacer(minLength: 0)
                 barButton(orderTitle, symbol: FiltersSymbol.order, isPresented: $showsOrder) {
@@ -62,24 +48,6 @@ struct FilterBar: View {
         .onChange(of: isPickerOpen) { _, isOpen in
             isPresentingPicker = isOpen
         }
-        .alert(FiltersText.saveViewTitle, isPresented: $isSavingView) {
-            TextField(FiltersText.viewName, text: $viewName)
-            Button(FiltersText.save, action: saveView)
-                .disabled(trimmedViewName.isEmpty || isViewNameTaken)
-            Button(FiltersText.cancel, role: .cancel) {}
-        }
-    }
-
-    private func startSavingView(closing close: () -> Void) {
-        close()
-        viewName = ""
-        Task { isSavingView = true }
-    }
-
-    private func saveView() {
-        let name = trimmedViewName
-        guard !name.isEmpty, !isViewNameTaken else { return }
-        organization.settings.views.append(SavedView(name: name, filter: organization.settings.filter))
     }
 
     private func barButton<Content: View>(

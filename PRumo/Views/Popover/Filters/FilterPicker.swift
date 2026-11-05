@@ -6,7 +6,6 @@ struct FilterPicker: View {
     let organization: OrganizationStore
     let snapshot: Snapshot?
     let tab: ListTab
-    let onSaveView: () -> Void
     @State private var personSearch = ""
 
     private var filter: RowFilter { organization.settings.filter }
@@ -76,7 +75,7 @@ struct FilterPicker: View {
             Divider()
                 .padding(.top, FiltersMetrics.footerDividerTopPadding)
                 .padding(.bottom, FiltersMetrics.footerDividerBottomPadding)
-            PickerFooterButton(title: FiltersText.saveAsView, action: onSaveView)
+            SaveViewRow(organization: organization)
         }
         .padding(FiltersMetrics.pickerPadding)
         .frame(width: FiltersMetrics.pickerWidth)
