@@ -30,7 +30,7 @@ struct SearchField: View {
         .padding(.vertical, PopoverMetrics.searchVerticalPadding)
         .background(Color.prumoBadgeBackground, in: RoundedRectangle(cornerRadius: 6))
         .padding(.horizontal, 12)
-        .padding(.bottom, 8)
+        .padding(.bottom, PopoverMetrics.searchBottomPadding)
         .onChange(of: focus.wrappedValue) { _, newFocus in
             guard newFocus == .search else { return }
             selection = TextSelection(insertionPoint: text.endIndex)

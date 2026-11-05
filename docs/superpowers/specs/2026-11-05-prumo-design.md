@@ -228,7 +228,7 @@ WidgetKit, dois tamanhos:
 Janela com 600 de largura e as abas Conta, Geral, Notificações, Comentários, Filtros, Claude, Integrações e Sobre:
 
 - **Conta**: usuário conectado e origem do token (`gh` ou token colado); trocar conta.
-- **Exibição**: linha detalhada ou compacta; intervalo de atualização (padrão 60 s); abrir ao iniciar o macOS; atalho global.
+- **Geral**: linha detalhada ou compacta; intervalo de atualização (padrão 60 s); abrir ao iniciar o macOS; atalho global.
 - **Notificações**: um toggle por tipo; agrupar notificações de CI; lembrete de review parado após N horas (padrão 24 h); só em horário de trabalho (dias e horário).
 - **Comentários**: lista "Ignorar comentários de" (padrão `github-actions` e `datadog-official`). A comparação ignora maiúsculas e o sufixo `[bot]`. Bots são sempre ignorados, com ou sem entrada na lista. Comentário de autor ignorado não conta no badge, não notifica e não acende o marcador de novo.
 - **Filtros**: ignorar drafts em Revisar; incluir reviews pedidos ao time (padrão ligado); visões salvas; PRs silenciados (lista, com reativar).

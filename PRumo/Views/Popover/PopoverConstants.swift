@@ -23,6 +23,7 @@ enum PopoverMetrics {
     static let footerSpacing: CGFloat = 4
     static let searchSpacing: CGFloat = 6
     static let searchVerticalPadding: CGFloat = 5
+    static let searchBottomPadding: CGFloat = 12
     static let selectionLineWidth: CGFloat = 1.5
     static let selectionCornerRadius: CGFloat = 6
     static let jiraBadgeBackgroundOpacity: Double = 0.14
