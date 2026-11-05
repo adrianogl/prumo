@@ -1,0 +1,4 @@
+public enum SessionPurpose: Sendable {
+    case review
+    case fixCI
+}
