@@ -33,7 +33,7 @@ public actor RefreshCoordinator {
             stored = await store.load()
         }
         do {
-            let fresh = try await fetch()
+            let fresh = try await fetch().keepingKnownMergeable(from: stored)
             let events = TransitionEngine.events(from: stored, to: fresh, options: options)
             lastKnown = fresh
             try? await store.save(fresh)

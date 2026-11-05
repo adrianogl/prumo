@@ -11,6 +11,8 @@ public enum TransitionEngine {
             result += ciEvents(before, pr)
             result += reviewEvents(before, pr, viewer: new.viewer, since: threshold)
             result += commentEvents(before, pr, viewer: new.viewer, since: threshold)
+            result += conflictEvents(before, pr)
+            result += readyEvents(before, pr, viewer: new.viewer)
         }
         let oldToReviewIDs = Set(old.toReview.map(\.id))
         let knownReviewRequests = Set(requests(old.toReview, options).map(\.id))
@@ -87,6 +89,29 @@ public enum TransitionEngine {
         return [NotificationEvent(
             kind: .newComment, pullRequestID: new.id, title: title,
             body: "\(latest.author): \"\(excerpt(latest.body))\"", url: latest.url
+        )]
+    }
+
+    private static func conflictEvents(_ old: PullRequest, _ new: PullRequest) -> [NotificationEvent] {
+        guard old.mergeable != .conflicting, new.mergeable == .conflicting else { return [] }
+        let suffix = new.baseRefName.isEmpty ? "" : " · conflito com \(new.baseRefName)"
+        return [NotificationEvent(
+            kind: .conflict, pullRequestID: new.id, title: "#\(new.number) entrou em conflito",
+            body: "\(new.title)\(suffix)", url: new.url
+        )]
+    }
+
+    private static func readyEvents(_ old: PullRequest, _ new: PullRequest, viewer: String) -> [NotificationEvent] {
+        guard !MergeReadiness.isReady(old, viewer: viewer), MergeReadiness.isReady(new, viewer: viewer) else { return [] }
+        let body: String
+        if case .success(let total) = new.ci {
+            body = "Aprovado, CI \(total)/\(total) e sem conflito"
+        } else {
+            body = "Aprovado e sem conflito"
+        }
+        return [NotificationEvent(
+            kind: .readyToMerge, pullRequestID: new.id, title: "#\(new.number) pronto para merge",
+            body: body, url: new.url
         )]
     }
 

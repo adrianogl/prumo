@@ -68,6 +68,18 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         self.reviewDecision = reviewDecision
     }
 
+    public func with(mergeable: Mergeable) -> PullRequest {
+        PullRequest(
+            id: id, number: number, title: title, url: url, repository: repository, author: author,
+            isDraft: isDraft, createdAt: createdAt, updatedAt: updatedAt, headSHA: headSHA, ci: ci,
+            reviews: reviews, comments: comments, commentCount: commentCount, additions: additions,
+            deletions: deletions, mergeable: mergeable, reviewRequestedAt: reviewRequestedAt,
+            headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository,
+            failedRunID: failedRunID, failedRunName: failedRunName,
+            reviewTarget: reviewTarget, reviewDecision: reviewDecision
+        )
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, number, title, url, repository, author, isDraft, createdAt, updatedAt, headSHA, ci
         case reviews, comments, commentCount, additions, deletions, mergeable, reviewRequestedAt

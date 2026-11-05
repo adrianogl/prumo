@@ -2,6 +2,7 @@ import Foundation
 
 public enum NotificationKind: String, Codable, Sendable {
     case ciFailed, ciSucceeded, approved, changesRequested, newComment, reviewRequested
+    case readyToMerge, conflict, staleReview
 }
 
 public struct NotificationEvent: Equatable, Sendable {

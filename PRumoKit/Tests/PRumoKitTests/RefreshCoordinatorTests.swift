@@ -159,4 +159,42 @@ private func failed(at date: Date) -> Snapshot {
         let result = await including.refresh(options: .init(ignoreDraftReviews: false))
         #expect(result.events.map(\.kind) == [.reviewRequested])
     }
+
+    private func snapshot(_ mergeable: Mergeable, at date: Date) -> Snapshot {
+        .fixture(mine: [.fixture(mergeable: mergeable)], fetchedAt: date)
+    }
+
+    @Test func conflictNotifiesOnceAcrossUnknown() async {
+        let (store, directory) = temporaryStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sut = coordinator(
+            [.success(snapshot(.mergeable, at: .fixed)), .success(snapshot(.unknown, at: t1)), .success(snapshot(.conflicting, at: t2))],
+            store: store
+        )
+        _ = await sut.refresh()
+        let unknown = await sut.refresh()
+        let conflicting = await sut.refresh()
+        #expect(unknown.events.isEmpty)
+        #expect(unknown.snapshot?.mine.first?.mergeable == .mergeable)
+        #expect(conflicting.events.map(\.kind) == [.conflict])
+    }
+
+    @Test func conflictDoesNotRenotifyAcrossUnknown() async {
+        let (store, directory) = temporaryStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let t3 = Date.fixed.addingTimeInterval(180)
+        let sut = coordinator(
+            [
+                .success(snapshot(.conflicting, at: .fixed)), .success(snapshot(.unknown, at: t1)),
+                .success(snapshot(.conflicting, at: t2)), .success(snapshot(.conflicting, at: t3))
+            ],
+            store: store
+        )
+        _ = await sut.refresh()
+        let unknown = await sut.refresh()
+        let back = await sut.refresh()
+        #expect(unknown.events.isEmpty)
+        #expect(back.events.isEmpty)
+        #expect(await store.load()?.mine.first?.mergeable == .conflicting)
+    }
 }

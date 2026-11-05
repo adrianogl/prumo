@@ -229,7 +229,8 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         let staleHistory = Snapshot.fixture(
             mine: [.fixture(
                 reviews: [review("r1", state: .approved, at: t0.addingTimeInterval(-300))],
-                comments: [comment("c1", at: t0.addingTimeInterval(-300)), comment("c0", at: t0.addingTimeInterval(-3600))]
+                comments: [comment("c1", at: t0.addingTimeInterval(-300)), comment("c0", at: t0.addingTimeInterval(-3600))],
+                reviewDecision: .reviewRequired
             )],
             fetchedAt: t2
         )
@@ -378,5 +379,81 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         #expect(events.map(\.kind) == [.reviewRequested])
         let again = Snapshot.fixture(toReview: new.toReview, fetchedAt: t2.addingTimeInterval(120))
         #expect(TransitionEngine.events(from: new, to: again, options: .init(ignoreDraftReviews: true)).isEmpty)
+    }
+
+    @Test func enteringConflictNotifies() {
+        let old = Snapshot.fixture(mine: [.fixture(number: 812, mergeable: .mergeable)])
+        let new = Snapshot.fixture(mine: [.fixture(number: 812, mergeable: .conflicting)], fetchedAt: t1)
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(events.map(\.kind) == [.conflict])
+        #expect(events.first?.title == "#812 entrou em conflito")
+        #expect(events.first?.body == "Corrige cálculo do carrinho · conflito com main")
+        #expect(events.first?.url == URL(string: "https://github.com/acme/loja/pull/812"))
+    }
+
+    @Test func conflictBodyWithoutBaseIsTitle() {
+        let old = Snapshot.fixture(mine: [.fixture(mergeable: .mergeable)])
+        let new = Snapshot.fixture(mine: [.fixture(mergeable: .conflicting, baseRefName: "")], fetchedAt: t1)
+        #expect(TransitionEngine.events(from: old, to: new).first?.body == "Corrige cálculo do carrinho")
+    }
+
+    @Test func staysConflictingDoesNotRenotify() {
+        let old = Snapshot.fixture(mine: [.fixture(mergeable: .conflicting)])
+        let new = Snapshot.fixture(mine: [.fixture(mergeable: .conflicting)], fetchedAt: t1)
+        #expect(TransitionEngine.events(from: old, to: new).isEmpty)
+    }
+
+    @Test func becomingReadyNotifiesOnce() {
+        let old = Snapshot.fixture(mine: [.fixture(number: 812, ci: .pending(done: 1, total: 3), reviewDecision: .approved)])
+        let ready = Snapshot.fixture(mine: [.fixture(number: 812, ci: .success(total: 3), reviewDecision: .approved)], fetchedAt: t1)
+        let events = TransitionEngine.events(from: old, to: ready).filter { $0.kind == .readyToMerge }
+        #expect(events.count == 1)
+        #expect(events.first?.title == "#812 pronto para merge")
+        #expect(events.first?.body == "Aprovado, CI 3/3 e sem conflito")
+        #expect(events.first?.url == URL(string: "https://github.com/acme/loja/pull/812"))
+    }
+
+    @Test func alreadyReadyDoesNotRenotify() {
+        let old = Snapshot.fixture(mine: [.fixture(ci: .success(total: 3), reviewDecision: .approved)])
+        let new = Snapshot.fixture(mine: [.fixture(ci: .success(total: 3), reviewDecision: .approved)], fetchedAt: t1)
+        #expect(TransitionEngine.events(from: old, to: new).filter { $0.kind == .readyToMerge }.isEmpty)
+    }
+
+    @Test func readyBodyWithoutChecks() {
+        let old = Snapshot.fixture(mine: [.fixture(ci: .none, reviewDecision: .reviewRequired)])
+        let new = Snapshot.fixture(mine: [.fixture(ci: .none, reviewDecision: .approved)], fetchedAt: t1)
+        let events = TransitionEngine.events(from: old, to: new).filter { $0.kind == .readyToMerge }
+        #expect(events.first?.body == "Aprovado e sem conflito")
+    }
+
+    @Test func readyWithoutBranchProtectionNotifies() {
+        let approval = Review(id: "r1", author: "ana", state: .approved, submittedAt: t0)
+        let old = Snapshot.fixture(mine: [.fixture(reviews: [], reviewDecision: nil)])
+        let new = Snapshot.fixture(mine: [.fixture(reviews: [approval], reviewDecision: nil)], fetchedAt: t1)
+        #expect(TransitionEngine.events(from: old, to: new).filter { $0.kind == .readyToMerge }.count == 1)
+    }
+
+    @Test func conflictAndReadyComeAfterCommentEvents() {
+        let old = Snapshot.fixture(mine: [.fixture(mergeable: .mergeable)])
+        let new = Snapshot.fixture(
+            mine: [.fixture(comments: [comment("c1")], mergeable: .conflicting)], fetchedAt: t1
+        )
+        #expect(TransitionEngine.events(from: old, to: new).map(\.kind) == [.newComment, .conflict])
+    }
+
+    @Test func unknownKeepsPreviousKnownMergeable() {
+        let old = Snapshot.fixture(
+            mine: [.fixture(id: "A", mergeable: .conflicting), .fixture(id: "B", mergeable: .mergeable)],
+            toReview: [.fixture(id: "C", mergeable: .conflicting)]
+        )
+        let new = Snapshot.fixture(
+            mine: [.fixture(id: "A", mergeable: .unknown), .fixture(id: "B", mergeable: .unknown), .fixture(id: "N", mergeable: .unknown)],
+            toReview: [.fixture(id: "C", mergeable: .unknown)],
+            fetchedAt: t1
+        )
+        let merged = new.keepingKnownMergeable(from: old)
+        #expect(merged.mine.map(\.mergeable) == [.conflicting, .mergeable, .unknown])
+        #expect(merged.toReview.map(\.mergeable) == [.conflicting])
+        #expect(new.keepingKnownMergeable(from: nil) == new)
     }
 }

@@ -33,4 +33,23 @@ public struct Snapshot: Sendable, Codable, Equatable {
         mergedToday = try container.decodeIfPresent([MergedPullRequest].self, forKey: .mergedToday) ?? []
         fetchedAt = try container.decode(Date.self, forKey: .fetchedAt)
     }
+
+    public func keepingKnownMergeable(from old: Snapshot?) -> Snapshot {
+        guard let old else { return self }
+        return Snapshot(
+            viewer: viewer,
+            mine: Self.inheriting(mine, from: old.mine),
+            toReview: Self.inheriting(toReview, from: old.toReview),
+            mergedToday: mergedToday,
+            fetchedAt: fetchedAt
+        )
+    }
+
+    private static func inheriting(_ prs: [PullRequest], from old: [PullRequest]) -> [PullRequest] {
+        let known = Dictionary(old.filter { $0.mergeable != .unknown }.map { ($0.id, $0.mergeable) }, uniquingKeysWith: { first, _ in first })
+        return prs.map { pr in
+            guard pr.mergeable == .unknown, let value = known[pr.id] else { return pr }
+            return pr.with(mergeable: value)
+        }
+    }
 }
