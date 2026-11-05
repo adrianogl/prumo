@@ -28,4 +28,31 @@ import Testing
         let data = try JSONEncoder().encode(original)
         #expect(try JSONDecoder().decode(ClaudeSettings.self, from: data) == original)
     }
+
+    @Test func commandDefaultsToClaude() {
+        #expect(ClaudeSettings.defaults.command == "claude")
+        #expect(ClaudeDefaults.command == "claude")
+    }
+
+    @Test func oldSettingsWithoutCommandDecode() throws {
+        let json = #"{"extraFlags":"--model opus"}"#
+        let settings = try JSONDecoder().decode(ClaudeSettings.self, from: Data(json.utf8))
+        #expect(settings.command == "claude")
+    }
+
+    @Test func resolvedCommandTrimsAndFallsBack() {
+        #expect(ClaudeSettings(command: " claude-ems ").resolvedCommand == "claude-ems")
+        #expect(ClaudeSettings(command: "").resolvedCommand == "claude")
+        #expect(ClaudeSettings(command: "a b").resolvedCommand == "claude")
+    }
+
+    @Test(arguments: ["claude", "claude-ems", "~/bin/claude", "/opt/homebrew/bin/claude"])
+    func validCommandNames(name: String) {
+        #expect(ClaudeCommandName.isValid(name))
+    }
+
+    @Test(arguments: ["claude --x", "-x", "a;b", "$(x)", "a b", ""])
+    func invalidCommandNames(name: String) {
+        #expect(!ClaudeCommandName.isValid(name))
+    }
 }

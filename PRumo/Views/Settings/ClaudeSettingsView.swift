@@ -14,6 +14,7 @@ struct ClaudeSettingsView: View {
                 templateField(ClaudeSettingsText.ciTemplate, hint: ClaudeSettingsText.ciVariables, text: $store.settings.ciTemplate)
                 templateField(ClaudeSettingsText.conflictTemplate, hint: ClaudeSettingsText.conflictVariables, text: $store.settings.conflictTemplate)
                 templateField(ClaudeSettingsText.commentsTemplate, hint: ClaudeSettingsText.commentsVariables, text: $store.settings.commentsTemplate)
+                commandField(text: $store.settings.command)
                 TextField(ClaudeSettingsText.flags, text: $store.settings.extraFlags, prompt: Text(ClaudeSettingsText.flagsPlaceholder))
                     .font(.system(.body, design: .monospaced))
             }
@@ -59,6 +60,21 @@ struct ClaudeSettingsView: View {
                 .lineLimit(ClaudeSettingsMetrics.templateLines)
                 .font(.system(.body, design: .monospaced))
             hint(hintText)
+        }
+    }
+
+    private func commandField(text: Binding<String>) -> some View {
+        let value = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isInvalid = !value.isEmpty && !ClaudeCommandName.isValid(value)
+        return VStack(alignment: .leading, spacing: 2) {
+            TextField(ClaudeSettingsText.command, text: text, prompt: Text(ClaudeSettingsText.commandPlaceholder))
+                .font(.system(.body, design: .monospaced))
+            hint(ClaudeSettingsText.commandHint)
+            if isInvalid {
+                Text(ClaudeSettingsText.commandInvalid)
+                    .font(.system(size: ClaudeSettingsMetrics.hintSize))
+                    .foregroundStyle(.red)
+            }
         }
     }
 

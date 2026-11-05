@@ -2,8 +2,11 @@ enum ClaudeMessages {
     static let gitTimedOut = "O git demorou demais para responder."
     static let forkNotice = " O PR vem de um fork; não faça push."
     static let shellTimedOut = "O shell demorou demais para responder ao procurar o claude."
-    static let claudeNotFound = "Não encontrei o comando claude no PATH do seu shell."
     static let commandTimedOut = "O comando demorou demais para responder."
+
+    static func claudeNotFound(_ command: String) -> String {
+        "Não encontrei o comando \(command) no seu shell. Confira o nome em Ajustes › Claude."
+    }
 
     static func invalidBranch(_ branch: String) -> String {
         "Nome de branch inválido: \(branch)"

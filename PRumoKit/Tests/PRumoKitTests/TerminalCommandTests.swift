@@ -20,6 +20,12 @@ import Testing
         #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'/Users/ana/.local/bin/claude' -- 'oi'\n" + Self.tail)
     }
 
+    @Test func scriptUsesConfiguredCommand() {
+        let script = TerminalCommand.scriptContents(
+            directory: directory, prompt: "oi", extraFlags: "", claudeExecutable: "claude-ems")
+        #expect(script.contains("'claude-ems' -- "))
+    }
+
     @Test(arguments: [(0, Int32(0)), (3, Int32(3))])
     func scriptRunsUnderZshWithStub(stubExit: Int, expected: Int32) throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("prumo-\(UUID().uuidString)")

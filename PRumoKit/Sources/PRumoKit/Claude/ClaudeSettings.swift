@@ -1,8 +1,11 @@
+import Foundation
+
 public struct ClaudeSettings: Codable, Equatable, Sendable {
     public var reviewTemplate: String
     public var ciTemplate: String
     public var conflictTemplate: String
     public var commentsTemplate: String
+    public var command: String
     public var extraFlags: String
     public var terminal: TerminalKind
     public var clonesRoot: String
@@ -15,6 +18,7 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         ciTemplate: String = ClaudeDefaults.ciTemplate,
         conflictTemplate: String = ClaudeDefaults.conflictTemplate,
         commentsTemplate: String = ClaudeDefaults.commentsTemplate,
+        command: String = ClaudeDefaults.command,
         extraFlags: String = ClaudeDefaults.extraFlags,
         terminal: TerminalKind = ClaudeDefaults.terminal,
         clonesRoot: String = ClaudeDefaults.clonesRoot,
@@ -26,6 +30,7 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         self.ciTemplate = ciTemplate
         self.conflictTemplate = conflictTemplate
         self.commentsTemplate = commentsTemplate
+        self.command = command
         self.extraFlags = extraFlags
         self.terminal = terminal
         self.clonesRoot = clonesRoot
@@ -40,6 +45,7 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         ciTemplate = try container.decodeIfPresent(String.self, forKey: .ciTemplate) ?? ClaudeDefaults.ciTemplate
         conflictTemplate = try container.decodeIfPresent(String.self, forKey: .conflictTemplate) ?? ClaudeDefaults.conflictTemplate
         commentsTemplate = try container.decodeIfPresent(String.self, forKey: .commentsTemplate) ?? ClaudeDefaults.commentsTemplate
+        command = try container.decodeIfPresent(String.self, forKey: .command) ?? ClaudeDefaults.command
         extraFlags = try container.decodeIfPresent(String.self, forKey: .extraFlags) ?? ClaudeDefaults.extraFlags
         terminal = try container.decodeIfPresent(TerminalKind.self, forKey: .terminal) ?? ClaudeDefaults.terminal
         clonesRoot = try container.decodeIfPresent(String.self, forKey: .clonesRoot) ?? ClaudeDefaults.clonesRoot
@@ -47,6 +53,11 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         cloneOverrides = try container.decodeIfPresent([String: String].self, forKey: .cloneOverrides) ?? [:]
         removeWorktreeOnClose = try container.decodeIfPresent(Bool.self, forKey: .removeWorktreeOnClose)
             ?? ClaudeDefaults.removeWorktreeOnClose
+    }
+
+    public var resolvedCommand: String {
+        let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ClaudeCommandName.isValid(trimmed) ? trimmed : ClaudeDefaults.command
     }
 
     public static let defaults = ClaudeSettings()

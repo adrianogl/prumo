@@ -38,6 +38,13 @@ private final class ScriptSink: @unchecked Sendable {
     func cleanup(_ dir: URL, _ date: Date) { lock.withLock { cleanups.append((dir, date)) } }
 }
 
+private final class AskedCommands: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [String] = []
+    var values: [String] { lock.withLock { recorded } }
+    func record(_ value: String) { lock.withLock { recorded.append(value) } }
+}
+
 private let home = URL(fileURLWithPath: "/h")
 private let clone = URL(fileURLWithPath: "/h/Code/acme/loja")
 private let sessions = URL(fileURLWithPath: "/h/Library/Caches/PRumo/sessions")
@@ -52,7 +59,7 @@ private func launcher(
     scanned: [String: [URL]] = ["acme/loja": [clone]],
     sessionsDir: URL = sessions,
     uuid: String = "u1",
-    claude: Bool = true
+    claude: @escaping @Sendable (String) async throws -> Bool = { _ in true }
 ) -> ClaudeLauncher {
     ClaudeLauncher(
         settings: settings,
@@ -64,7 +71,7 @@ private func launcher(
         cleanupOldScripts: { sink.cleanup($0, $1) },
         uuid: { uuid },
         now: { fixedNow },
-        claudeLocator: { claude }
+        claudeLocator: claude
     )
 }
 
@@ -193,8 +200,8 @@ private func launcher(
     @Test func claudeNotFoundFails() async {
         let runner = FakeRunner()
         let sink = ScriptSink()
-        await #expect(throws: ClaudeLaunchError.launchFailed("Não encontrei o comando claude no PATH do seu shell.")) {
-            try await launcher(runner, sink: sink, claude: false).launch(pr: .fixture(), purpose: .review)
+        await #expect(throws: ClaudeLaunchError.launchFailed("Não encontrei o comando claude no seu shell. Confira o nome em Ajustes › Claude.")) {
+            try await launcher(runner, sink: sink, claude: { _ in false }).launch(pr: .fixture(), purpose: .review)
         }
         #expect(sink.written.isEmpty)
         #expect(!runner.commands.contains { $0.contains("worktree add") })
@@ -222,7 +229,7 @@ private func launcher(
         let failing = ClaudeLauncher(
             settings: .defaults, scanned: ["acme/loja": [clone]], runner: runner, home: home,
             sessionsDir: sessions, writeScript: { _, _ in throw CocoaError(.fileWriteNoPermission) },
-            cleanupOldScripts: { _, _ in }, uuid: { "u1" }, now: { fixedNow }, claudeLocator: { true })
+            cleanupOldScripts: { _, _ in }, uuid: { "u1" }, now: { fixedNow }, claudeLocator: { _ in true })
         await #expect(throws: ClaudeLaunchError.self) {
             try await failing.launch(pr: .fixture(), purpose: .review)
         }
@@ -240,17 +247,47 @@ private func launcher(
         let timing = ClaudeLauncher(
             settings: .defaults, scanned: ["acme/loja": [clone]], runner: FakeRunner(), home: home,
             sessionsDir: sessions, writeScript: { _, _ in }, cleanupOldScripts: { _, _ in },
-            uuid: { "u1" }, now: { fixedNow }, claudeLocator: { throw ProcessRunnerError.timedOut })
+            uuid: { "u1" }, now: { fixedNow }, claudeLocator: { _ in throw ProcessRunnerError.timedOut })
         await #expect(throws: ClaudeLaunchError.launchFailed("O shell demorou demais para responder ao procurar o claude.")) {
             try await timing.launch(pr: .fixture(), purpose: .review)
         }
     }
 
     @Test func locatorChecksWhenceClaude() async throws {
-        let ok = FakeRunner { $0 == "/bin/zsh -ilc whence claude" ? (0, "claude () {...}\n", "") : (1, "", "") }
-        #expect(try await ClaudeExecutableLocator.isAvailable(runner: ok))
-        #expect(try await !ClaudeExecutableLocator.isAvailable(runner: FakeRunner { _ in (1, "", "") }))
-        #expect(try await !ClaudeExecutableLocator.isAvailable(runner: FakeRunner { _ in (0, "\n", "") }))
+        let ok = FakeRunner { $0 == "/bin/zsh -ilc whence -- 'claude'" ? (0, "claude () {...}\n", "") : (1, "", "") }
+        #expect(try await ClaudeExecutableLocator.isAvailable(command: "claude", runner: ok))
+        #expect(try await !ClaudeExecutableLocator.isAvailable(command: "claude", runner: FakeRunner { _ in (1, "", "") }))
+        #expect(try await !ClaudeExecutableLocator.isAvailable(command: "claude", runner: FakeRunner { _ in (0, "\n", "") }))
+    }
+
+    @Test func locatorQuotesConfiguredCommand() async throws {
+        let runner = FakeRunner { _ in (0, "claude-ems () {...}\n", "") }
+        #expect(try await ClaudeExecutableLocator.isAvailable(command: "claude-ems", runner: runner))
+        #expect(runner.commands == ["/bin/zsh -ilc whence -- 'claude-ems'"])
+    }
+
+    @Test func cachedLocatorIsPerCommandName() async throws {
+        let first = FakeRunner { _ in (0, "x\n", "") }
+        #expect(try await ClaudeExecutableLocator.cached(command: "cache-probe-a", runner: first))
+        let missing = FakeRunner { _ in (1, "", "") }
+        #expect(try await ClaudeExecutableLocator.cached(command: "cache-probe-a", runner: missing))
+        #expect(missing.commands.isEmpty)
+        #expect(try await !ClaudeExecutableLocator.cached(command: "cache-probe-b", runner: missing))
+        #expect(missing.commands.count == 1)
+    }
+
+    @Test func launcherChecksConfiguredCommand() async throws {
+        let asked = AskedCommands()
+        let sink = ScriptSink()
+        let settings = ClaudeSettings(command: " claude-ems ")
+        _ = try await launcher(FakeRunner(), sink: sink, settings: settings, claude: { asked.record($0); return true })
+            .launch(pr: .fixture(), purpose: .review)
+        #expect(asked.values == ["claude-ems"])
+        #expect(sink.written[0].contents.contains("'claude-ems' -- "))
+
+        await #expect(throws: ClaudeLaunchError.launchFailed("Não encontrei o comando claude-ems no seu shell. Confira o nome em Ajustes › Claude.")) {
+            try await launcher(FakeRunner(), settings: settings, claude: { _ in false }).launch(pr: .fixture(), purpose: .review)
+        }
     }
 
     @Test func launchTimeoutKeepsCreatedWorktree() async {
@@ -270,7 +307,7 @@ private func launcher(
             settings: .defaults, scanned: ["acme/loja": [clone]], runner: runner, home: home,
             sessionsDir: sessions, writeScript: { _, _ in throw CocoaError(.fileWriteNoPermission) },
             cleanupOldScripts: { _, _ in }, uuid: { "u1" }, now: { fixedNow },
-            exists: { $0.path == worktree }, claudeLocator: { true })
+            exists: { $0.path == worktree }, claudeLocator: { _ in true })
         await #expect(throws: ClaudeLaunchError.self) {
             try await failing.launch(pr: .fixture(), purpose: .review)
         }

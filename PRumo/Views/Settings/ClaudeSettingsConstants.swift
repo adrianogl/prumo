@@ -1,7 +1,7 @@
 import Foundation
 
 enum ClaudeSettingsMetrics {
-    static let height: CGFloat = 640
+    static let height: CGFloat = 700
     static let hintSize: CGFloat = 11
     static let templateLines = 2...4
 }
@@ -16,6 +16,10 @@ enum ClaudeSettingsText {
     static let conflictVariables = "Variáveis: {numero} {url} {repo} {branch} {base} {titulo}"
     static let commentsTemplate = "Resolver comentários"
     static let commentsVariables = "Variáveis: {numero} {url} {repo} {branch} {titulo}"
+    static let command = "Comando do claude"
+    static let commandPlaceholder = "claude"
+    static let commandHint = "Nome da função, alias ou caminho, como claude-ems. Roda no seu zsh."
+    static let commandInvalid = "Use só o nome ou o caminho, sem espaços nem opções. As flags vão no campo abaixo."
     static let flags = "Flags do claude"
     static let flagsPlaceholder = "--model opus"
     static let terminal = "Terminal"

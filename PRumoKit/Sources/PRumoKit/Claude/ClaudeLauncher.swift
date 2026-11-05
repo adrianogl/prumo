@@ -13,7 +13,7 @@ public struct ClaudeLauncher: Sendable {
     private let uuid: @Sendable () -> String
     private let now: @Sendable () -> Date
     private let exists: @Sendable (URL) -> Bool
-    private let claudeLocator: @Sendable () async throws -> Bool
+    private let claudeLocator: @Sendable (String) async throws -> Bool
 
     public init(
         settings: ClaudeSettings,
@@ -26,7 +26,7 @@ public struct ClaudeLauncher: Sendable {
         uuid: @escaping @Sendable () -> String = { UUID().uuidString },
         now: @escaping @Sendable () -> Date = { Date() },
         exists: @escaping @Sendable (URL) -> Bool = { FileManager.default.fileExists(atPath: $0.path) },
-        claudeLocator: (@Sendable () async throws -> Bool)? = nil
+        claudeLocator: (@Sendable (String) async throws -> Bool)? = nil
     ) {
         self.settings = settings
         self.scanned = scanned
@@ -38,8 +38,8 @@ public struct ClaudeLauncher: Sendable {
         self.uuid = uuid
         self.now = now
         self.exists = exists
-        self.claudeLocator = claudeLocator ?? {
-            try await ClaudeExecutableLocator.cached(runner: SystemProcessRunner(timeout: .seconds(15)))
+        self.claudeLocator = claudeLocator ?? { command in
+            try await ClaudeExecutableLocator.cached(command: command, runner: SystemProcessRunner(timeout: .seconds(15)))
         }
     }
 
@@ -55,16 +55,17 @@ public struct ClaudeLauncher: Sendable {
         guard !scriptURL.path.isEmpty, scriptURL.path.allSatisfy(Self.safePathCharacters.contains) else {
             throw .launchFailed(ClaudeMessages.unsafeCachePath(scriptURL.path))
         }
+        let claudeCommand = settings.resolvedCommand
         let claudeFound: Bool
         do {
-            claudeFound = try await claudeLocator()
+            claudeFound = try await claudeLocator(claudeCommand)
         } catch ProcessRunnerError.timedOut {
             throw .launchFailed(ClaudeMessages.shellTimedOut)
         } catch {
             throw .launchFailed(Self.message(for: error))
         }
         guard claudeFound else {
-            throw .launchFailed(ClaudeMessages.claudeNotFound)
+            throw .launchFailed(ClaudeMessages.claudeNotFound(claudeCommand))
         }
 
         let worktreesRoot = expand(settings.worktreesRoot)
@@ -101,7 +102,8 @@ public struct ClaudeLauncher: Sendable {
         }
 
         let script = TerminalCommand.scriptContents(
-            directory: directory, prompt: prompt, extraFlags: settings.extraFlags)
+            directory: directory, prompt: prompt, extraFlags: settings.extraFlags,
+            claudeExecutable: claudeCommand)
         cleanupOldScripts(sessionsDir, now())
         do {
             try writeScript(script, scriptURL)

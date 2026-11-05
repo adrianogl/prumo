@@ -2,24 +2,28 @@ import Foundation
 
 public enum ClaudeExecutableLocator {
     private actor Cache {
-        var found = false
+        var found = Set<String>()
 
-        func markFound() {
-            found = true
+        func contains(_ command: String) -> Bool {
+            found.contains(command)
+        }
+
+        func markFound(_ command: String) {
+            found.insert(command)
         }
     }
 
     private static let cache = Cache()
 
-    public static func isAvailable(runner: ProcessRunner) async throws -> Bool {
-        let result = try await runner.run("/bin/zsh", ["-ilc", "whence claude"])
+    public static func isAvailable(command: String, runner: ProcessRunner) async throws -> Bool {
+        let result = try await runner.run("/bin/zsh", ["-ilc", "whence -- \(ShellQuote.single(command))"])
         return result.status == 0 && !result.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    public static func cached(runner: ProcessRunner) async throws -> Bool {
-        if await cache.found { return true }
-        guard try await isAvailable(runner: runner) else { return false }
-        await cache.markFound()
+    public static func cached(command: String, runner: ProcessRunner) async throws -> Bool {
+        if await cache.contains(command) { return true }
+        guard try await isAvailable(command: command, runner: runner) else { return false }
+        await cache.markFound(command)
         return true
     }
 }

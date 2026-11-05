@@ -5,7 +5,7 @@ public enum TerminalCommand {
         directory: URL,
         prompt: String,
         extraFlags: String,
-        claudeExecutable: String = "claude"
+        claudeExecutable: String = ClaudeDefaults.command
     ) -> String {
         let flags = extraFlags.trimmingCharacters(in: .whitespacesAndNewlines)
         let claude = ([ShellQuote.single(claudeExecutable)] + (flags.isEmpty ? [] : [flags]) + ["--", ShellQuote.single(sanitize(prompt))])
