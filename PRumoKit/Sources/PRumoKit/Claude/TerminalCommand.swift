@@ -11,26 +11,27 @@ public struct LaunchCommand: Equatable, Sendable {
 }
 
 public enum TerminalCommand {
-    public static func claudeLine(prompt: String, extraFlags: String) -> String {
+    public static func scriptContents(directory: URL, prompt: String, extraFlags: String) -> String {
         let flags = extraFlags.trimmingCharacters(in: .whitespacesAndNewlines)
-        let parts = ["claude"] + (flags.isEmpty ? [] : [flags]) + [ShellQuote.single(prompt)]
-        return parts.joined(separator: " ")
+        let claude = (["exec", "claude"] + (flags.isEmpty ? [] : [flags]) + [ShellQuote.single(sanitize(prompt))])
+            .joined(separator: " ")
+        return "cd \(ShellQuote.single(directory.path)) || exit 1\n\(claude)\n"
     }
 
-    public static func build(kind: TerminalKind, directory: URL, line: String) -> LaunchCommand {
+    public static func build(kind: TerminalKind, directory: URL, scriptPath: URL) -> LaunchCommand {
         let dir = directory.path
-        let cdLine = "cd \(ShellQuote.single(dir)) && \(line)"
+        let runLine = "/bin/zsh -l \(ShellQuote.single(scriptPath.path))"
         switch kind {
         case .ghostty:
             return LaunchCommand(
                 executable: "/usr/bin/open",
                 arguments: ["-na", "Ghostty", "--args", "--working-directory=\(dir)",
-                            "-e", "/bin/zsh", "-lc", line])
+                            "-e", "/bin/zsh", "-l", scriptPath.path])
         case .terminal:
             return LaunchCommand(
                 executable: "/usr/bin/osascript",
                 arguments: [
-                    "-e", "tell application \"Terminal\" to do script \"\(ShellQuote.appleScriptString(cdLine))\"",
+                    "-e", "tell application \"Terminal\" to do script \"\(ShellQuote.appleScriptString(runLine))\"",
                     "-e", "tell application \"Terminal\" to activate",
                 ])
         case .iterm:
@@ -40,13 +41,27 @@ public enum TerminalCommand {
                     "-e", "tell application \"iTerm\"",
                     "-e", "activate",
                     "-e", "create window with default profile",
-                    "-e", "tell current session of current window to write text \"\(ShellQuote.appleScriptString(cdLine))\"",
+                    "-e", "tell current session of current window to write text \"\(ShellQuote.appleScriptString(runLine))\"",
                     "-e", "end tell",
                 ])
         case .custom(let template):
-            let resolved = substitute(template, values: ["{dir}": ShellQuote.single(dir), "{cmd}": ShellQuote.single(line)])
+            let resolved = substitute(template, values: ["{dir}": ShellQuote.single(dir), "{cmd}": runLine])
             return LaunchCommand(executable: "/bin/zsh", arguments: ["-lc", resolved])
         }
+    }
+
+    private static func sanitize(_ prompt: String) -> String {
+        let normalized = prompt
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+        var scalars = String.UnicodeScalarView()
+        for scalar in normalized.unicodeScalars {
+            let v = scalar.value
+            let isControl = v < 0x20 || v == 0x7F || (0x80...0x9F).contains(v)
+            if isControl && scalar != "\n" && scalar != "\t" { continue }
+            scalars.append(scalar)
+        }
+        return String(scalars)
     }
 
     private static func substitute(_ template: String, values: [String: String]) -> String {
