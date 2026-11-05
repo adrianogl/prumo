@@ -8,6 +8,15 @@ struct IntegrationsSettingsView: View {
     var body: some View {
         Form {
             Section {
+                if !store.jira.sites.isEmpty {
+                    HStack {
+                        Text(IntegrationsSettingsText.prefix)
+                            .frame(width: IntegrationsSettingsMetrics.prefixWidth, alignment: .leading)
+                        Text(IntegrationsSettingsText.site)
+                    }
+                    .font(.system(size: IntegrationsSettingsMetrics.hintSize))
+                    .foregroundStyle(.secondary)
+                }
                 ForEach(store.jira.sites) { site in
                     siteRow(site)
                 }
@@ -34,13 +43,19 @@ struct IntegrationsSettingsView: View {
         let id = site.id
         return VStack(alignment: .leading, spacing: 2) {
             HStack {
-                TextField(IntegrationsSettingsText.prefix, text: field(id, \.prefix))
+                TextField(
+                    IntegrationsSettingsText.prefix, text: field(id, \.prefix),
+                    prompt: Text(IntegrationsSettingsText.prefixPlaceholder))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
                     .focused($focusedPrefix, equals: id)
                     .onSubmit { normalizePrefix(of: id) }
                     .frame(width: IntegrationsSettingsMetrics.prefixWidth)
                 TextField(
                     IntegrationsSettingsText.site, text: field(id, \.host),
                     prompt: Text(IntegrationsSettingsText.sitePlaceholder))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
                 Button {
                     store.jira.sites.removeAll { $0.id == id }
                 } label: {
