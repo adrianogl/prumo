@@ -2,7 +2,7 @@ import SwiftUI
 
 enum OnboardingMetrics {
     static let width: CGFloat = 400
-    static let iconSize: CGFloat = 72
+    static let iconSize: CGFloat = 96
 }
 
 enum OnboardingSymbol {

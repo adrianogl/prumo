@@ -13,10 +13,7 @@ struct MenuBarLabel: View {
 
     var body: some View {
         HStack(spacing: 3) {
-            Image(PopoverSymbol.menuBarGlyph)
-                .resizable()
-                .scaledToFit()
-                .frame(width: PopoverMetrics.menuBarGlyphSize, height: PopoverMetrics.menuBarGlyphSize)
+            Image(nsImage: Self.glyph)
             if reviewCount > 0 {
                 Text("\(reviewCount)")
             }
@@ -31,6 +28,17 @@ struct MenuBarLabel: View {
             }
         }
     }
+
+    private static let glyph: NSImage = {
+        let side = PopoverMetrics.menuBarGlyphSize
+        let source = NSImage(named: PopoverSymbol.menuBarGlyph)
+        let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
+            source?.draw(in: rect)
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }()
 
     private static let failureDot: NSImage = {
         let size = NSSize(width: PopoverMetrics.menuBarDotSize, height: PopoverMetrics.menuBarDotSize)

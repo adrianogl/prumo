@@ -21,7 +21,7 @@ struct SettingsView: View {
             }
             Tab(SettingsText.about, systemImage: SettingsSymbol.about, value: SettingsTab.about) { about }
         }
-        .frame(width: SettingsMetrics.width, height: selection == .claude ? ClaudeSettingsMetrics.height : SettingsMetrics.height)
+        .frame(width: SettingsMetrics.width, height: selection == .claude ? ClaudeSettingsMetrics.height : (selection == .about ? SettingsMetrics.aboutHeight : SettingsMetrics.height))
     }
 
     private var account: some View {
@@ -66,6 +66,10 @@ struct SettingsView: View {
 
     private var about: some View {
         VStack(spacing: 6) {
+            Image(PopoverSymbol.appLogo)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: SettingsMetrics.aboutLogoSize, height: SettingsMetrics.aboutLogoSize)
             Wordmark(size: 22)
             Text("\(SettingsText.version) \(version)").foregroundStyle(.secondary)
             Text(SettingsText.iconCredit)
