@@ -1,0 +1,86 @@
+import Foundation
+
+public enum StatusDot: Equatable, Sendable {
+    case ok, running, failed, attention
+}
+
+public struct RowPresentation: Equatable, Sendable {
+    public let dot: StatusDot
+    public let title: String
+    public let subtitle: String
+    public let badges: [Badge]
+
+    public init(dot: StatusDot, title: String, subtitle: String, badges: [Badge]) {
+        self.dot = dot
+        self.title = title
+        self.subtitle = subtitle
+        self.badges = badges
+    }
+}
+
+public enum RowPresenter {
+    public static func mine(_ pr: PullRequest, viewer: String, now: Date) -> RowPresentation {
+        let verdicts = latestVerdicts(pr.reviews, excluding: viewer)
+        let approvals = verdicts.filter { $0 == .approved }.count
+        let hasChangesRequested = verdicts.contains(.changesRequested)
+
+        var badges: [Badge] = []
+        if let ci = ciBadge(pr.ci) { badges.append(ci) }
+        if approvals > 0 {
+            badges.append(Badge("✓ \(approvals) \(approvals == 1 ? "aprovação" : "aprovações")", .positive))
+        }
+        if hasChangesRequested { badges.append(Badge(PresentationText.changesRequested, .negative)) }
+        if pr.isDraft { badges.append(Badge(PresentationText.draft, .neutral)) }
+        if pr.mergeable == .conflicting { badges.append(Badge(PresentationText.conflict, .warning, .conflict)) }
+        if pr.commentCount > 0 { badges.append(Badge(String(pr.commentCount), .neutral, .comments)) }
+
+        return RowPresentation(
+            dot: dot(ci: pr.ci, hasChangesRequested: hasChangesRequested),
+            title: pr.title,
+            subtitle: subtitle(pr, now: now),
+            badges: badges
+        )
+    }
+
+    public static func review(_ pr: PullRequest, now: Date) -> RowPresentation {
+        var badges = [Badge(pr.author, .neutral)]
+        if let ci = ciBadge(pr.ci) { badges.append(ci) }
+        badges.append(Badge("+\(pr.additions) \(PresentationText.minus)\(pr.deletions)", .neutral))
+
+        return RowPresentation(
+            dot: dot(ci: pr.ci, hasChangesRequested: false),
+            title: pr.title,
+            subtitle: subtitle(pr, now: now),
+            badges: badges
+        )
+    }
+
+    private static func subtitle(_ pr: PullRequest, now: Date) -> String {
+        "\(pr.repository) #\(pr.number) · \(RelativeAge.string(from: pr.createdAt, now: now))"
+    }
+
+    private static func dot(ci: CIStatus, hasChangesRequested: Bool) -> StatusDot {
+        if case .failure = ci { return .failed }
+        if hasChangesRequested { return .attention }
+        if case .pending = ci { return .running }
+        return .ok
+    }
+
+    private static func ciBadge(_ ci: CIStatus) -> Badge? {
+        switch ci {
+        case .none: nil
+        case let .success(total): Badge("✓ CI \(total)/\(total)", .positive)
+        case let .pending(done, total): Badge("● CI \(done)/\(total)", .pending)
+        case let .failure(failed, total): Badge("✗ \(failed.first ?? "CI \(total)")", .negative)
+        }
+    }
+
+    private static func latestVerdicts(_ reviews: [Review], excluding viewer: String) -> [ReviewState] {
+        let relevant = reviews
+            .filter { $0.author != viewer && ($0.state == .approved || $0.state == .changesRequested) }
+            .sorted { $0.submittedAt < $1.submittedAt }
+        var latest: [String: ReviewState] = [:]
+        for review in relevant { latest[review.author] = review.state }
+        return Array(latest.values)
+    }
+}
