@@ -147,4 +147,9 @@ import Testing
         #expect(entries.first { $0.name == "globex/web" }?.displayName == "globex/web")
         #expect(RepositoryEntry(name: "a/b", count: 0, isFavorite: false).displayName == "a/b")
     }
+
+    @Test func publicDisplayNameDropsGitLabHostOnly() {
+        #expect(RepositoryCatalog.displayName("gitlab.empresa.com/vendas/api") == "vendas/api")
+        #expect(RepositoryCatalog.displayName("globex/web") == "globex/web")
+    }
 }

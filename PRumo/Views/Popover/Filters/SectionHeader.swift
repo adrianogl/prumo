@@ -1,3 +1,4 @@
+import PRumoKit
 import SwiftUI
 
 struct SectionHeader: View {
@@ -5,8 +6,9 @@ struct SectionHeader: View {
     let count: Int
 
     private var parts: (owner: String?, name: String) {
-        guard let slash = repository.firstIndex(of: "/") else { return (nil, repository) }
-        return (String(repository[..<slash]), String(repository[repository.index(after: slash)...]))
+        let display = RepositoryCatalog.displayName(repository)
+        guard let slash = display.firstIndex(of: "/") else { return (nil, display) }
+        return (String(display[..<slash]), String(display[display.index(after: slash)...]))
     }
 
     var body: some View {
@@ -36,7 +38,7 @@ struct SectionHeader: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.primary.opacity(FiltersMetrics.sectionHeaderBackgroundOpacity))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(FiltersText.sectionHeader(repository: repository, count: count))
+        .accessibilityLabel(FiltersText.sectionHeader(repository: RepositoryCatalog.displayName(repository), count: count))
         .accessibilityAddTraits(.isHeader)
     }
 }

@@ -62,7 +62,7 @@ public enum RepositoryCatalog {
         key.split(separator: "/", maxSplits: 1).first?.contains(".") ?? false
     }
 
-    private static func displayName(_ key: String) -> String {
+    public static func displayName(_ key: String) -> String {
         guard hasHost(key), let slash = key.firstIndex(of: "/") else { return key }
         return String(key[key.index(after: slash)...])
     }
