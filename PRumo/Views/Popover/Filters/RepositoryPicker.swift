@@ -31,7 +31,7 @@ struct RepositoryPicker: View {
             }
             .frame(maxHeight: FiltersMetrics.pickerListMaxHeight)
             .fixedSize(horizontal: false, vertical: true)
-            Divider().padding(.vertical, 6)
+            Divider().padding(.vertical, FiltersMetrics.dividerVerticalPadding)
             Toggle(FiltersText.hideEmptyRepositories, isOn: hideEmpty)
                 .toggleStyle(.checkbox)
                 .font(.system(size: FiltersMetrics.pickerNoteFontSize))
@@ -52,16 +52,16 @@ struct RepositoryPicker: View {
 
     private func row(_ entry: RepositoryEntry) -> some View {
         let selected = settings.filter.repositories.contains(entry.name)
-        return HStack(spacing: 8) {
+        return HStack(spacing: FiltersMetrics.rowSpacing) {
             Button {
                 toggleSelection(entry.name)
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: FiltersMetrics.rowSpacing) {
                     checkbox(selected)
                     Text(entry.name)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    Spacer(minLength: 4)
+                    Spacer(minLength: FiltersMetrics.rowSpacerMinLength)
                 }
                 .contentShape(Rectangle())
             }

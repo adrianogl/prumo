@@ -8,6 +8,7 @@ struct PopoverView: View {
     @State private var isOpen = false
     @State private var openGeneration = 0
     @State private var window: NSWindow?
+    @State private var isPresentingPicker = false
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
@@ -20,7 +21,7 @@ struct PopoverView: View {
             header
             tabs
             if !model.needsOnboarding {
-                FilterBar(organization: organization, snapshot: model.snapshot, tab: tab)
+                FilterBar(organization: organization, snapshot: model.snapshot, tab: tab, isPresentingPicker: $isPresentingPicker)
             }
             StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
             Divider()
@@ -40,7 +41,7 @@ struct PopoverView: View {
             if isPopoverWindow(note.object) { open() }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { note in
-            if isPopoverWindow(note.object) { close() }
+            if isPopoverWindow(note.object) && !isPresentingPicker { close() }
         }
     }
 

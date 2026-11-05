@@ -12,9 +12,9 @@ struct SectionHeader: View {
             .lineLimit(1)
             .truncationMode(.middle)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.top, 6)
-            .padding(.bottom, 2)
+            .padding(.horizontal, FiltersMetrics.sectionHeaderHorizontalPadding)
+            .padding(.top, FiltersMetrics.sectionHeaderTopPadding)
+            .padding(.bottom, FiltersMetrics.sectionHeaderBottomPadding)
             .accessibilityAddTraits(.isHeader)
     }
 }

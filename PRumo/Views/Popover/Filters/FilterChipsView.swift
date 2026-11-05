@@ -32,7 +32,7 @@ struct FilterChipsView: View {
         Button {
             organization.settings.filter = organization.settings.filter.removing(chip.key)
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: FiltersMetrics.chipContentSpacing) {
                 Text(chip.label)
                     .lineLimit(1)
                 Image(systemName: FiltersSymbol.remove)
@@ -48,6 +48,6 @@ struct FilterChipsView: View {
         }
         .buttonStyle(.plain)
         .help(FiltersText.removeFilter)
-        .accessibilityLabel("\(chip.label), \(FiltersText.removeFilter)")
+        .accessibilityLabel(FiltersText.removeChip(chip.label))
     }
 }

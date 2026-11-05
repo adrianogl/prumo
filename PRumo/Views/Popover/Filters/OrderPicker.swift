@@ -14,7 +14,7 @@ struct OrderPicker: View {
                     update { $0.order = order }
                 }
             }
-            Divider().padding(.vertical, 6)
+            Divider().padding(.vertical, FiltersMetrics.dividerVerticalPadding)
             item(FiltersText.groupByRepository, isOn: ordering.groupByRepository, highlights: false) {
                 update { $0.groupByRepository.toggle() }
             }
@@ -40,7 +40,7 @@ struct OrderPicker: View {
     ) -> some View {
         let highlighted = isOn && highlights
         return Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: FiltersMetrics.rowSpacing) {
                 Image(systemName: FiltersSymbol.check)
                     .font(.system(size: FiltersMetrics.orderCheckSize, weight: .semibold))
                     .opacity(isOn ? 1 : 0)

@@ -10,7 +10,7 @@ struct PickerGroupTitle: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, FiltersMetrics.pickerRowHorizontalPadding)
             .padding(.top, FiltersMetrics.pickerPadding)
-            .padding(.bottom, 3)
+            .padding(.bottom, FiltersMetrics.groupTitleBottomPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -20,7 +20,7 @@ struct PickerSearchField: View {
     @Binding var text: String
 
     var body: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: FiltersMetrics.searchContentSpacing) {
             Image(systemName: FiltersSymbol.search)
                 .foregroundStyle(.secondary)
             TextField(prompt, text: $text)

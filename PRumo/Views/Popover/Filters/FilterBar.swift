@@ -10,12 +10,21 @@ struct FilterBar: View {
     @State private var showsOrder = false
     @State private var isSavingView = false
     @State private var viewName = ""
+    @Binding var isPresentingPicker: Bool
 
     private var settings: OrganizationSettings { organization.settings }
 
     private var orderTitle: String {
         let ordering = settings.ordering(for: tab)
         return ordering.groupByRepository ? FiltersText.groupedByRepository : FiltersText.label(ordering.order)
+    }
+
+    private var isPickerOpen: Bool {
+        showsRepositories || showsFilters || showsOrder || isSavingView
+    }
+
+    private var isViewNameTaken: Bool {
+        settings.views.contains { $0.name.caseInsensitiveCompare(trimmedViewName) == .orderedSame }
     }
 
     private var trimmedViewName: String {
@@ -37,7 +46,7 @@ struct FilterBar: View {
                     FiltersText.withCount(FiltersText.filters, count: settings.filter.criteriaCount),
                     isPresented: $showsFilters
                 ) {
-                    FilterPicker(organization: organization, snapshot: snapshot) {
+                    FilterPicker(organization: organization, snapshot: snapshot, tab: tab) {
                         startSavingView { showsFilters = false }
                     }
                 }
@@ -48,12 +57,15 @@ struct FilterBar: View {
             }
             FilterChipsView(organization: organization)
         }
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
+        .padding(.horizontal, FiltersMetrics.barHorizontalPadding)
+        .padding(.bottom, FiltersMetrics.barBottomPadding)
+        .onChange(of: isPickerOpen) { _, isOpen in
+            isPresentingPicker = isOpen
+        }
         .alert(FiltersText.saveViewTitle, isPresented: $isSavingView) {
             TextField(FiltersText.viewName, text: $viewName)
             Button(FiltersText.save, action: saveView)
-                .disabled(trimmedViewName.isEmpty)
+                .disabled(trimmedViewName.isEmpty || isViewNameTaken)
             Button(FiltersText.cancel, role: .cancel) {}
         }
     }
@@ -66,7 +78,7 @@ struct FilterBar: View {
 
     private func saveView() {
         let name = trimmedViewName
-        guard !name.isEmpty else { return }
+        guard !name.isEmpty, !isViewNameTaken else { return }
         organization.settings.views.append(SavedView(name: name, filter: organization.settings.filter))
     }
 
@@ -79,7 +91,7 @@ struct FilterBar: View {
         Button {
             isPresented.wrappedValue.toggle()
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: FiltersMetrics.barButtonContentSpacing) {
                 if let symbol {
                     Image(systemName: symbol)
                 }

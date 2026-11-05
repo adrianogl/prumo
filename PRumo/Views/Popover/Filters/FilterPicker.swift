@@ -5,6 +5,7 @@ import enum PRumoKit.CIFilter
 struct FilterPicker: View {
     let organization: OrganizationStore
     let snapshot: Snapshot?
+    let tab: ListTab
     let onSaveView: () -> Void
     @State private var personSearch = ""
 
@@ -48,19 +49,21 @@ struct FilterPicker: View {
                             }
                         }
                     }
-                    group(FiltersText.requestTitle) {
-                        ForEach(RequestFilter.allCases, id: \.self) { value in
-                            chip(
-                                FiltersText.label(value, staleHours: FiltersDefaults.staleHours),
-                                isOn: filter.request.contains(value)
-                            ) {
-                                organization.settings.filter.request.formSymmetricDifference([value])
+                    if tab == .review {
+                        group(FiltersText.requestTitle) {
+                            ForEach(RequestFilter.allCases, id: \.self) { value in
+                                chip(
+                                    FiltersText.label(value, staleHours: FiltersDefaults.staleHours),
+                                    isOn: filter.request.contains(value)
+                                ) {
+                                    organization.settings.filter.request.formSymmetricDifference([value])
+                                }
                             }
                         }
                     }
                     PickerGroupTitle(title: FiltersText.authorTitle)
                     PickerSearchField(prompt: FiltersText.searchPerson, text: $personSearch)
-                        .padding(.bottom, 6)
+                        .padding(.bottom, FiltersMetrics.searchBottomPadding)
                     chipFlow {
                         ForEach(authors, id: \.self) { login in
                             chip(login, isOn: isSelected(author: login)) { toggle(author: login) }
@@ -70,7 +73,9 @@ struct FilterPicker: View {
             }
             .frame(maxHeight: FiltersMetrics.pickerListMaxHeight)
             .fixedSize(horizontal: false, vertical: true)
-            Divider().padding(.top, 8).padding(.bottom, 4)
+            Divider()
+                .padding(.top, FiltersMetrics.footerDividerTopPadding)
+                .padding(.bottom, FiltersMetrics.footerDividerBottomPadding)
             PickerFooterButton(title: FiltersText.saveAsView, action: onSaveView)
         }
         .padding(FiltersMetrics.pickerPadding)
@@ -101,7 +106,7 @@ struct FilterPicker: View {
         FlowLayout(spacing: FiltersMetrics.chipSpacing, lineSpacing: FiltersMetrics.chipLineSpacing) {
             content()
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, FiltersMetrics.chipFlowHorizontalPadding)
     }
 
     private func chip(_ title: String, isOn: Bool, action: @escaping () -> Void) -> some View {

@@ -40,6 +40,22 @@ enum FiltersMetrics {
     static let searchVerticalPadding: CGFloat = 4
     static let sectionHeaderFontSize: CGFloat = 10.5
     static let sectionHeaderTracking: CGFloat = 0.6
+    static let sectionHeaderHorizontalPadding: CGFloat = 12
+    static let sectionHeaderTopPadding: CGFloat = 6
+    static let sectionHeaderBottomPadding: CGFloat = 2
+    static let barButtonContentSpacing: CGFloat = 4
+    static let barHorizontalPadding: CGFloat = 12
+    static let barBottomPadding: CGFloat = 8
+    static let chipContentSpacing: CGFloat = 4
+    static let searchBottomPadding: CGFloat = 6
+    static let searchContentSpacing: CGFloat = 5
+    static let footerDividerTopPadding: CGFloat = 8
+    static let footerDividerBottomPadding: CGFloat = 4
+    static let dividerVerticalPadding: CGFloat = 6
+    static let chipFlowHorizontalPadding: CGFloat = 4
+    static let groupTitleBottomPadding: CGFloat = 3
+    static let rowSpacing: CGFloat = 8
+    static let rowSpacerMinLength: CGFloat = 4
 }
 
 enum FiltersSymbol {
@@ -77,6 +93,10 @@ enum FiltersText {
     static let unfavorite = "Remover dos favoritos"
     static let removeFilter = "Remover filtro"
     static let separator = " · "
+
+    static func removeChip(_ label: String) -> String {
+        "\(label), \(removeFilter)"
+    }
 
     static func withCount(_ title: String, count: Int) -> String {
         count > 0 ? "\(title)\(separator)\(count)" : title
