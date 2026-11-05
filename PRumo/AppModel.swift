@@ -14,6 +14,7 @@ final class AppModel {
     var origin: TokenOrigin?
     let claude: ClaudeSettingsStore
     let integrations: IntegrationSettingsStore
+    let organization: OrganizationStore
     private(set) var launching: Set<String> = []
     private(set) var rerunning: Set<String> = []
 
@@ -23,6 +24,7 @@ final class AppModel {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let worktreeRegistry: WorktreeRegistry
     @ObservationIgnored private var cleaningWorktrees = false
+    @ObservationIgnored private var activityBaseline: Snapshot?
     @ObservationIgnored private var githubClient: GitHubClient?
     @ObservationIgnored private var coordinator: RefreshCoordinator?
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
@@ -36,6 +38,7 @@ final class AppModel {
         defaults: UserDefaults = .standard,
         claude: ClaudeSettingsStore? = nil,
         integrations: IntegrationSettingsStore? = nil,
+        organization: OrganizationStore? = nil,
         worktreeRegistry: WorktreeRegistry = WorktreeRegistry(fileURL: WorktreeRegistry.defaultURL())
     ) {
         self.worktreeRegistry = worktreeRegistry
@@ -45,6 +48,7 @@ final class AppModel {
         self.defaults = defaults
         self.claude = claude ?? ClaudeSettingsStore(defaults: defaults)
         self.integrations = integrations ?? IntegrationSettingsStore(defaults: defaults)
+        self.organization = organization ?? OrganizationStore(defaults: defaults)
         login = defaults.string(forKey: AppConstants.accountLoginKey)
         origin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
         notifications.onFixWithClaude = { [weak self] id, url in
@@ -127,6 +131,7 @@ final class AppModel {
     private func begin(token: String) async {
         let client = GitHubClient(token: token)
         githubClient = client
+        activityBaseline = nil
         coordinator = RefreshCoordinator(
             fetch: { () async throws(GitHubError) -> Snapshot in try await client.fetchSnapshot() },
             store: snapshotStore
@@ -159,6 +164,7 @@ final class AppModel {
         }
         coordinator = nil
         githubClient = nil
+        activityBaseline = nil
         snapshot = nil
         lastRefresh = nil
         connection = .ok
@@ -198,7 +204,8 @@ final class AppModel {
 
     private func runRefresh() async -> Bool {
         guard let coordinator else { return false }
-        let result = await coordinator.refresh()
+        let options = TransitionOptions(ignoreDraftReviews: organization.settings.ignoreDraftsInReview)
+        let result = await coordinator.refresh(options: options)
         guard !Task.isCancelled else { return false }
         snapshot = result.snapshot
         if let viewer = result.snapshot?.viewer, viewer != login {
@@ -207,11 +214,23 @@ final class AppModel {
         }
         connection = result.state
         if result.state == .ok { lastRefresh = .now }
-        notifications.post(result.events)
         if result.state == .ok, let fresh = result.snapshot {
+            trackActivity(fresh: fresh, events: result.events)
+            organization.learnRepositories(from: fresh)
             cleanUpWorktrees(snapshot: fresh)
         }
+        let marks = organization.settings.marks
+        notifications.post(result.events.filter { !marks.isMuted($0.pullRequestID) })
         return result.state != .unauthorized
+    }
+
+    private func trackActivity(fresh: Snapshot, events: [NotificationEvent]) {
+        let baseline = activityBaseline.flatMap { $0.viewer == fresh.viewer ? $0 : nil }
+        let marks = organization.settings.marks
+        let touched = ActivityTracker.touched(old: baseline, new: fresh, events: events)
+        organization.recordActivity(touched.filter { !marks.isMuted($0) })
+        organization.pruneActivity(snapshot: fresh)
+        activityBaseline = fresh
     }
 
     func perform(_ entry: RowMenuEntry, on pr: PullRequest) {

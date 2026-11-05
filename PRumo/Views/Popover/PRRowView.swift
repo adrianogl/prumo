@@ -5,10 +5,22 @@ import PRumoKit
 struct PRRowView: View {
     let pr: PullRequest
     let presentation: RowPresentation
-    let tab: PopoverTab
+    let compactLine: String?
+    let tab: ListTab
+    let isHighlighted: Bool
     let model: AppModel
     @State private var hovering = false
     @State private var menuOpen = false
+
+    private static let dayMonth: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = PopoverText.dayMonthFormat
+        return formatter
+    }()
+
+    private var isPinned: Bool { model.organization.settings.marks.isPinned(pr.id) }
+    private var muted: MutedPullRequest? { model.organization.settings.marks.muted[pr.id] }
+    private var showsMenu: Bool { hovering || menuOpen || model.isLaunching(pr) }
 
     private var actions: RowActions {
         let purposes = pr.claudePurposes(in: tab, offersComments: presentation.commentsBadgeIndex != nil)
@@ -25,28 +37,37 @@ struct PRRowView: View {
     }
 
     private var accessibilitySummary: String {
-        ([presentation.title, presentation.subtitle] + presentation.badges.map(\.text)).joined(separator: ", ")
+        let details = compactLine.map { [$0] } ?? [presentation.subtitle] + presentation.badges.map(\.text)
+        return ([presentation.title] + details).joined(separator: ", ")
     }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Button {
-                NSWorkspace.shared.open(pr.url)
-            } label: {
-                Color.clear.contentShape(Rectangle())
+            if let muted {
+                openButton
+                    .help(PopoverText.mutedOn(date: Self.dayMonth.string(from: muted.mutedAt)))
+                content
+                    .opacity(PopoverMetrics.mutedOpacity)
+            } else {
+                openButton
+                content
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(accessibilitySummary)
-            .accessibilityAddTraits(.isButton)
 
-            content
-
-            if hovering || menuOpen || model.isLaunching(pr) {
+            if showsMenu {
                 RowMenuButton(
                     actions: actions, isLaunching: model.isLaunching(pr), isRerunning: model.isRerunning(pr),
                     menuOpen: $menuOpen)
                     .padding(.top, 6)
                     .padding(.trailing, 8)
+            } else if isHighlighted {
+                Circle()
+                    .fill(Color.prumoCaramel)
+                    .frame(width: PopoverMetrics.newDotSize, height: PopoverMetrics.newDotSize)
+                    .frame(width: ClaudeMetrics.menuButtonSize, height: ClaudeMetrics.menuButtonSize)
+                    .padding(.top, 6)
+                    .padding(.trailing, 8)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
         }
         .background(hovering ? Color.primary.opacity(0.04) : Color.clear)
@@ -54,26 +75,62 @@ struct PRRowView: View {
         .contextMenu { RowMenuItems(actions: actions, isRerunning: model.isRerunning(pr)) }
     }
 
-    private var content: some View {
-        HStack(alignment: .top, spacing: 10) {
+    private var openButton: some View {
+        Button {
+            NSWorkspace.shared.open(pr.url)
+        } label: {
+            Color.clear.contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilitySummary)
+        .accessibilityAddTraits(.isButton)
+    }
+
+    @ViewBuilder
+    private var statusMark: some View {
+        if muted != nil {
+            Image(systemName: PopoverSymbol.muted)
+                .font(.system(size: PopoverMetrics.dotSize))
+                .foregroundStyle(.secondary)
+                .frame(width: PopoverMetrics.dotSize, height: PopoverMetrics.dotSize)
+                .padding(.top, 4)
+        } else {
             Circle()
                 .fill(presentation.dot.color)
                 .frame(width: PopoverMetrics.dotSize, height: PopoverMetrics.dotSize)
                 .padding(.top, 4)
+        }
+    }
+
+    private var titleLine: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            if isPinned {
+                Image(systemName: PopoverSymbol.pinned)
+                    .font(.system(size: PopoverMetrics.pinSize))
+                    .foregroundStyle(Color.prumoCaramel)
+            }
+            Text(presentation.title)
+                .font(.system(size: 13, weight: isHighlighted ? .semibold : .medium))
+                .lineLimit(compactLine == nil ? 2 : 1)
+                .multilineTextAlignment(.leading)
+        }
+        .padding(.trailing, PopoverMetrics.menuReserve)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private var content: some View {
+        HStack(alignment: .top, spacing: 10) {
+            statusMark
             VStack(alignment: .leading, spacing: 3) {
-                Text(presentation.title)
-                    .font(.system(size: 13, weight: .medium))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .padding(.trailing, PopoverMetrics.menuReserve)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-                Text(presentation.subtitle)
+                titleLine
+                Text(compactLine ?? presentation.subtitle)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                    .lineLimit(compactLine == nil ? nil : 1)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
-                if !presentation.badges.isEmpty {
+                if compactLine == nil, !presentation.badges.isEmpty {
                     FlowLayout(spacing: PopoverMetrics.badgeSpacing, lineSpacing: PopoverMetrics.badgeLineSpacing) {
                         ForEach(Array(presentation.badges.enumerated()), id: \.offset) { index, badge in
                             BadgeView(badge: badge).allowsHitTesting(false).accessibilityHidden(true)

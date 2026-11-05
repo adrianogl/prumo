@@ -6,10 +6,11 @@ struct MenuBarLabel: View {
     let model: AppModel
     @Environment(\.openWindow) private var openWindow
 
-    private var reviewCount: Int { model.snapshot?.toReview.count ?? 0 }
-    private var hasFailure: Bool {
-        model.snapshot?.mine.contains { if case .failure = $0.ci { true } else { false } } ?? false
+    private var reviewCount: Int {
+        guard let snapshot = model.snapshot else { return 0 }
+        return Counters.reviewBadge(snapshot, ignoreDrafts: model.organization.settings.ignoreDraftsInReview)
     }
+    private var hasFailure: Bool { model.snapshot.map(Counters.hasFailingCI) ?? false }
 
     var body: some View {
         HStack(spacing: 3) {

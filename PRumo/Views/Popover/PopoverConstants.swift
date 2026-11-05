@@ -10,6 +10,10 @@ enum PopoverMetrics {
     static let menuBarGlyphSize: CGFloat = 15
     static let menuBarDotSize: CGFloat = 5
     static let menuReserve: CGFloat = 26
+    static let newDotSize: CGFloat = 7
+    static let mutedOpacity: Double = 0.55
+    static let pinSize: CGFloat = 10
+    static let mergedIconSize: CGFloat = 11
 }
 
 enum PopoverSymbol {
@@ -21,13 +25,20 @@ enum PopoverSymbol {
     static let clock = "clock"
     static let menuBarGlyph = "MenuBarGlyph"
     static let appLogo = "AppLogo"
+    static let pinned = "pin.fill"
+    static let muted = "pause.fill"
+    static let merged = "checkmark"
 }
 
 enum PopoverText {
     static let mineTab = "Meus PRs"
     static let reviewTab = "Revisar"
+    static let mergeTab = "Merge"
     static let emptyMine = "Nenhum PR aberto"
     static let emptyReview = "Nenhum review pedido"
+    static let emptyMerge = "Nenhum PR pronto para merge"
+    static let clockFormat = "HH:mm"
+    static let dayMonthFormat = "dd/MM"
     static let settings = "Ajustes"
     static let refresh = "Atualizar"
     static let updating = "Atualizando…"
@@ -36,6 +47,16 @@ enum PopoverText {
     static let connectPrompt = "Conecte sua conta do GitHub"
     static let connectAction = "Conectar"
     static let onboardingWindowID = "onboarding"
+
+    static func mergedToday(count: Int) -> String { "MERGEADOS HOJE · \(count)" }
+
+    static func mergedAt(time: String) -> String { "merge às \(time)" }
+
+    static func mergedSubtitle(repository: String, number: Int, time: String) -> String {
+        "\(repository) #\(number) · \(mergedAt(time: time))"
+    }
+
+    static func mutedOn(date: String) -> String { "Silenciado em \(date)" }
 
     static func updatedAgo(seconds: Int) -> String {
         if seconds < 60 { return "Atualizado há \(seconds)s" }
@@ -56,8 +77,4 @@ enum PopoverText {
     static func rateLimited(resetAt: String?) -> String {
         resetAt.map { "Limite da API do GitHub. Volta às \($0)" } ?? "Limite da API do GitHub."
     }
-}
-
-enum PopoverTab: Hashable {
-    case mine, review
 }
