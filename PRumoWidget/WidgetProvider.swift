@@ -25,12 +25,10 @@ struct PRumoProvider: TimelineProvider {
 
     static func load() -> WidgetSnapshot {
         guard
-            let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetStorage.appGroupIdentifier),
-            let data = try? Data(contentsOf: container.appendingPathComponent(WidgetStorage.fileName))
+            let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetSharedStore.appGroupIdentifier),
+            let data = try? Data(contentsOf: container.appendingPathComponent(WidgetSharedStore.fileName))
         else { return .disconnected }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return (try? decoder.decode(WidgetSnapshot.self, from: data)) ?? .disconnected
+        return (try? WidgetSharedStore.makeDecoder().decode(WidgetSnapshot.self, from: data)) ?? .disconnected
     }
 
     static var placeholderSnapshot: WidgetSnapshot {

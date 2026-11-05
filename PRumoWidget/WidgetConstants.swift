@@ -33,11 +33,6 @@ enum WidgetMetrics {
     static let maxRows = 3
 }
 
-enum WidgetStorage {
-    static let appGroupIdentifier = "group.dev.aglv.prumo"
-    static let fileName = "widget.json"
-}
-
 enum WidgetPlaceholder {
     static let items: [(number: Int, title: String, hours: Int?)] = [
         (809, "feat(pedido): filtro por status", nil),

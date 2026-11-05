@@ -16,8 +16,8 @@ final class WidgetPublisher {
 
     static func makeDefault() -> WidgetPublisher? {
         FileManager.default
-            .containerURL(forSecurityApplicationGroupIdentifier: AppConstants.appGroupIdentifier)
-            .map { WidgetPublisher(fileURL: $0.appendingPathComponent(AppConstants.widgetFileName)) }
+            .containerURL(forSecurityApplicationGroupIdentifier: WidgetSharedStore.appGroupIdentifier)
+            .map { WidgetPublisher(fileURL: $0.appendingPathComponent(WidgetSharedStore.fileName)) }
     }
 
     func publish(_ snapshot: WidgetSnapshot) {
@@ -25,9 +25,7 @@ final class WidgetPublisher {
             new: snapshot, lastPublished: lastPublished, now: now(), renewAfter: AppConstants.widgetRenewAfter
         )
         guard decision.write else { return }
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        guard let data = try? encoder.encode(snapshot) else { return }
+        guard let data = try? WidgetSharedStore.makeEncoder().encode(snapshot) else { return }
         do {
             try data.write(to: fileURL, options: .atomic)
         } catch {
