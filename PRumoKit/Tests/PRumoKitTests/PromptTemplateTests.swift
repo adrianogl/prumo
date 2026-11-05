@@ -32,6 +32,7 @@ import Testing
         let defaults = ClaudeSettings.defaults
         #expect(defaults.reviewTemplate == "/code-review {numero}")
         #expect(defaults.ciTemplate == "A CI do PR #{numero} ({repo}) falhou no job {job}. Leia o log com gh run view {run} --log-failed, encontre a causa e corrija.")
+        #expect(defaults.conflictTemplate == "O PR #{numero} ({repo}) está em conflito com {base}. Atualize a branch com git fetch origin {base} e git merge origin/{base}, resolva os conflitos mantendo a intenção das duas partes, rode os testes e faça commit do merge.")
         #expect(defaults.extraFlags == "")
         #expect(defaults.terminal == .ghostty)
         #expect(defaults.clonesRoot == "~/Code")
@@ -46,6 +47,14 @@ import Testing
         #expect(values["job"] == "lint")
         #expect(values["run"] == "1234")
         #expect(values["repo"] == "acme/loja")
+    }
+
+    @Test func conflictValuesAddBase() {
+        let values = PromptValues.conflict(.fixture(baseRefName: "develop"))
+        #expect(values["base"] == "develop")
+        #expect(values["numero"] == "812")
+        #expect(values["branch"] == "feat/carrinho")
+        #expect(PromptValues.review(.fixture())["base"] == nil)
     }
 
     @Test func ciValuesAreEmptyWithoutFailure() {

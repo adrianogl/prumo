@@ -17,6 +17,7 @@
           "deletions": 2,
           "mergeable": "MERGEABLE",
           "headRefName": "feat/branch-101",
+          "baseRefName": "main",
           "isCrossRepository": false,
           "repository": {
             "nameWithOwner": "acme/api"
@@ -181,6 +182,7 @@
           "deletions": 2,
           "mergeable": "UNKNOWN",
           "headRefName": "feat/branch-103",
+          "baseRefName": "main",
           "isCrossRepository": false,
           "repository": {
             "nameWithOwner": "acme/web"
@@ -268,6 +270,7 @@
           "deletions": 2,
           "mergeable": "CONFLICTING",
           "headRefName": "feat/branch-104",
+          "baseRefName": "develop",
           "isCrossRepository": true,
           "repository": {
             "nameWithOwner": "acme/web"

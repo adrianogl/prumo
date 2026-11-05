@@ -16,6 +16,12 @@ public enum PromptValues {
         return values
     }
 
+    public static func conflict(_ pr: PullRequest) -> [String: String] {
+        var values = review(pr)
+        values["base"] = pr.baseRefName
+        return values
+    }
+
     private static func firstFailedCheck(_ ci: CIStatus) -> String {
         if case .failure(let checks, _) = ci { return checks.first ?? "" }
         return ""

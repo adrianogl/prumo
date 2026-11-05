@@ -55,6 +55,33 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
         ])
     }
 
+    @Test func resolveConflictOnOwnBranchMatchesFixCI() async throws {
+        let ci = RecordingRunner()
+        _ = try await manager(ci).prepare(pr: .fixture(), clone: clone, purpose: .fixCI)
+        let conflict = RecordingRunner()
+        let path = try await manager(conflict).prepare(pr: .fixture(), clone: clone, purpose: .resolveConflict)
+        #expect(path.path == target)
+        #expect(conflict.commands == ci.commands)
+    }
+
+    @Test func resolveConflictOnForkIsDetached() async throws {
+        let runner = RecordingRunner()
+        let pr = PullRequest.fixture(isCrossRepository: true)
+        _ = try await manager(runner).prepare(pr: pr, clone: clone, purpose: .resolveConflict)
+        #expect(runner.commands.contains("/usr/bin/git -C /code/loja worktree add --detach -- \(target) refs/prumo/pull/812"))
+        #expect(!runner.commands.contains { $0.contains("-B") })
+    }
+
+    @Test func resolveConflictOnDirtyDetachedTargetThrows() async {
+        let runner = RecordingRunner(results: [
+            "/usr/bin/git -C \(target) symbolic-ref -q HEAD": (1, "", ""),
+            "/usr/bin/git -C \(target) status --porcelain": (0, " M a\n", "")
+        ])
+        await #expect(throws: WorktreeError.gitFailed("A worktree \(target) tem alterações; finalize ou descarte antes de resolver o conflito.")) {
+            try await manager(runner, existing: [target]).prepare(pr: .fixture(), clone: clone, purpose: .resolveConflict)
+        }
+    }
+
     @Test func reviewUsesDetachedPullHead() async throws {
         let runner = RecordingRunner()
         let path = try await manager(runner).prepare(pr: .fixture(), clone: clone, purpose: .review)

@@ -26,6 +26,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
     public let mergeable: Mergeable
     public let reviewRequestedAt: Date?
     public let headRefName: String
+    public let baseRefName: String
     public let isCrossRepository: Bool
     public let failedRunID: Int?
 
@@ -34,7 +35,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         isDraft: Bool, createdAt: Date, updatedAt: Date, headSHA: String, ci: CIStatus,
         reviews: [Review], comments: [Comment], commentCount: Int, additions: Int, deletions: Int,
         mergeable: Mergeable, reviewRequestedAt: Date?,
-        headRefName: String = "", isCrossRepository: Bool = false, failedRunID: Int? = nil
+        headRefName: String = "", baseRefName: String = "", isCrossRepository: Bool = false, failedRunID: Int? = nil
     ) {
         self.id = id
         self.number = number
@@ -55,6 +56,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         self.mergeable = mergeable
         self.reviewRequestedAt = reviewRequestedAt
         self.headRefName = headRefName
+        self.baseRefName = baseRefName
         self.isCrossRepository = isCrossRepository
         self.failedRunID = failedRunID
     }
@@ -62,7 +64,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case id, number, title, url, repository, author, isDraft, createdAt, updatedAt, headSHA, ci
         case reviews, comments, commentCount, additions, deletions, mergeable, reviewRequestedAt
-        case headRefName, isCrossRepository, failedRunID
+        case headRefName, baseRefName, isCrossRepository, failedRunID
     }
 
     public init(from decoder: Decoder) throws {
@@ -86,6 +88,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         mergeable = try container.decode(Mergeable.self, forKey: .mergeable)
         reviewRequestedAt = try container.decodeIfPresent(Date.self, forKey: .reviewRequestedAt)
         headRefName = try container.decodeIfPresent(String.self, forKey: .headRefName) ?? ""
+        baseRefName = try container.decodeIfPresent(String.self, forKey: .baseRefName) ?? ""
         isCrossRepository = try container.decodeIfPresent(Bool.self, forKey: .isCrossRepository) ?? false
         failedRunID = try container.decodeIfPresent(Int.self, forKey: .failedRunID)
     }

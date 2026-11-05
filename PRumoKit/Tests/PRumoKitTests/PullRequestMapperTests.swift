@@ -83,6 +83,13 @@ struct PullRequestMapperTests {
         #expect(s.mine[3].isCrossRepository)
     }
 
+    @Test func mapsBaseRefName() throws {
+        let s = try snapshot()
+        #expect(s.mine[0].baseRefName == "main")
+        #expect(s.mine[3].baseRefName == "develop")
+        #expect(s.toReview[0].baseRefName == "main")
+    }
+
     @Test func failedRunIDFromDetailsURL() throws {
         let s = try snapshot()
         #expect(s.mine[1].failedRunID == 102001)

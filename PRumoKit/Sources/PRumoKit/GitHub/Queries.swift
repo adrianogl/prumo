@@ -21,6 +21,7 @@ public enum Queries {
             deletions
             mergeable
             headRefName
+            baseRefName
             isCrossRepository
             repository { nameWithOwner }
             author { __typename login }

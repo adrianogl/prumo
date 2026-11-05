@@ -17,7 +17,11 @@ enum ClaudeMessages {
         "O terminal não abriu (código \(status))."
     }
 
-    static func dirtyWorktree(_ path: String) -> String {
-        "A worktree \(path) tem alterações; finalize ou descarte antes de corrigir a CI."
+    static func dirtyWorktree(_ path: String, purpose: SessionPurpose) -> String {
+        let action = purpose == .resolveConflict ? dirtyConflictAction : dirtyCIAction
+        return "A worktree \(path) tem alterações; finalize ou descarte antes de \(action)."
     }
+
+    private static let dirtyCIAction = "corrigir a CI"
+    private static let dirtyConflictAction = "resolver o conflito"
 }

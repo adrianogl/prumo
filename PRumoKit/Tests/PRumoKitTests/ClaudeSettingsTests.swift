@@ -10,6 +10,7 @@ import Testing
         #expect(settings.removeWorktreeOnClose == false)
         #expect(settings.reviewTemplate == ClaudeDefaults.reviewTemplate)
         #expect(settings.ciTemplate == ClaudeDefaults.ciTemplate)
+        #expect(settings.conflictTemplate == ClaudeDefaults.conflictTemplate)
         #expect(settings.terminal == ClaudeDefaults.terminal)
         #expect(settings.clonesRoot == ClaudeDefaults.clonesRoot)
         #expect(settings.worktreesRoot == ClaudeDefaults.worktreesRoot)

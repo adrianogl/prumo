@@ -50,6 +50,7 @@ public enum PullRequestMapper {
                 .compactMap(\.createdAt)
                 .max(),
             headRefName: node.headRefName ?? "",
+            baseRefName: node.baseRefName ?? "",
             isCrossRepository: node.isCrossRepository ?? false,
             failedRunID: failedRunID(commit?.statusCheckRollup)
         )

@@ -10,13 +10,18 @@ public struct RowPresentation: Equatable, Sendable {
     public let subtitle: String
     public let badges: [Badge]
     public let ciFailureBadgeIndex: Int?
+    public let conflictBadgeIndex: Int?
 
-    public init(dot: StatusDot, title: String, subtitle: String, badges: [Badge], ciFailureBadgeIndex: Int? = nil) {
+    public init(
+        dot: StatusDot, title: String, subtitle: String, badges: [Badge],
+        ciFailureBadgeIndex: Int? = nil, conflictBadgeIndex: Int? = nil
+    ) {
         self.dot = dot
         self.title = title
         self.subtitle = subtitle
         self.badges = badges
         self.ciFailureBadgeIndex = ciFailureBadgeIndex
+        self.conflictBadgeIndex = conflictBadgeIndex
     }
 }
 
@@ -37,7 +42,11 @@ public enum RowPresenter {
         }
         if hasChangesRequested { badges.append(Badge(PresentationText.changesRequested, .negative)) }
         if pr.isDraft { badges.append(Badge(PresentationText.draft, .neutral)) }
-        if pr.mergeable == .conflicting { badges.append(Badge(PresentationText.conflict, .warning, .conflict)) }
+        var conflictIndex: Int?
+        if pr.mergeable == .conflicting {
+            conflictIndex = badges.count
+            badges.append(Badge(PresentationText.conflict, .warning, .conflict))
+        }
         let commentTotal = pr.commentCount + pr.reviews.filter(\.isComment).count
         if commentTotal > 0 { badges.append(Badge(String(commentTotal), .neutral, .comments)) }
 
@@ -46,7 +55,8 @@ public enum RowPresenter {
             title: pr.title,
             subtitle: subtitle(pr, from: pr.createdAt, now: now),
             badges: badges,
-            ciFailureBadgeIndex: ciFailureIndex
+            ciFailureBadgeIndex: ciFailureIndex,
+            conflictBadgeIndex: conflictIndex
         )
     }
 

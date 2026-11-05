@@ -114,6 +114,17 @@ import Testing
         #expect(RowPresenter.mine(passing, viewer: "adriano", now: .fixed).ciFailureBadgeIndex == nil)
     }
 
+    @Test func conflictBadgeIndexPointsToTheConflictBadge() {
+        let conflicting = PullRequest.fixture(ci: .success(total: 3), mergeable: .conflicting)
+        let presentation = RowPresenter.mine(conflicting, viewer: "adriano", now: .fixed)
+        let index = presentation.conflictBadgeIndex
+        #expect(index == 1)
+        #expect(presentation.badges[index!].icon == .conflict)
+        let clean = PullRequest.fixture(mergeable: .mergeable)
+        #expect(RowPresenter.mine(clean, viewer: "adriano", now: .fixed).conflictBadgeIndex == nil)
+        #expect(RowPresenter.review(conflicting, now: .fixed).conflictBadgeIndex == nil)
+    }
+
     @Test func failureBadgeFallsBackWhenNoCheckNames() {
         let pr = PullRequest.fixture(ci: .failure(failedChecks: [], total: 7))
         #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).badges == [Badge("✗ CI 7", .negative)])

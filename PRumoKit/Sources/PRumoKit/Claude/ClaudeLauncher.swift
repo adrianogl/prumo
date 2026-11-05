@@ -92,6 +92,9 @@ public struct ClaudeLauncher: Sendable {
         case .fixCI:
             prompt = PromptTemplate.render(settings.ciTemplate, values: PromptValues.ci(pr))
             if pr.isCrossRepository { prompt += ClaudeMessages.forkNotice }
+        case .resolveConflict:
+            prompt = PromptTemplate.render(settings.conflictTemplate, values: PromptValues.conflict(pr))
+            if pr.isCrossRepository { prompt += ClaudeMessages.forkNotice }
         }
 
         let script = TerminalCommand.scriptContents(

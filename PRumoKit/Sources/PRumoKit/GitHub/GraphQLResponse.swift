@@ -48,6 +48,7 @@ struct GraphQLResponse: Decodable {
         let deletions: Int
         let mergeable: String
         let headRefName: String?
+        let baseRefName: String?
         let isCrossRepository: Bool?
         let repository: Repository
         let author: Author?

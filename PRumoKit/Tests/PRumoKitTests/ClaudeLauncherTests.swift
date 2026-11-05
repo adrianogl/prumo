@@ -101,6 +101,26 @@ private func launcher(
         #expect(sink.written[0].contents.contains("e corrija. O PR vem de um fork; não faça push.'\n"))
     }
 
+    @Test func resolveConflictUsesConflictTemplateInBranchWorktree() async throws {
+        let sink = ScriptSink()
+        let runner = FakeRunner()
+        let pr = PullRequest.fixture(mergeable: .conflicting, baseRefName: "develop")
+        _ = try await launcher(runner, sink: sink).launch(pr: pr, purpose: .resolveConflict)
+        let script = sink.written[0].contents
+        #expect(script.contains("O PR #812 (acme/loja) está em conflito com develop. Atualize a branch com git fetch origin develop e git merge origin/develop, resolva os conflitos mantendo a intenção das duas partes, rode os testes e faça commit do merge.'\n"))
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add -B feat/carrinho -- \(worktree) refs/remotes/origin/feat/carrinho"))
+        #expect(!script.contains("não faça push"))
+    }
+
+    @Test func forkResolveConflictIsDetachedWithNoPushNotice() async throws {
+        let sink = ScriptSink()
+        let runner = FakeRunner()
+        let pr = PullRequest.fixture(mergeable: .conflicting, isCrossRepository: true)
+        _ = try await launcher(runner, sink: sink).launch(pr: pr, purpose: .resolveConflict)
+        #expect(sink.written[0].contents.contains("faça commit do merge. O PR vem de um fork; não faça push.'\n"))
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add --detach -- \(worktree) refs/prumo/pull/812"))
+    }
+
     @Test func missingCloneThrowsCloneNotFound() async {
         let runner = FakeRunner()
         let sink = ScriptSink()

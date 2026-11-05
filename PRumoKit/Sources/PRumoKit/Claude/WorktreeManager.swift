@@ -23,7 +23,7 @@ public struct WorktreeManager: Sendable {
             throw .gitFailed(ClaudeMessages.invalidBranch(branch))
         }
         let target = try await resolveTarget(pr: pr, clone: clone)
-        let ownBranch = purpose == .fixCI && !pr.isCrossRepository
+        let ownBranch = purpose != .review && !pr.isCrossRepository
         let ref = Self.pullRef(pr.number)
 
         if exists(target) {
@@ -43,7 +43,7 @@ public struct WorktreeManager: Sendable {
             if await isRemovable(path: target, clone: clone) {
                 try await git(["-C", clone.path, "worktree", "remove", target.path])
             } else {
-                throw .gitFailed(ClaudeMessages.dirtyWorktree(target.path))
+                throw .gitFailed(ClaudeMessages.dirtyWorktree(target.path, purpose: purpose))
             }
         }
 
