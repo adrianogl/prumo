@@ -19,6 +19,9 @@ struct PopoverView: View {
         VStack(spacing: 0) {
             header
             tabs
+            if !model.needsOnboarding {
+                FilterBar(organization: organization, snapshot: model.snapshot, tab: tab)
+            }
             StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
             Divider()
             list
@@ -72,18 +75,23 @@ struct PopoverView: View {
         }
     }
 
-    private func rows(for tab: ListTab, now: Date) -> [PullRequest] {
+    private func sections(for tab: ListTab, now: Date) -> [RowSection] {
         let settings = organization.settings
         let context = FilterContext(
             viewer: viewer, marks: settings.marks, unseen: highlighted.union(organization.unseen), now: now)
         let filtered = RowFiltering.apply(source(for: tab), filter: settings.filter, tab: tab, context: context)
         return RowOrdering.sections(
-            filtered, tab: tab, ordering: settings.ordering(for: tab), marks: settings.marks, viewer: viewer
-        ).flatMap(\.items)
+            filtered, tab: tab, ordering: settings.ordering(for: tab), marks: settings.marks, viewer: viewer)
+    }
+
+    private func rowCount(for tab: ListTab) -> Int {
+        sections(for: tab, now: .now).reduce(0) { $0 + $1.items.count }
     }
 
     private func mergedToday(now: Date) -> [MergedPullRequest] {
-        MergedToday.items(model.snapshot?.mergedToday ?? [], now: now, calendar: .current)
+        let repositories = organization.settings.filter.repositories
+        return MergedToday.items(model.snapshot?.mergedToday ?? [], now: now, calendar: .current)
+            .filter { repositories.isEmpty || repositories.contains($0.repository) }
     }
 
     private func showOnboarding() {
@@ -117,9 +125,9 @@ struct PopoverView: View {
 
     private var tabs: some View {
         HStack(spacing: 2) {
-            tabButton(PopoverText.mineTab, count: rows(for: .mine, now: .now).count, tab: .mine)
-            tabButton(PopoverText.reviewTab, count: rows(for: .review, now: .now).count, tab: .review)
-            tabButton(PopoverText.mergeTab, count: rows(for: .merge, now: .now).count, tab: .merge)
+            tabButton(PopoverText.mineTab, count: rowCount(for: .mine), tab: .mine)
+            tabButton(PopoverText.reviewTab, count: rowCount(for: .review), tab: .review)
+            tabButton(PopoverText.mergeTab, count: rowCount(for: .merge), tab: .merge)
         }
         .padding(2)
         .background(Color.prumoBadgeBackground, in: RoundedRectangle(cornerRadius: 8))
@@ -175,17 +183,16 @@ struct PopoverView: View {
             .frame(maxWidth: .infinity)
         } else {
             TimelineView(.periodic(from: .now, by: 60)) { context in
-                let items = rows(for: tab, now: context.date)
+                let sections = sections(for: tab, now: context.date).filter { !$0.items.isEmpty }
                 let merged = tab == .merge ? mergedToday(now: context.date) : []
-                if items.isEmpty && merged.isEmpty {
+                if sections.isEmpty && merged.isEmpty {
                     emptyState
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
-                            if items.isEmpty { emptyState }
-                            ForEach(items) { pr in
-                                row(pr, now: context.date)
-                                if pr.id != items.last?.id { Divider() }
+                            if sections.isEmpty { emptyState }
+                            ForEach(sections, id: \.repository) { section in
+                                sectionView(section, isFirst: section.repository == sections.first?.repository, now: context.date)
                             }
                             if !merged.isEmpty { mergedSection(merged) }
                         }
@@ -195,6 +202,18 @@ struct PopoverView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func sectionView(_ section: RowSection, isFirst: Bool, now: Date) -> some View {
+        if let repository = section.repository {
+            if !isFirst { Divider() }
+            SectionHeader(repository: repository, count: section.items.count)
+        }
+        ForEach(section.items) { pr in
+            row(pr, now: now)
+            if pr.id != section.items.last?.id { Divider() }
         }
     }
 
