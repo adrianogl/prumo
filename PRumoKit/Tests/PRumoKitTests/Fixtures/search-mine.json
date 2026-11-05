@@ -1,0 +1,362 @@
+{
+  "data": {
+    "viewer": {
+      "login": "adriano"
+    },
+    "search": {
+      "nodes": [
+        {
+          "id": "PR_101",
+          "number": 101,
+          "title": "Adiciona busca",
+          "url": "https://github.com/acme/api/pull/101",
+          "isDraft": false,
+          "createdAt": "2026-11-03T10:00:00Z",
+          "updatedAt": "2026-11-05T12:00:00Z",
+          "additions": 10,
+          "deletions": 2,
+          "mergeable": "MERGEABLE",
+          "repository": {
+            "nameWithOwner": "acme/api"
+          },
+          "author": {
+            "login": "adriano"
+          },
+          "commits": {
+            "nodes": [
+              {
+                "commit": {
+                  "oid": "sha101",
+                  "statusCheckRollup": {
+                    "state": "SUCCESS",
+                    "contexts": {
+                      "totalCount": 12,
+                      "nodes": [
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-1",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-2",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-3",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-4",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-5",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-6",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-7",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-8",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-9",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-10",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-11",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "check-12",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "reviews": {
+            "nodes": [
+              {
+                "id": "R1",
+                "state": "APPROVED",
+                "submittedAt": "2026-11-04T09:00:00Z",
+                "author": {
+                  "login": "ana"
+                },
+                "url": "https://github.com/acme/api/pull/101#pullrequestreview-R1",
+                "body": ""
+              },
+              {
+                "id": "R2",
+                "state": "APPROVED",
+                "submittedAt": "2026-11-04T10:00:00Z",
+                "author": {
+                  "login": "beto"
+                },
+                "url": "https://github.com/acme/api/pull/101#pullrequestreview-R2",
+                "body": ""
+              }
+            ]
+          },
+          "comments": {
+            "totalCount": 1,
+            "nodes": [
+              {
+                "id": "C1",
+                "url": "https://github.com/acme/api/pull/101#issuecomment-1",
+                "body": "Ficou bom",
+                "createdAt": "2026-11-04T11:00:00Z",
+                "author": {
+                  "__typename": "User",
+                  "login": "ana"
+                }
+              }
+            ]
+          },
+          "timelineItems": {
+            "nodes": []
+          }
+        },
+        {
+          "id": "PR_102",
+          "number": 102,
+          "title": "Corrige timeout",
+          "url": "https://github.com/acme/api/pull/102",
+          "isDraft": false,
+          "createdAt": "2026-11-03T10:00:00Z",
+          "updatedAt": "2026-11-05T12:00:00Z",
+          "additions": 10,
+          "deletions": 2,
+          "mergeable": "MERGEABLE",
+          "repository": {
+            "nameWithOwner": "acme/api"
+          },
+          "author": {
+            "login": "adriano"
+          },
+          "commits": {
+            "nodes": [
+              {
+                "commit": {
+                  "oid": "sha102",
+                  "statusCheckRollup": {
+                    "state": "FAILURE",
+                    "contexts": {
+                      "totalCount": 12,
+                      "nodes": [
+                        {
+                          "__typename": "CheckRun",
+                          "name": "unit-tests",
+                          "status": "COMPLETED",
+                          "conclusion": "FAILURE"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "reviews": {
+            "nodes": []
+          },
+          "comments": {
+            "totalCount": 1,
+            "nodes": [
+              {
+                "id": "C2",
+                "url": "https://github.com/acme/api/pull/102#issuecomment-2",
+                "body": "Coverage 80%",
+                "createdAt": "2026-11-05T08:00:00Z",
+                "author": {
+                  "__typename": "Bot",
+                  "login": "codecov"
+                }
+              }
+            ]
+          },
+          "timelineItems": {
+            "nodes": []
+          }
+        },
+        {
+          "id": "PR_103",
+          "number": 103,
+          "title": "WIP migracao",
+          "url": "https://github.com/acme/web/pull/103",
+          "isDraft": true,
+          "createdAt": "2026-11-03T10:00:00Z",
+          "updatedAt": "2026-11-05T12:00:00Z",
+          "additions": 10,
+          "deletions": 2,
+          "mergeable": "UNKNOWN",
+          "repository": {
+            "nameWithOwner": "acme/web"
+          },
+          "author": {
+            "login": "adriano"
+          },
+          "commits": {
+            "nodes": [
+              {
+                "commit": {
+                  "oid": "sha103",
+                  "statusCheckRollup": {
+                    "state": "PENDING",
+                    "contexts": {
+                      "totalCount": 9,
+                      "nodes": [
+                        {
+                          "__typename": "CheckRun",
+                          "name": "job-1",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "job-2",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "job-3",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "job-4",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "deploy",
+                          "status": "IN_PROGRESS",
+                          "conclusion": null
+                        },
+                        {
+                          "__typename": "StatusContext",
+                          "context": "lint",
+                          "state": "PENDING"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "reviews": {
+            "nodes": []
+          },
+          "comments": {
+            "totalCount": 0,
+            "nodes": []
+          },
+          "timelineItems": {
+            "nodes": []
+          }
+        },
+        {
+          "id": "PR_104",
+          "number": 104,
+          "title": "Refatora auth",
+          "url": "https://github.com/acme/web/pull/104",
+          "isDraft": false,
+          "createdAt": "2026-11-03T10:00:00Z",
+          "updatedAt": "2026-11-05T12:00:00Z",
+          "additions": 10,
+          "deletions": 2,
+          "mergeable": "CONFLICTING",
+          "repository": {
+            "nameWithOwner": "acme/web"
+          },
+          "author": {
+            "login": "adriano"
+          },
+          "commits": {
+            "nodes": [
+              {
+                "commit": {
+                  "oid": "sha104",
+                  "statusCheckRollup": null
+                }
+              }
+            ]
+          },
+          "reviews": {
+            "nodes": [
+              {
+                "id": "R3",
+                "state": "CHANGES_REQUESTED",
+                "submittedAt": "2026-11-04T15:00:00Z",
+                "author": {
+                  "login": "carla"
+                },
+                "url": "https://github.com/acme/web/pull/104#pullrequestreview-R3",
+                "body": ""
+              },
+              {
+                "id": "R4",
+                "state": "COMMENTED",
+                "submittedAt": "2026-11-04T16:00:00Z",
+                "url": "https://github.com/acme/web/pull/104#pullrequestreview-R4",
+                "body": "Dá para extrair essa função?",
+                "author": {
+                  "__typename": "User",
+                  "login": "carla"
+                }
+              }
+            ]
+          },
+          "comments": {
+            "totalCount": 0,
+            "nodes": []
+          },
+          "timelineItems": {
+            "nodes": []
+          }
+        }
+      ]
+    }
+  }
+}

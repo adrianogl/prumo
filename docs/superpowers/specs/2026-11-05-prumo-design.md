@@ -167,6 +167,34 @@ Cada tipo pode ser ligado e desligado nos Ajustes.
 - Com o popover aberto, digitar abre um campo de busca que filtra as três abas por título, repositório ou número.
 - `↑` `↓` navegam entre as linhas (linha com contorno caramelo), `↵` abre, `⌘1` `⌘2` `⌘3` trocam de aba, `⌘.` abre o menu da linha.
 
+### Claude no terminal
+
+Uso principal: revisar PR e corrigir CI quebrada sem montar o ambiente na mão. O PRumo abre uma sessão do Claude Code no terminal, já na branch do PR e com o prompt pronto. Mockup em `docs/mockups/claude.html` (opções A e C).
+
+Onde aparece:
+
+- **Menu `⋯` da linha** (e `⌘K` com o PR selecionado): primeiro item. Nos meus PRs com CI falhando, "Corrigir CI com Claude". Na aba Revisar, "Revisar com Claude".
+- **Badge de CI falhando**: o badge `✗ <job>` ganha um "corrigir" ao lado, que abre direto a correção.
+- **Notificação "CI falhou em #n"**: botão "Corrigir com Claude", ao lado de "Abrir" e "Silenciar".
+
+Revisar não ganha atalho fora do menu `⋯`, para a aba Revisar não ficar carregada.
+
+Visual: o símbolo do Claude (estrela de raios, laranja `#D97757`) nos itens e botões dessa ação. Botões em fundo pêssego claro com texto terracota, para não se confundir com o caramelo do PRumo. O SVG vem de uma fonte oficial escolhida pelo usuário. App de uso pessoal; se o PRumo for publicado, revisar as regras de marca da Anthropic antes.
+
+O que acontece no clique:
+
+1. **Clone local**: o app procura em `~/Code` (pasta configurável) um repositório git cujo `remote` aponta para `org/repo`. Sem resultado, pergunta uma vez e guarda o caminho.
+2. **Worktree**: cria ou reaproveita `~/Code/.prumo-worktrees/<repo>-<número>` na branch do PR (`git fetch` + `git worktree add`). O clone principal não muda de branch.
+3. **Terminal**: abre o terminal configurado nessa pasta rodando `claude <flags> "<prompt>"`.
+4. **Limpeza**: quando o PR é mergeado ou fechado, a worktree é removida, salvo se tiver mudanças não commitadas (aí fica e o app avisa).
+
+Prompts são templates com variáveis `{numero}`, `{url}`, `{repo}`, `{branch}`, `{titulo}` e, para CI, `{job}` e `{run}`:
+
+- revisar (padrão): `/code-review {numero}`;
+- corrigir CI (padrão): `A CI do PR #{numero} ({repo}) falhou no job {job}. Leia o log com gh run view --log-failed, encontre a causa e corrija.`
+
+O app não passa `--dangerously-skip-permissions` por padrão; o Claude pede confirmação antes de editar ou rodar comandos.
+
 ### Widget
 
 Depende de App Group entre o app e a extensão. Com conta gratuita, o macOS pode aceitar App Group com o prefixo do Team ID sem perfil pago, mas isso precisa ser testado. Se não funcionar, o widget sai do escopo.
@@ -191,6 +219,7 @@ Janela com estas seções:
 - **Exibição**: linha detalhada ou compacta; intervalo de atualização (padrão 60 s); abrir ao iniciar o macOS; atalho global.
 - **Notificações**: um toggle por tipo; agrupar notificações de CI; lembrete de review parado após N horas (padrão 24 h); só em horário de trabalho (dias e horário).
 - **Filtros**: ignorar drafts em Revisar; incluir reviews pedidos ao time; visões salvas; PRs silenciados (lista, com reativar).
+- **Claude**: template de revisão, template de correção de CI, flags extras do `claude`, terminal (Ghostty padrão, Terminal, iTerm ou comando personalizado), pasta das worktrees, clones encontrados (com adicionar manualmente), apagar worktree quando o PR fechar.
 - **Integrações**: Jira, com uma lista de prefixo de chave → endereço do site (ex.: `ON` → `empresa.atlassian.net`, `DEV` → site da Contoso).
 - **Sobre**: versão e aviso de licença do símbolo do IBM Carbon (Apache 2.0).
 
@@ -242,11 +271,12 @@ Sem rede ou com erro da API, o popover mantém os últimos dados com um aviso ("
 Cada etapa termina com o app usável.
 
 1. **Núcleo**: projeto Xcode, identidade (ícone, logotipo, cores), onboarding e token, leitura pela API, abas Meus PRs e Revisar, linha detalhada, abrir no navegador, notificações de CI, aprovado, alterações pedidas, comentário e review pedido, estado persistido, ajustes básicos, abrir ao iniciar.
-2. **Organização**: aba Merge e mergeados hoje, barra de repositórios, filtros e ordem, visões salvas, linha compacta, silenciar, fixar, ignorar drafts, para você/time, marcador de novo.
-3. **Ruído sob controle**: Não perturbe, horário de trabalho, review parado, notificações de pronto para merge e conflito, toggles por tipo.
-4. **Ações**: menu `⋯`, re-rodar job, copiar link e checkout, Jira, botões nas notificações.
-5. **Teclado**: atalho global, busca, navegação por teclado.
-6. **Widget**, se o App Group funcionar com conta gratuita.
+2. **Claude no terminal**: menu `⋯` da linha (com abrir no navegador e copiar link), "Revisar com Claude" e "Corrigir CI com Claude", "corrigir" no badge de CI, botão na notificação de CI falhou, descoberta de clones, worktrees com limpeza, aba Claude nos Ajustes.
+3. **Organização**: aba Merge e mergeados hoje, barra de repositórios, filtros e ordem, visões salvas, linha compacta, silenciar, fixar, ignorar drafts, para você/time, marcador de novo.
+4. **Ruído sob controle**: Não perturbe, horário de trabalho, review parado, notificações de pronto para merge e conflito, toggles por tipo.
+5. **Ações**: demais itens do menu `⋯` (re-rodar job, copiar checkout, Jira) e demais botões nas notificações.
+6. **Teclado**: atalho global, busca, navegação por teclado.
+7. **Widget**, se o App Group funcionar com conta gratuita.
 
 ## Distribuição
 
@@ -278,6 +308,10 @@ Build local, assinado com o time pessoal (gratuito) do Xcode, para rodar na máq
 - Reviews do time: na lista, sem notificação e fora dos contadores (sugestão aceita).
 - Ordem escolhida por aba; filtros e repositórios valem para as três abas.
 - Distribuição local, sem App Store.
+- Claude no terminal vira a etapa 2, porque é o uso principal; o menu `⋯` básico vem junto.
+- Worktrees em `~/Code/.prumo-worktrees`, removidas quando o PR fecha, salvo com mudanças não commitadas.
+- Descoberta de clones pelo `remote` em `~/Code`.
+- Sem `--dangerously-skip-permissions` por padrão.
 
 ## Fica para o builder
 

@@ -1,0 +1,142 @@
+{
+  "data": {
+    "viewer": {
+      "login": "adriano"
+    },
+    "search": {
+      "nodes": [
+        {
+          "id": "PR_201",
+          "number": 201,
+          "title": "Novo endpoint",
+          "url": "https://github.com/acme/api/pull/201",
+          "isDraft": false,
+          "createdAt": "2026-11-03T10:00:00Z",
+          "updatedAt": "2026-11-05T12:00:00Z",
+          "additions": 10,
+          "deletions": 2,
+          "mergeable": "MERGEABLE",
+          "repository": {
+            "nameWithOwner": "acme/api"
+          },
+          "author": {
+            "login": "carla"
+          },
+          "commits": {
+            "nodes": [
+              {
+                "commit": {
+                  "oid": "sha201",
+                  "statusCheckRollup": {
+                    "state": "SUCCESS",
+                    "contexts": {
+                      "totalCount": 3,
+                      "nodes": [
+                        {
+                          "__typename": "CheckRun",
+                          "name": "a",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "CheckRun",
+                          "name": "b",
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS"
+                        },
+                        {
+                          "__typename": "StatusContext",
+                          "context": "ci",
+                          "state": "SUCCESS"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "reviews": {
+            "nodes": []
+          },
+          "comments": {
+            "totalCount": 0,
+            "nodes": []
+          },
+          "timelineItems": {
+            "nodes": [
+              {
+                "__typename": "ReviewRequestedEvent",
+                "createdAt": "2026-11-04T14:00:00Z",
+                "requestedReviewer": {
+                  "__typename": "User",
+                  "login": "adriano"
+                }
+              },
+              {
+                "__typename": "ReviewRequestedEvent",
+                "createdAt": "2026-11-05T09:30:00Z",
+                "requestedReviewer": {
+                  "__typename": "User",
+                  "login": "adriano"
+                }
+              },
+              {
+                "__typename": "ReviewRequestedEvent",
+                "createdAt": "2026-11-05T11:00:00Z",
+                "requestedReviewer": {
+                  "__typename": "User",
+                  "login": "beto"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "PR_202",
+          "number": 202,
+          "title": "Remove codigo morto",
+          "url": "https://github.com/acme/web/pull/202",
+          "isDraft": false,
+          "createdAt": "2026-11-03T10:00:00Z",
+          "updatedAt": "2026-11-05T12:00:00Z",
+          "additions": 10,
+          "deletions": 2,
+          "mergeable": "MERGEABLE",
+          "repository": {
+            "nameWithOwner": "acme/web"
+          },
+          "author": null,
+          "commits": {
+            "nodes": [
+              {
+                "commit": {
+                  "oid": "sha202",
+                  "statusCheckRollup": null
+                }
+              }
+            ]
+          },
+          "reviews": {
+            "nodes": []
+          },
+          "comments": {
+            "totalCount": 0,
+            "nodes": []
+          },
+          "timelineItems": {
+            "nodes": [
+              {
+                "__typename": "ReviewRequestedEvent",
+                "createdAt": "2026-11-05T10:00:00Z",
+                "requestedReviewer": {
+                  "__typename": "Team"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
