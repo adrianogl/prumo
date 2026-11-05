@@ -54,6 +54,16 @@ final class AppModel {
             }
             self.launchClaude(pr: pr, purpose: .fixCI)
         }
+        notifications.onRerun = { [weak self] id, url in
+            guard let self,
+                  let pr = self.snapshot?.mine.first(where: { $0.id == id }),
+                  let runID = pr.failedRunID
+            else {
+                NSWorkspace.shared.open(url)
+                return
+            }
+            self.rerunFailedJobs(pr: pr, runID: runID)
+        }
     }
 
     private var refreshInterval: TimeInterval {
