@@ -43,7 +43,7 @@ struct PopoverView: View {
             Wordmark(size: 13)
             Spacer()
             Button(action: model.refreshNow) {
-                Image(systemName: "arrow.clockwise")
+                Image(systemName: PopoverSymbol.refresh)
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
@@ -153,7 +153,7 @@ struct PopoverView: View {
             }
             Spacer()
             Button(action: showSettings) {
-                Label(PopoverText.settings, systemImage: "gearshape")
+                Label(PopoverText.settings, systemImage: PopoverSymbol.settings)
             }
             .buttonStyle(.plain)
         }

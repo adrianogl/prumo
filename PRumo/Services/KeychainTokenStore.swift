@@ -3,18 +3,11 @@ import Security
 import PRumoKit
 
 struct KeychainTokenStore: TokenStore {
-    struct KeychainError: Error {
-        let status: OSStatus
-    }
-
-    private let service = "dev.aglv.prumo"
-    private let account = "github-token"
-
     private var baseQuery: [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account
+            kSecAttrService as String: AppConstants.keychainService,
+            kSecAttrAccount as String: AppConstants.keychainAccount
         ]
     }
 

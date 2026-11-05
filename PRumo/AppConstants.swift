@@ -9,6 +9,9 @@ enum AppConstants {
     static let onboardingDoneKey = "onboardingDone"
     static let ghTokenRetryAttempts = 3
     static let ghTokenRetryDelay: Duration = .seconds(2)
+    static let keychainService = "dev.aglv.prumo"
+    static let keychainAccount = "github-token"
+    static let launchApprovalMessage = "Aprove em Ajustes do Sistema > Itens de Início"
     static let refreshIntervalOptions: [(label: String, seconds: TimeInterval)] = [
         ("30 s", 30), ("60 s", 60), ("2 min", 120), ("5 min", 300)
     ]

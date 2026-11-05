@@ -5,6 +5,11 @@ enum OnboardingMetrics {
     static let iconSize: CGFloat = 72
 }
 
+enum OnboardingSymbol {
+    static let found = "checkmark.circle.fill"
+    static let notifications = "bell.badge"
+}
+
 enum OnboardingText {
     static let windowTitle = "Bem-vindo ao PRumo"
     static let id = PopoverText.onboardingWindowID

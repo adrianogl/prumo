@@ -44,7 +44,7 @@ struct StatusBanner: View {
 
     private func banner<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         HStack(alignment: .top, spacing: 6) {
-            Image(systemName: "exclamationmark.triangle")
+            Image(systemName: PopoverSymbol.warning)
             content()
             Spacer(minLength: 0)
         }

@@ -13,7 +13,7 @@ struct MenuBarLabel: View {
 
     var body: some View {
         HStack(spacing: 3) {
-            Image("MenuBarGlyph")
+            Image(PopoverSymbol.menuBarGlyph)
                 .resizable()
                 .scaledToFit()
                 .frame(width: PopoverMetrics.menuBarGlyphSize, height: PopoverMetrics.menuBarGlyphSize)

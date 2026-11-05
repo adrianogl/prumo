@@ -37,7 +37,7 @@ struct OnboardingView: View {
             if flow.isCheckingGh {
                 ProgressView(OnboardingText.checking).controlSize(.small)
             } else if let login = flow.ghLogin {
-                Label(OnboardingText.foundGh(login), systemImage: "checkmark.circle.fill")
+                Label(OnboardingText.foundGh(login), systemImage: OnboardingSymbol.found)
                     .foregroundStyle(.green)
                     .multilineTextAlignment(.center)
                 HStack(spacing: 8) {
@@ -87,7 +87,7 @@ struct OnboardingView: View {
 
     private var notifications: some View {
         VStack(spacing: 8) {
-            Image(systemName: "bell.badge")
+            Image(systemName: OnboardingSymbol.notifications)
                 .font(.system(size: 34))
                 .foregroundStyle(Color.prumoCaramel)
             Text(OnboardingText.notificationsTitle).font(.system(size: 16, weight: .semibold))
@@ -129,27 +129,5 @@ struct OnboardingView: View {
         if let message = flow.errorMessage {
             Text(message).font(.system(size: 12)).foregroundStyle(.red).padding(.top, 6)
         }
-    }
-}
-
-struct PrimaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-            .background(Color.prumoCaramel.opacity(configuration.isPressed ? 0.8 : 1), in: RoundedRectangle(cornerRadius: 7))
-    }
-}
-
-struct SecondaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-            .background(Color.prumoBadgeBackground.opacity(configuration.isPressed ? 0.8 : 1), in: RoundedRectangle(cornerRadius: 7))
     }
 }

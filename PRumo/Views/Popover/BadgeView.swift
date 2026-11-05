@@ -17,9 +17,9 @@ extension BadgeIcon {
     var systemName: String? {
         switch self {
         case .none: nil
-        case .comments: "bubble.left.and.bubble.right"
-        case .conflict: "arrow.triangle.merge"
-        case .clock: "clock"
+        case .comments: PopoverSymbol.comments
+        case .conflict: PopoverSymbol.conflict
+        case .clock: PopoverSymbol.clock
         }
     }
 }

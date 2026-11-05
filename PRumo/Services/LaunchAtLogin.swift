@@ -1,8 +1,6 @@
 import ServiceManagement
 
 enum LaunchAtLogin {
-    static let approvalMessage = "Aprove em Ajustes do Sistema > Itens de Início"
-
     static var isEnabled: Bool {
         let status = SMAppService.mainApp.status
         return status == .enabled || status == .requiresApproval
@@ -13,7 +11,7 @@ enum LaunchAtLogin {
     }
 
     static func approvalMessage(enabled: Bool) -> String? {
-        enabled && needsApproval ? approvalMessage : nil
+        enabled && needsApproval ? AppConstants.launchApprovalMessage : nil
     }
 
     static func set(_ enabled: Bool) throws {

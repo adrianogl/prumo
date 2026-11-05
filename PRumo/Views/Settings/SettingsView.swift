@@ -13,11 +13,11 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
-            Tab(SettingsText.account, systemImage: "person.crop.circle") { account }
-            Tab(SettingsText.general, systemImage: "gearshape") { general }
-            Tab(SettingsText.about, systemImage: "info.circle") { about }
+            Tab(SettingsText.account, systemImage: SettingsSymbol.account) { account }
+            Tab(SettingsText.general, systemImage: SettingsSymbol.general) { general }
+            Tab(SettingsText.about, systemImage: SettingsSymbol.about) { about }
         }
-        .frame(width: 420, height: 220)
+        .frame(width: SettingsMetrics.width, height: SettingsMetrics.height)
     }
 
     private var account: some View {

@@ -9,6 +9,16 @@ enum PopoverMetrics {
     static let menuBarDotSize: CGFloat = 5
 }
 
+enum PopoverSymbol {
+    static let refresh = "arrow.clockwise"
+    static let settings = "gearshape"
+    static let warning = "exclamationmark.triangle"
+    static let comments = "bubble.left.and.bubble.right"
+    static let conflict = "arrow.triangle.merge"
+    static let clock = "clock"
+    static let menuBarGlyph = "MenuBarGlyph"
+}
+
 enum PopoverText {
     static let mineTab = "Meus PRs"
     static let reviewTab = "Revisar"

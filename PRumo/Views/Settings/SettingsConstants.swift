@@ -1,5 +1,16 @@
 import Foundation
 
+enum SettingsMetrics {
+    static let width: CGFloat = 420
+    static let height: CGFloat = 220
+}
+
+enum SettingsSymbol {
+    static let account = "person.crop.circle"
+    static let general = "gearshape"
+    static let about = "info.circle"
+}
+
 enum SettingsText {
     static let account = "Conta"
     static let general = "Geral"

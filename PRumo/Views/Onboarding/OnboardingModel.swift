@@ -2,10 +2,6 @@ import Foundation
 import Observation
 import PRumoKit
 
-enum OnboardingStep {
-    case welcome, token, notifications, ready
-}
-
 @Observable @MainActor
 final class OnboardingModel {
     var step: OnboardingStep = .welcome
