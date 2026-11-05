@@ -39,7 +39,7 @@ public enum Queries {
               }
             }
             reviews(last: 30) {
-              nodes { id state submittedAt author { __typename login } }
+              nodes { id state submittedAt url body author { __typename login } }
             }
             comments(last: 20) {
               totalCount

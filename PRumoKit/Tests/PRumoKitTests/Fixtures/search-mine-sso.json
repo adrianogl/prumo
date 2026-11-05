@@ -119,7 +119,9 @@
                 "submittedAt": "2026-11-04T09:00:00Z",
                 "author": {
                   "login": "ana"
-                }
+                },
+                "url": "https://github.com/acme/api/pull/101#pullrequestreview-R1",
+                "body": ""
               },
               {
                 "id": "R2",
@@ -127,7 +129,9 @@
                 "submittedAt": "2026-11-04T10:00:00Z",
                 "author": {
                   "login": "beto"
-                }
+                },
+                "url": "https://github.com/acme/api/pull/101#pullrequestreview-R2",
+                "body": ""
               }
             ]
           },
@@ -266,7 +270,9 @@
                 "submittedAt": "2026-11-04T15:00:00Z",
                 "author": {
                   "login": "carla"
-                }
+                },
+                "url": "https://github.com/acme/web/pull/104#pullrequestreview-R3",
+                "body": ""
               }
             ]
           },

@@ -32,7 +32,8 @@ public enum RowPresenter {
         if hasChangesRequested { badges.append(Badge(PresentationText.changesRequested, .negative)) }
         if pr.isDraft { badges.append(Badge(PresentationText.draft, .neutral)) }
         if pr.mergeable == .conflicting { badges.append(Badge(PresentationText.conflict, .warning, .conflict)) }
-        if pr.commentCount > 0 { badges.append(Badge(String(pr.commentCount), .neutral, .comments)) }
+        let commentTotal = pr.commentCount + pr.reviews.filter(\.isComment).count
+        if commentTotal > 0 { badges.append(Badge(String(commentTotal), .neutral, .comments)) }
 
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: hasChangesRequested),

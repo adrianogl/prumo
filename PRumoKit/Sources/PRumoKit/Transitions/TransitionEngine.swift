@@ -67,11 +67,16 @@ public enum TransitionEngine {
     }
 
     private static func commentEvents(_ old: PullRequest, _ new: PullRequest, viewer: String, since: Date) -> [NotificationEvent] {
-        let known = Set(old.comments.map(\.id))
-        let fresh = new.comments.filter {
-            !known.contains($0.id) && $0.author != viewer && !$0.authorIsBot && $0.createdAt > since
-        }
-        guard let latest = fresh.max(by: { $0.createdAt < $1.createdAt }) else { return [] }
+        let knownComments = Set(old.comments.map(\.id))
+        let knownReviews = Set(old.reviews.map(\.id))
+        let comments = new.comments
+            .filter { !knownComments.contains($0.id) && $0.author != viewer && !$0.authorIsBot && $0.createdAt > since }
+            .map { (author: $0.author, body: $0.body, url: $0.url, date: $0.createdAt) }
+        let reviews = new.reviews
+            .filter { !knownReviews.contains($0.id) && $0.isComment && $0.author != viewer && !$0.authorIsBot && $0.submittedAt > since }
+            .map { (author: $0.author, body: $0.body, url: $0.url ?? new.url, date: $0.submittedAt) }
+        let fresh = comments + reviews
+        guard let latest = fresh.max(by: { $0.date < $1.date }) else { return [] }
         let title = fresh.count > 1 ? "\(fresh.count) comentários novos em #\(new.number)" : "Comentário novo em #\(new.number)"
         return [NotificationEvent(
             kind: .newComment, pullRequestID: new.id, title: title,

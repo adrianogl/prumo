@@ -5,6 +5,7 @@ public enum PullRequestMapper {
     private static let failingStates: Set<String> = ["FAILURE", "ERROR"]
     private static let waitingStates: Set<String> = ["PENDING", "EXPECTED"]
     private static let ghost = "ghost"
+    private static let botTypename = "Bot"
 
     public static func snapshot(mineJSON: Data, reviewJSON: Data, now: Date) throws -> Snapshot {
         let mine = try decode(mineJSON)
@@ -53,14 +54,22 @@ public enum PullRequestMapper {
 
     private static func mapReview(_ node: GraphQLResponse.ReviewNode) -> Review? {
         guard let state = ReviewState(rawValue: node.state), let submittedAt = node.submittedAt else { return nil }
-        return Review(id: node.id, author: node.author?.login ?? ghost, state: state, submittedAt: submittedAt)
+        return Review(
+            id: node.id,
+            author: node.author?.login ?? ghost,
+            authorIsBot: node.author?.typename == botTypename,
+            state: state,
+            submittedAt: submittedAt,
+            body: node.body ?? "",
+            url: node.url
+        )
     }
 
     private static func mapComment(_ node: GraphQLResponse.CommentNode) -> Comment {
         Comment(
             id: node.id,
             author: node.author?.login ?? ghost,
-            authorIsBot: node.author?.typename == "Bot",
+            authorIsBot: node.author?.typename == botTypename,
             body: node.body,
             url: node.url,
             createdAt: node.createdAt

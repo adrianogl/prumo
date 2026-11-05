@@ -18,8 +18,17 @@ struct PullRequestMapperTests {
         #expect(!s.mine[0].comments[0].authorIsBot)
         #expect(s.mine[3].mergeable == .conflicting)
         #expect(s.mine[2].isDraft)
-        #expect(s.mine[3].reviews.map(\.state) == [.changesRequested])
+        #expect(s.mine[3].reviews.map(\.state) == [.changesRequested, .commented])
         #expect(s.mine[0].reviews.map(\.state) == [.approved, .approved])
+    }
+
+    @Test func mapsReviewBodyAndURL() throws {
+        let review = try snapshot().mine[3].reviews[1]
+        #expect(review.id == "R4")
+        #expect(review.author == "carla")
+        #expect(!review.authorIsBot)
+        #expect(review.body == "Dá para extrair essa função?")
+        #expect(review.url == URL(string: "https://github.com/acme/web/pull/104#pullrequestreview-R4"))
     }
 
     @Test func reviewRequestedAtComesFromViewerEvent() throws {

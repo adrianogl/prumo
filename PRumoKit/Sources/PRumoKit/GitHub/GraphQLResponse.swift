@@ -92,6 +92,8 @@ struct GraphQLResponse: Decodable {
         let id: String
         let state: String
         let submittedAt: Date?
+        let url: URL?
+        let body: String?
         let author: Author?
     }
 

@@ -12,8 +12,11 @@ private func comment(_ id: String, author: String = "maria", bot: Bool = false, 
     PRComment(id: id, author: author, authorIsBot: bot, body: body, url: URL(string: "https://github.com/acme/loja/pull/812#\(id)")!, createdAt: at)
 }
 
-private func review(_ id: String, author: String = "maria", state: ReviewState, at: Date = t1) -> Review {
-    Review(id: id, author: author, state: state, submittedAt: at)
+private func review(_ id: String, author: String = "maria", bot: Bool = false, state: ReviewState, body: String = "", at: Date = t1) -> Review {
+    Review(
+        id: id, author: author, authorIsBot: bot, state: state, submittedAt: at, body: body,
+        url: URL(string: "https://github.com/acme/loja/pull/812#pullrequestreview-\(id)")!
+    )
 }
 
 @Suite struct TransitionEngineTests {
@@ -137,6 +140,60 @@ private func review(_ id: String, author: String = "maria", state: ReviewState, 
         #expect(events[0].title == "3 comentários novos em #812")
         #expect(events[0].body == "ana: \"\(String(repeating: "x", count: 80))…\"")
         #expect(events[0].url.absoluteString == "https://github.com/acme/loja/pull/812#c3")
+    }
+
+    @Test func commentedReviewWithBodyNotifiesAsComment() {
+        let old = Snapshot.fixture(mine: [.fixture()])
+        let new = Snapshot.fixture(
+            mine: [.fixture(reviews: [review("r1", author: "joao", state: .commented, body: "Dá para\nextrair?")])],
+            fetchedAt: t2
+        )
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(events.count == 1)
+        #expect(events[0].kind == .newComment)
+        #expect(events[0].title == "Comentário novo em #812")
+        #expect(events[0].body == "joao: \"Dá para extrair?\"")
+        #expect(events[0].url.absoluteString == "https://github.com/acme/loja/pull/812#pullrequestreview-r1")
+    }
+
+    @Test func commentedReviewGroupsWithIssueCommentsAndLatestDrivesBody() {
+        let old = Snapshot.fixture(mine: [.fixture()])
+        let new = Snapshot.fixture(
+            mine: [.fixture(
+                reviews: [review("r1", author: "joao", state: .commented, body: "Revisei", at: t1.addingTimeInterval(30))],
+                comments: [comment("c1", author: "maria", at: t1)]
+            )],
+            fetchedAt: t2
+        )
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(events.map(\.kind) == [.newComment])
+        #expect(events[0].title == "2 comentários novos em #812")
+        #expect(events[0].body == "joao: \"Revisei\"")
+        #expect(events[0].url.absoluteString == "https://github.com/acme/loja/pull/812#pullrequestreview-r1")
+    }
+
+    @Test func commentedReviewWithoutBodyOwnOrBotIsIgnored() {
+        let old = Snapshot.fixture(mine: [.fixture(reviews: [review("r0", author: "joao", state: .commented, body: "antigo")])])
+        let new = Snapshot.fixture(
+            mine: [.fixture(reviews: [
+                review("r0", author: "joao", state: .commented, body: "antigo"),
+                review("r1", author: "joao", state: .commented, body: "  \n"),
+                review("r2", author: "adriano", state: .commented, body: "meu"),
+                review("r3", author: "copilot", bot: true, state: .commented, body: "sugestão"),
+                review("r4", author: "ana", state: .commented, body: "velho", at: t0.addingTimeInterval(-3600))
+            ])],
+            fetchedAt: t2
+        )
+        #expect(TransitionEngine.events(from: old, to: new).isEmpty)
+    }
+
+    @Test func commentedReviewWithoutURLFallsBackToPullRequestURL() {
+        let old = Snapshot.fixture(mine: [.fixture()])
+        let new = Snapshot.fixture(
+            mine: [.fixture(reviews: [Review(id: "r1", author: "joao", state: .commented, submittedAt: t1, body: "ok")])],
+            fetchedAt: t2
+        )
+        #expect(TransitionEngine.events(from: old, to: new).map(\.url.absoluteString) == ["https://github.com/acme/loja/pull/812"])
     }
 
     @Test func prThatDisappearsAndReturnsDoesNotReplayHistory() {

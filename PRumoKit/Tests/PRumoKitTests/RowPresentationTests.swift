@@ -112,6 +112,19 @@ import Testing
         #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).badges == [Badge("✗ CI 7", .negative)])
     }
 
+    @Test func commentsBadgeCountsCommentedReviewsWithBody() {
+        let pr = PullRequest.fixture(
+            reviews: [
+                Review(id: "r1", author: "ana", state: .commented, submittedAt: .fixed, body: "Veja"),
+                Review(id: "r2", author: "bia", state: .commented, submittedAt: .fixed, body: " "),
+                Review(id: "r3", author: "caio", state: .approved, submittedAt: .fixed, body: "LGTM")
+            ],
+            commentCount: 1
+        )
+        let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed)
+        #expect(row.badges.filter { $0.icon == .comments } == [Badge("2", .neutral, .comments)])
+    }
+
     @Test func noCommentsBadgeWhenCommentCountIsZero() {
         let row = RowPresenter.mine(.fixture(commentCount: 0), viewer: "adriano", now: .fixed)
         #expect(row.badges.contains { $0.icon == .comments } == false)
