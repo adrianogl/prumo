@@ -1,0 +1,87 @@
+import Foundation
+
+public enum TransitionEngine {
+    static let bodyLimit = 80
+
+    public static func events(from old: Snapshot?, to new: Snapshot) -> [NotificationEvent] {
+        guard let old else { return [] }
+        let oldMine = Dictionary(old.mine.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var result: [NotificationEvent] = []
+        for pr in new.mine {
+            guard let before = oldMine[pr.id] else { continue }
+            result += ciEvents(before, pr)
+            result += reviewEvents(before, pr, viewer: new.viewer, since: old.fetchedAt)
+            result += commentEvents(before, pr, viewer: new.viewer, since: old.fetchedAt)
+        }
+        let knownReviewRequests = Set(old.toReview.map(\.id))
+        for pr in new.toReview where !knownReviewRequests.contains(pr.id) {
+            result.append(NotificationEvent(
+                kind: .reviewRequested, pullRequestID: pr.id,
+                title: "Review pedido: #\(pr.number)",
+                body: "\(pr.author) pediu seu review em \(pr.title)", url: pr.url
+            ))
+        }
+        return result
+    }
+
+    private static func ciEvents(_ old: PullRequest, _ new: PullRequest) -> [NotificationEvent] {
+        guard new.ci.isTerminal, !old.ci.isTerminal || old.headSHA != new.headSHA else { return [] }
+        let checksURL = new.url.appendingPathComponent("checks")
+        switch new.ci {
+        case .success(let total):
+            return [NotificationEvent(
+                kind: .ciSucceeded, pullRequestID: new.id,
+                title: "CI terminou em #\(new.number): \(total)/\(total)", body: new.title, url: checksURL
+            )]
+        case .failure(let failedChecks, _):
+            let first = failedChecks.first.map { " · \($0)" } ?? ""
+            return [NotificationEvent(
+                kind: .ciFailed, pullRequestID: new.id,
+                title: "CI falhou em #\(new.number)", body: "\(new.title)\(first)", url: checksURL
+            )]
+        case .none, .pending:
+            return []
+        }
+    }
+
+    private static func reviewEvents(_ old: PullRequest, _ new: PullRequest, viewer: String, since: Date) -> [NotificationEvent] {
+        let known = Set(old.reviews.map(\.id))
+        return new.reviews.compactMap { review in
+            guard !known.contains(review.id), review.author != viewer, review.submittedAt > since else { return nil }
+            switch review.state {
+            case .approved:
+                return NotificationEvent(
+                    kind: .approved, pullRequestID: new.id, title: "#\(new.number) aprovado",
+                    body: "\(review.author) aprovou \(new.title)", url: new.url
+                )
+            case .changesRequested:
+                return NotificationEvent(
+                    kind: .changesRequested, pullRequestID: new.id, title: "Alterações pedidas em #\(new.number)",
+                    body: "\(review.author) pediu alterações em \(new.title)", url: new.url
+                )
+            case .commented, .dismissed, .pending:
+                return nil
+            }
+        }
+    }
+
+    private static func commentEvents(_ old: PullRequest, _ new: PullRequest, viewer: String, since: Date) -> [NotificationEvent] {
+        let known = Set(old.comments.map(\.id))
+        let fresh = new.comments.filter {
+            !known.contains($0.id) && $0.author != viewer && !$0.authorIsBot && $0.createdAt > since
+        }
+        guard let latest = fresh.max(by: { $0.createdAt < $1.createdAt }) else { return [] }
+        let title = fresh.count > 1 ? "\(fresh.count) comentários novos em #\(new.number)" : "Comentário novo em #\(new.number)"
+        return [NotificationEvent(
+            kind: .newComment, pullRequestID: new.id, title: title,
+            body: "\(latest.author): \"\(excerpt(latest.body))\"", url: latest.url
+        )]
+    }
+
+    private static func excerpt(_ text: String) -> String {
+        let flat = text.replacingOccurrences(of: "\r\n", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+        return flat.count > bodyLimit ? String(flat.prefix(bodyLimit)) + "…" : flat
+    }
+}
