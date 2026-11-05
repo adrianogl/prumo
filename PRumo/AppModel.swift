@@ -724,9 +724,12 @@ final class AppModel {
         let launcher = ClaudeLauncher(
             settings: claude.settings, scanned: claude.scanned,
             runner: SystemProcessRunner(timeout: AppConstants.longCommandTimeout))
+        let environment = session(for: pr).map {
+            SessionEnvironment.variables(provider: $0.account.provider, host: $0.account.host, token: $0.token)
+        } ?? [:]
         let result = await Task.detached { () -> Result<LaunchResult, ClaudeLaunchError> in
             do throws(ClaudeLaunchError) {
-                return .success(try await launcher.launch(pr: pr, purpose: purpose))
+                return .success(try await launcher.launch(pr: pr, purpose: purpose, environment: environment))
             } catch {
                 return .failure(error)
             }

@@ -30,12 +30,15 @@ private final class ScriptSink: @unchecked Sendable {
     private let lock = NSLock()
     private var scripts: [(contents: String, url: URL)] = []
     private var cleanups: [(dir: URL, date: Date)] = []
+    private var removals: [URL] = []
 
     var written: [(contents: String, url: URL)] { lock.withLock { scripts } }
     var cleaned: [(dir: URL, date: Date)] { lock.withLock { cleanups } }
 
     func write(_ contents: String, _ url: URL) { lock.withLock { scripts.append((contents, url)) } }
     func cleanup(_ dir: URL, _ date: Date) { lock.withLock { cleanups.append((dir, date)) } }
+    var removed: [URL] { lock.withLock { removals } }
+    func remove(_ url: URL) { lock.withLock { removals.append(url) } }
 }
 
 private final class AskedCommands: @unchecked Sendable {
@@ -69,6 +72,7 @@ private func launcher(
         sessionsDir: sessionsDir,
         writeScript: { sink.write($0, $1) },
         cleanupOldScripts: { sink.cleanup($0, $1) },
+        removeScript: { sink.remove($0) },
         uuid: { uuid },
         now: { fixedNow },
         claudeLocator: claude
@@ -324,5 +328,55 @@ private func launcher(
         #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add --detach -- \(ownerWorktree) refs/prumo/pull/812"))
         #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree remove \(ownerWorktree)"))
         #expect(!runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree remove \(worktree)"))
+    }
+
+    @Test func launcherWritesTokenToScript() async throws {
+        let runner = FakeRunner()
+        let sink = ScriptSink()
+        _ = try await launcher(runner, sink: sink).launch(
+            pr: .fixture(), purpose: .review, environment: ["GH_TOKEN": "ghp_SECRET"])
+        let script = sink.written[0].contents
+        #expect(script.hasPrefix("rm -f -- '/h/Library/Caches/PRumo/sessions/u1.zsh'\nexport GH_TOKEN='ghp_SECRET'\ncd '\(worktree)' || exit 1\n"))
+        #expect(!runner.commands.contains { $0.contains("ghp_SECRET") })
+        #expect(sink.removed.isEmpty)
+    }
+
+    @Test func launcherWithoutEnvironmentKeepsScript() async throws {
+        let sink = ScriptSink()
+        _ = try await launcher(FakeRunner(), sink: sink).launch(pr: .fixture(), purpose: .review)
+        #expect(sink.written[0].contents.hasPrefix("cd '\(worktree)' || exit 1\n"))
+    }
+
+    @Test func scriptRemovedWhenTerminalFails() async {
+        let runner = FakeRunner { $0.hasPrefix("/usr/bin/open") ? (1, "", "x") : (0, "", "") }
+        let sink = ScriptSink()
+        await #expect(throws: ClaudeLaunchError.launchFailed("x")) {
+            try await launcher(runner, sink: sink).launch(
+                pr: .fixture(), purpose: .review, environment: ["GH_TOKEN": "ghp_SECRET"])
+        }
+        #expect(sink.removed.map(\.path) == ["/h/Library/Caches/PRumo/sessions/u1.zsh"])
+    }
+
+    @Test func scriptRemovedWhenRunnerThrows() async {
+        let runner = FakeRunner(throwsFor: { $0.hasPrefix("/usr/bin/open") })
+        let sink = ScriptSink()
+        await #expect(throws: ClaudeLaunchError.launchFailed("O comando demorou demais para responder.")) {
+            try await launcher(runner, sink: sink).launch(
+                pr: .fixture(), purpose: .review, environment: ["GH_TOKEN": "ghp_SECRET"])
+        }
+        #expect(sink.removed.map(\.path) == ["/h/Library/Caches/PRumo/sessions/u1.zsh"])
+    }
+
+    @Test func scriptRemovedWhenWriteFails() async {
+        let sink = ScriptSink()
+        let failing = ClaudeLauncher(
+            settings: .defaults, scanned: ["acme/loja": [clone]], runner: FakeRunner(), home: home,
+            sessionsDir: sessions, writeScript: { _, _ in throw CocoaError(.fileWriteNoPermission) },
+            cleanupOldScripts: { _, _ in }, removeScript: { sink.remove($0) }, uuid: { "u1" }, now: { fixedNow },
+            claudeLocator: { _ in true })
+        await #expect(throws: ClaudeLaunchError.self) {
+            try await failing.launch(pr: .fixture(), purpose: .review, environment: ["GH_TOKEN": "ghp_SECRET"])
+        }
+        #expect(sink.removed.map(\.path) == ["/h/Library/Caches/PRumo/sessions/u1.zsh"])
     }
 }

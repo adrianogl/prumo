@@ -149,4 +149,84 @@ import Testing
         #expect(ShellQuote.single("a'b") == "'a'\\''b'")
         #expect(ShellQuote.appleScriptString("a\\b\"c") == "a\\\\b\\\"c")
     }
+
+    @Test func scriptDeletesItselfFirst() {
+        let script = TerminalCommand.scriptContents(
+            directory: directory, prompt: "oi", extraFlags: "",
+            environment: ["GH_TOKEN": "t"], scriptPath: URL(fileURLWithPath: "/tmp/s/abc.zsh"))
+        #expect(script.components(separatedBy: "\n").first == "rm -f -- '/tmp/s/abc.zsh'")
+        #expect(script == "rm -f -- '/tmp/s/abc.zsh'\nexport GH_TOKEN='t'\n" + Self.head() + "'claude' -- 'oi'\n" + Self.tail())
+    }
+
+    @Test func tokenExportedQuoted() {
+        let script = TerminalCommand.scriptContents(
+            directory: directory, prompt: "oi", extraFlags: "", environment: ["GH_TOKEN": "ab'c"])
+        #expect(script == "export GH_TOKEN='ab'\\''c'\n" + Self.head() + "'claude' -- 'oi'\n" + Self.tail())
+    }
+
+    @Test func exportsSortedByName() {
+        let script = TerminalCommand.scriptContents(
+            directory: directory, prompt: "oi", extraFlags: "",
+            environment: ["GITLAB_TOKEN": "b", "GITLAB_HOST": "a"])
+        #expect(script.hasPrefix("export GITLAB_HOST='a'\nexport GITLAB_TOKEN='b'\ncd "))
+    }
+
+    @Test func invalidEnvNameSkipped() {
+        let script = TerminalCommand.scriptContents(
+            directory: directory, prompt: "oi", extraFlags: "",
+            environment: ["GH TOKEN": "x", "gh_token": "y", "1A": "z", "A=B": "w", "": "v"])
+        #expect(script == Self.head() + "'claude' -- 'oi'\n" + Self.tail())
+    }
+
+    @Test func noEnvironmentKeepsScriptUnchanged() {
+        let script = TerminalCommand.scriptContents(directory: directory, prompt: "oi", extraFlags: "")
+        #expect(script == Self.head() + "'claude' -- 'oi'\n" + Self.tail())
+        #expect(!script.contains("export"))
+        #expect(!script.contains("rm -f"))
+    }
+
+    @Test func hostileTokenReachesClaudeLiterally() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("prumo-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let output = dir.appendingPathComponent("token.out")
+        let stub = dir.appendingPathComponent("claude-stub")
+        try "#!/bin/sh\nprintf %s \"$GH_TOKEN\" > \(ShellQuote.single(output.path))\nexit 0\n"
+            .write(to: stub, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: stub.path)
+        let token = "a'b\"c$(touch PWNED)`x`$HOME\nd;e\\f"
+        let script = dir.appendingPathComponent("session.zsh")
+        try TerminalCommand.scriptContents(
+            directory: dir, prompt: "oi", extraFlags: "", claudeExecutable: stub.path,
+            environment: ["GH_TOKEN": token], scriptPath: script
+        ).write(to: script, atomically: true, encoding: .utf8)
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-f", script.path]
+        process.standardInput = FileHandle.nullDevice
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+        #expect(try String(contentsOf: output, encoding: .utf8) == token)
+        #expect(!FileManager.default.fileExists(atPath: script.path))
+        #expect(!FileManager.default.fileExists(atPath: dir.appendingPathComponent("PWNED").path))
+    }
+
+    @Test func tokenNeverInLaunchArguments() {
+        let token = "ghp_SECRETTOKEN123"
+        let kinds: [TerminalKind] = [.ghostty, .terminal, .iterm, .custom(template: "x {dir} {cmd}")]
+        for kind in kinds {
+            let command = TerminalCommand.build(kind: kind, directory: directory, scriptPath: scriptPath)
+            let all = [command.executable] + command.arguments
+            #expect(!all.contains { $0.contains(token) })
+            #expect(!all.contains { $0.contains("GH_TOKEN") })
+        }
+    }
+
+    @Test func githubEnvironmentHasGhToken() {
+        #expect(SessionEnvironment.variables(provider: .github, host: "github.com", token: "t1") == ["GH_TOKEN": "t1"])
+    }
 }

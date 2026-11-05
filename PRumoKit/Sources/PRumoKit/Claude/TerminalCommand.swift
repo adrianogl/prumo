@@ -5,12 +5,18 @@ public enum TerminalCommand {
         directory: URL,
         prompt: String,
         extraFlags: String,
-        claudeExecutable: String = ClaudeDefaults.command
+        claudeExecutable: String = ClaudeDefaults.command,
+        environment: [String: String] = [:],
+        scriptPath: URL? = nil
     ) -> String {
         let flags = extraFlags.trimmingCharacters(in: .whitespacesAndNewlines)
         let claude = ([ShellQuote.single(claudeExecutable)] + (flags.isEmpty ? [] : [flags]) + ["--", ShellQuote.single(sanitize(prompt))])
             .joined(separator: " ")
-        return [
+        let selfDelete = scriptPath.map { ["rm -f -- \(ShellQuote.single($0.path))"] } ?? []
+        let exports = environment.keys.sorted()
+            .filter(isValidVariableName)
+            .map { "export \($0)=\(ShellQuote.single(environment[$0] ?? ""))" }
+        let body = [
             "cd \(ShellQuote.single(directory.path)) || exit 1",
             "claude_name=\(ShellQuote.single(claudeExecutable))",
             claude,
@@ -18,7 +24,8 @@ public enum TerminalCommand {
             "if [ $rc -ne 0 ]; then read -k1 \"?${claude_name} saiu com erro $rc. Pressione uma tecla.\"; fi",
             "exit $rc",
             "",
-        ].joined(separator: "\n")
+        ]
+        return (selfDelete + exports + body).joined(separator: "\n")
     }
 
     public static func build(kind: TerminalKind, directory: URL, scriptPath: URL) -> LaunchCommand {
@@ -51,6 +58,11 @@ public enum TerminalCommand {
             let resolved = substitute(template, values: ["{dir}": ShellQuote.single(dir), "{cmd}": runLine])
             return LaunchCommand(executable: "/bin/zsh", arguments: ["-lc", resolved])
         }
+    }
+
+    private static func isValidVariableName(_ name: String) -> Bool {
+        guard let first = name.unicodeScalars.first, first == "_" || ("A"..."Z").contains(first) else { return false }
+        return name.unicodeScalars.allSatisfy { $0 == "_" || ("A"..."Z").contains($0) || ("0"..."9").contains($0) }
     }
 
     private static func sanitize(_ prompt: String) -> String {

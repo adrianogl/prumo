@@ -10,6 +10,7 @@ public struct ClaudeLauncher: Sendable {
     private let sessionsDir: URL
     private let writeScript: @Sendable (String, URL) throws -> Void
     private let cleanupOldScripts: @Sendable (URL, Date) -> Void
+    private let removeScript: @Sendable (URL) -> Void
     private let uuid: @Sendable () -> String
     private let now: @Sendable () -> Date
     private let exists: @Sendable (URL) -> Bool
@@ -23,6 +24,7 @@ public struct ClaudeLauncher: Sendable {
         sessionsDir: URL? = nil,
         writeScript: @escaping @Sendable (String, URL) throws -> Void = { try SessionScriptFiles.write($0, to: $1) },
         cleanupOldScripts: @escaping @Sendable (URL, Date) -> Void = { SessionScriptFiles.cleanup(in: $0, now: $1) },
+        removeScript: @escaping @Sendable (URL) -> Void = { try? FileManager.default.removeItem(at: $0) },
         uuid: @escaping @Sendable () -> String = { UUID().uuidString },
         now: @escaping @Sendable () -> Date = { Date() },
         exists: @escaping @Sendable (URL) -> Bool = { FileManager.default.fileExists(atPath: $0.path) },
@@ -35,6 +37,7 @@ public struct ClaudeLauncher: Sendable {
         self.sessionsDir = sessionsDir ?? SessionScriptFiles.defaultSessionsDirectory(home: home)
         self.writeScript = writeScript
         self.cleanupOldScripts = cleanupOldScripts
+        self.removeScript = removeScript
         self.uuid = uuid
         self.now = now
         self.exists = exists
@@ -43,7 +46,9 @@ public struct ClaudeLauncher: Sendable {
         }
     }
 
-    public func launch(pr: PullRequest, purpose: SessionPurpose) async throws(ClaudeLaunchError) -> LaunchResult {
+    public func launch(
+        pr: PullRequest, purpose: SessionPurpose, environment: [String: String] = [:]
+    ) async throws(ClaudeLaunchError) -> LaunchResult {
         let overrides = settings.cloneOverrides.reduce(into: [String: URL]()) {
             $0[$1.key.lowercased()] = expand($1.value)
         }
@@ -104,11 +109,13 @@ public struct ClaudeLauncher: Sendable {
 
         let script = TerminalCommand.scriptContents(
             directory: directory, prompt: prompt, extraFlags: settings.extraFlags,
-            claudeExecutable: claudeCommand)
+            claudeExecutable: claudeCommand, environment: environment,
+            scriptPath: environment.isEmpty ? nil : scriptURL)
         cleanupOldScripts(sessionsDir, now())
         do {
             try writeScript(script, scriptURL)
         } catch {
+            removeScript(scriptURL)
             await discard(created: created, worktrees: worktrees, directory: directory, clone: clone, number: pr.number)
             throw .launchFailed(Self.message(for: error))
         }
@@ -118,9 +125,11 @@ public struct ClaudeLauncher: Sendable {
         do {
             result = try await runner.run(command.executable, command.arguments)
         } catch {
+            removeScript(scriptURL)
             throw .launchFailed(Self.message(for: error))
         }
         if result.status != 0 {
+            removeScript(scriptURL)
             await discard(created: created, worktrees: worktrees, directory: directory, clone: clone, number: pr.number)
             let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
             throw .launchFailed(stderr.isEmpty ? ClaudeMessages.terminalExit(result.status) : stderr)
