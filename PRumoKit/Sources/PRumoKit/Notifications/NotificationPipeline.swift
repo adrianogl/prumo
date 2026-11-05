@@ -19,17 +19,20 @@ public enum NotificationPipeline {
             )
         }
 
-        if !state.initialized || state.viewer != snapshot.viewer {
-            state = ReminderState(viewer: snapshot.viewer)
-            state.insert(due().map(\.key))
-            state.initialized = true
-        } else if !quiet {
-            let stale = due()
+        let accounts = snapshot.accountViewers.isEmpty ? [""] : Set(snapshot.accountViewers.keys).sorted()
+        let known = Set(state.baselined)
+        let pending = due()
+        let fresh = pending.filter { !known.contains($0.event.accountID) }
+        state.insert(fresh.map(\.key))
+        if !quiet {
+            let stale = pending.filter { known.contains($0.event.accountID) }
             state.insert(stale.map(\.key))
             if preferences.isEnabled(.staleReview) {
                 deliver += stale.map(\.event)
             }
         }
+        state.baselined = accounts
+        state.initialized = true
         return PipelineResult(deliver: deliver, reminders: state)
     }
 }

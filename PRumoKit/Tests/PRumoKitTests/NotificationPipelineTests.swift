@@ -27,13 +27,24 @@ import Testing
         ])
     }
 
-    private var initialized: ReminderState { ReminderState(initialized: true, viewer: viewer) }
-    private let viewer = "adriano"
+    private func twoAccountSnapshot(accounts: [String]) -> Snapshot {
+        .fixture(
+            toReview: accounts.enumerated().map { index, account in
+                .fixture(
+                    id: "PR_\(account)", number: index + 1,
+                    reviewRequestedAt: Date.fixed.addingTimeInterval(-30 * hour), accountID: account
+                )
+            },
+            accountViewers: Dictionary(uniqueKeysWithValues: accounts.map { ($0, "viewer-\($0.lowercased())") })
+        )
+    }
+
+    private var initialized: ReminderState { ReminderState(initialized: true, baselined: [""]) }
 
     private func run(
         _ events: [NotificationEvent] = [], snapshot: Snapshot = .fixture(),
         preferences: NotificationPreferences = NotificationPreferences(), muted: Set<String> = [],
-        includeTeam: Bool = true, reminders: ReminderState = ReminderState(initialized: true, viewer: "adriano"),
+        includeTeam: Bool = true, reminders: ReminderState = ReminderState(initialized: true, baselined: [""]),
         now: Date = .fixed
     ) -> PipelineResult {
         NotificationPipeline.run(
@@ -115,24 +126,85 @@ import Testing
         #expect(result.reminders.reminded.count == 1)
     }
 
-    @Test func viewerChangeResetsBaselineWithoutDelivering() {
-        let snapshot = Snapshot.fixture(viewer: "bob", toReview: staleSnapshot().toReview)
-        let previous = ReminderState(initialized: true, reminded: ["velho"], viewer: "alice")
+    @Test func newAccountStaleReviewsBaselinedSilently() {
+        let snapshot = twoAccountSnapshot(accounts: ["A", "B"])
+        let previous = ReminderState(initialized: true, baselined: ["A"])
         let result = run(snapshot: snapshot, reminders: previous)
-        #expect(result.deliver.isEmpty)
-        #expect(result.reminders.viewer == "bob")
-        #expect(result.reminders.initialized)
-        #expect(result.reminders.reminded == [StaleReviewTracker.key(for: snapshot.toReview[0])])
+        #expect(result.deliver.map(\.pullRequestID) == ["PR_A"])
+        #expect(result.reminders.reminded.sorted() == snapshot.toReview.map(StaleReviewTracker.key(for:)).sorted())
+        #expect(result.reminders.baselined == ["A", "B"])
         #expect(run(snapshot: snapshot, reminders: result.reminders).deliver.isEmpty)
     }
 
-    @Test func legacyStateWithoutViewerIsRebasedWithoutBurst() {
+    @Test func newAccountIsBaselinedEvenWhileQuiet() {
+        var quiet = NotificationPreferences()
+        quiet.dnd = .indefinite
+        let snapshot = twoAccountSnapshot(accounts: ["A", "B"])
+        let result = run(snapshot: snapshot, preferences: quiet, reminders: ReminderState(initialized: true, baselined: ["A"]))
+        #expect(result.deliver.isEmpty)
+        #expect(result.reminders.reminded == [StaleReviewTracker.key(for: snapshot.toReview[1])])
+        #expect(result.reminders.baselined == ["A", "B"])
+    }
+
+    @Test func removedAccountLeavesBaseline() {
+        let both = twoAccountSnapshot(accounts: ["A", "B"])
+        let first = run(snapshot: both, reminders: ReminderState(initialized: true, baselined: ["A", "B"]))
+        #expect(first.reminders.baselined == ["A", "B"])
+
+        let onlyA = twoAccountSnapshot(accounts: ["A"])
+        let removed = run(snapshot: onlyA, reminders: first.reminders)
+        #expect(removed.reminders.baselined == ["A"])
+
+        let returned = run(snapshot: both, reminders: removed.reminders)
+        #expect(returned.deliver.isEmpty)
+        #expect(returned.reminders.baselined == ["A", "B"])
+    }
+
+    @Test func returningAccountStaleReviewIsSilent() {
+        let both = twoAccountSnapshot(accounts: ["A", "B"])
+        let removed = ReminderState(initialized: true, baselined: ["A"])
+        let result = run(snapshot: both, reminders: removed)
+        #expect(result.deliver.map(\.pullRequestID) == ["PR_A"])
+        #expect(result.reminders.reminded.contains(StaleReviewTracker.key(for: both.toReview[1])))
+    }
+
+    @Test func legacyStateWithoutBaselinedDecodes() throws {
+        let json = #"{"initialized":true,"reminded":["x"],"viewer":"adrianogl"}"#
+        let state = try JSONDecoder().decode(ReminderState.self, from: Data(json.utf8))
+        #expect(state.baselined == [])
+        #expect(state.reminded == ["x"])
+        #expect(state.initialized)
+    }
+
+    @Test func legacyStateIsRebasedWithoutBurst() {
         let snapshot = staleSnapshot()
-        let legacy = ReminderState(initialized: true, reminded: [], viewer: nil)
+        let legacy = ReminderState(initialized: true, reminded: [], viewer: "adrianogl")
         let result = run(snapshot: snapshot, reminders: legacy)
         #expect(result.deliver.isEmpty)
-        #expect(result.reminders.viewer == snapshot.viewer)
+        #expect(result.reminders.baselined == [""])
         #expect(result.reminders.reminded.count == 1)
+    }
+
+    @Test func quietStillPostponesForBaselinedAccounts() {
+        let snapshot = twoAccountSnapshot(accounts: ["A", "B"])
+        var quiet = NotificationPreferences()
+        quiet.dnd = .until(Date.fixed.addingTimeInterval(hour))
+        let state = ReminderState(initialized: true, baselined: ["A", "B"])
+        let during = run(snapshot: snapshot, preferences: quiet, reminders: state)
+        #expect(during.deliver.isEmpty)
+        #expect(during.reminders == state)
+
+        let resumed = run(snapshot: snapshot, reminders: during.reminders, now: Date.fixed.addingTimeInterval(2 * hour))
+        #expect(resumed.deliver.map(\.pullRequestID) == ["PR_A", "PR_B"])
+    }
+
+    @Test func disabledStaleToggleMarksOnlyBaselinedAccountsWithoutDelivering() {
+        let snapshot = twoAccountSnapshot(accounts: ["A", "B"])
+        var off = NotificationPreferences()
+        off.disabled = [.staleReview]
+        let result = run(snapshot: snapshot, preferences: off, reminders: ReminderState(initialized: true, baselined: ["A"]))
+        #expect(result.deliver.isEmpty)
+        #expect(result.reminders.reminded.count == 2)
     }
 
     @Test func firstRunStillDeliversTransitionEvents() {
