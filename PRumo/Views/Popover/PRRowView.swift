@@ -5,44 +5,103 @@ import PRumoKit
 struct PRRowView: View {
     let pr: PullRequest
     let presentation: RowPresentation
+    let tab: PopoverTab
+    let model: AppModel
     @State private var hovering = false
 
+    private var claudePurpose: SessionPurpose? {
+        switch tab {
+        case .review: .review
+        case .mine: pr.hasFailedCI ? .fixCI : nil
+        }
+    }
+
+    private var actions: RowActions {
+        RowActions(claudePurpose: claudePurpose) { model.launchClaude(pr: pr, purpose: $0) }
+    }
+
+    private func offersFix(_ badge: Badge) -> Bool {
+        tab == .mine && badge.tone == .negative && badge.text.hasPrefix(PresentationMarks.failedCI)
+    }
+
     var body: some View {
-        Button {
-            NSWorkspace.shared.open(pr.url)
-        } label: {
-            HStack(alignment: .top, spacing: 10) {
-                Circle()
-                    .fill(presentation.dot.color)
-                    .frame(width: PopoverMetrics.dotSize, height: PopoverMetrics.dotSize)
-                    .padding(.top, 4)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(presentation.title)
-                        .font(.system(size: 13, weight: .medium))
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                    Text(presentation.subtitle)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                    if !presentation.badges.isEmpty {
-                        HStack(spacing: 5) {
-                            ForEach(Array(presentation.badges.enumerated()), id: \.offset) { _, badge in
-                                BadgeView(badge: badge)
+        ZStack(alignment: .topTrailing) {
+            Button {
+                NSWorkspace.shared.open(pr.url)
+            } label: {
+                Color.clear.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            content
+
+            if hovering || model.isLaunching(pr) {
+                RowMenuButton(pr: pr, actions: actions, isLaunching: model.isLaunching(pr))
+                    .padding(.top, 6)
+                    .padding(.trailing, 8)
+            }
+        }
+        .background(hovering ? Color.primary.opacity(0.04) : Color.clear)
+        .onHover { hovering = $0 }
+        .contextMenu { RowMenuItems(pr: pr, actions: actions) }
+    }
+
+    private var content: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Circle()
+                .fill(presentation.dot.color)
+                .frame(width: PopoverMetrics.dotSize, height: PopoverMetrics.dotSize)
+                .padding(.top, 4)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(presentation.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .padding(.trailing, PopoverMetrics.menuReserve)
+                    .allowsHitTesting(false)
+                Text(presentation.subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .allowsHitTesting(false)
+                if !presentation.badges.isEmpty {
+                    HStack(spacing: 5) {
+                        ForEach(Array(presentation.badges.enumerated()), id: \.offset) { _, badge in
+                            BadgeView(badge: badge).allowsHitTesting(false)
+                            if offersFix(badge), let purpose = claudePurpose {
+                                fixButton(purpose)
                             }
                         }
-                        .padding(.top, 2)
                     }
+                    .padding(.top, 2)
                 }
-                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(hovering ? Color.primary.opacity(0.04) : Color.clear)
-            .contentShape(Rectangle())
+            Spacer(minLength: 0)
         }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func fixButton(_ purpose: SessionPurpose) -> some View {
+        Button {
+            model.launchClaude(pr: pr, purpose: purpose)
+        } label: {
+            HStack(spacing: 3) {
+                if model.isLaunching(pr) {
+                    ProgressView().controlSize(.mini).scaleEffect(ClaudeMetrics.spinnerScale)
+                        .frame(width: ClaudeMetrics.markSize, height: ClaudeMetrics.markSize)
+                } else {
+                    Image(ClaudeSymbol.mark)
+                        .renderingMode(.original)
+                        .resizable()
+                        .frame(width: ClaudeMetrics.markSize, height: ClaudeMetrics.markSize)
+                }
+                Text(ClaudeText.fixBadge)
+            }
+        }
+        .buttonStyle(ClaudeButtonStyle())
+        .disabled(model.isLaunching(pr))
+        .help(ClaudeText.fixCI)
     }
 }
 

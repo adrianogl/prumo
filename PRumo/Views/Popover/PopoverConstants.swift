@@ -7,6 +7,11 @@ enum PopoverMetrics {
     static let dotSize: CGFloat = 9
     static let menuBarGlyphSize: CGFloat = 16
     static let menuBarDotSize: CGFloat = 5
+    static let menuReserve: CGFloat = 26
+}
+
+enum PresentationMarks {
+    static let failedCI = "✗ "
 }
 
 enum PopoverSymbol {

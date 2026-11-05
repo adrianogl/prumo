@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 import PRumoKit
@@ -12,6 +13,7 @@ final class AppModel {
     var login: String?
     var origin: TokenOrigin?
     let claude: ClaudeSettingsStore
+    private(set) var launching: Set<String> = []
 
     @ObservationIgnored private let notifications: NotificationService
     @ObservationIgnored private let tokenStore: TokenStore
@@ -179,5 +181,62 @@ final class AppModel {
         if result.state == .ok { lastRefresh = .now }
         notifications.post(result.events)
         return result.state != .unauthorized
+    }
+
+    func isLaunching(_ pr: PullRequest) -> Bool {
+        launching.contains(pr.id)
+    }
+
+    func launchClaude(pr: PullRequest, purpose: SessionPurpose) {
+        guard !launching.contains(pr.id) else { return }
+        if case .custom(let template) = claude.settings.terminal,
+           template.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            showAlert(ClaudeText.customTerminalEmpty)
+            return
+        }
+        launching.insert(pr.id)
+        Task {
+            await runLaunch(pr: pr, purpose: purpose, mayAskForClone: true)
+            launching.remove(pr.id)
+        }
+    }
+
+    private func runLaunch(pr: PullRequest, purpose: SessionPurpose, mayAskForClone: Bool) async {
+        let launcher = ClaudeLauncher(
+            settings: claude.settings, scanned: claude.scanned, runner: SystemProcessRunner())
+        let result = await Task.detached { () -> Result<URL, ClaudeLaunchError> in
+            do throws(ClaudeLaunchError) {
+                return .success(try await launcher.launch(pr: pr, purpose: purpose))
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        guard case .failure(let error) = result else { return }
+        switch error {
+        case .cloneNotFound(let repository):
+            guard mayAskForClone else {
+                showAlert(ClaudeText.cloneQuestion(repository))
+                return
+            }
+            NSApp.activate()
+            guard let folder = FolderPicker.choose(
+                prompt: ClaudeText.chooseClonePrompt, message: ClaudeText.cloneQuestion(repository))
+            else { return }
+            claude.setOverride(repository: repository, path: folder)
+            await runLaunch(pr: pr, purpose: purpose, mayAskForClone: false)
+        case .worktree(let message):
+            showAlert(ClaudeText.worktreePrefix + message)
+        case .launchFailed(let message):
+            showAlert(message)
+        }
+    }
+
+    private func showAlert(_ message: String) {
+        NSApp.activate()
+        let alert = NSAlert()
+        alert.messageText = ClaudeText.alertTitle
+        alert.informativeText = message
+        alert.addButton(withTitle: ClaudeText.alertOK)
+        alert.runModal()
     }
 }

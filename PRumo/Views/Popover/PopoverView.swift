@@ -123,7 +123,7 @@ struct PopoverView: View {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(items) { pr in
-                                PRRowView(pr: pr, presentation: presentation(for: pr, now: context.date))
+                                PRRowView(pr: pr, presentation: presentation(for: pr, now: context.date), tab: tab, model: model)
                                 if pr.id != items.last?.id { Divider() }
                             }
                         }

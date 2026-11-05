@@ -4,6 +4,7 @@ import PRumoKit
 struct ClaudeSettingsView: View {
     let store: ClaudeSettingsStore
     @State private var manualError: String?
+    @State private var lastCustomTemplate = ""
 
     var body: some View {
         @Bindable var store = store
@@ -153,11 +154,12 @@ struct ClaudeSettingsView: View {
         Binding(
             get: { TerminalChoice(store.settings.terminal) },
             set: { choice in
+                rememberCustomTemplate(currentCustomTemplate)
                 switch choice {
                 case .ghostty: store.settings.terminal = .ghostty
                 case .terminal: store.settings.terminal = .terminal
                 case .iterm: store.settings.terminal = .iterm
-                case .custom: store.settings.terminal = .custom(template: currentCustomTemplate)
+                case .custom: store.settings.terminal = .custom(template: lastCustomTemplate)
                 }
             }
         )
@@ -171,7 +173,16 @@ struct ClaudeSettingsView: View {
     private var customTemplate: Binding<String> {
         Binding(
             get: { currentCustomTemplate },
-            set: { store.settings.terminal = .custom(template: $0) }
+            set: {
+                rememberCustomTemplate($0)
+                store.settings.terminal = .custom(template: $0)
+            }
         )
+    }
+
+    private func rememberCustomTemplate(_ template: String) {
+        if !template.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            lastCustomTemplate = template
+        }
     }
 }
