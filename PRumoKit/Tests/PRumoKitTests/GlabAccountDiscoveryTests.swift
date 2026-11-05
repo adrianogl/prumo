@@ -114,19 +114,64 @@ private func discovery(
         #expect(calls.all == [["config", "get", "token", "--host", "gitlab.empresa.com"]])
     }
 
-    @Test func tokenFallsBackToAuthStatus() async {
+    @Test func authStatusPlainTokenFormat() async {
         let calls = Calls()
         let token = await discovery(
             config: fixture(),
             calls: calls,
             respond: { args in
                 args.first == "auth"
-                    ? (0, "", "gitlab.empresa.com\n  ✓ Token: glpat-xyz\n")
+                    ? (0, "", "gitlab.empresa.com\n  ✓ Token: glpat-xyz\n  ✓ Git operations for gitlab.empresa.com configured to use ssh protocol.\n")
                     : (0, "\n", "")
             }
         ).token(host: "gitlab.empresa.com")
         #expect(token == "glpat-xyz")
         #expect(calls.all.last == ["auth", "status", "--hostname", "gitlab.empresa.com", "--show-token"])
+    }
+
+    @Test func authStatusKeyringFormat() async {
+        let calls = Calls()
+        let token = await discovery(
+            config: fixture(),
+            calls: calls,
+            respond: { args in
+                args.first == "auth"
+                    ? (0, "", "gitlab.empresa.com\n  ✓ Token found in operating system keyring: glpat-xyz\n  ✓ Git operations for gitlab.empresa.com configured to use ssh protocol.\n")
+                    : (0, "\n", "")
+            }
+        ).token(host: "gitlab.empresa.com")
+        #expect(token == "glpat-xyz")
+        #expect(calls.all.last == ["auth", "status", "--hostname", "gitlab.empresa.com", "--show-token"])
+    }
+
+    @Test func authStatusTokenFoundFormat() async {
+        let calls = Calls()
+        let token = await discovery(
+            config: fixture(),
+            calls: calls,
+            respond: { args in
+                args.first == "auth"
+                    ? (0, "", "gitlab.empresa.com\n  ✓ Token found: glpat-xyz\n  ✓ Git operations for gitlab.empresa.com configured to use ssh protocol.\n")
+                    : (0, "\n", "")
+            }
+        ).token(host: "gitlab.empresa.com")
+        #expect(token == "glpat-xyz")
+        #expect(calls.all.last == ["auth", "status", "--hostname", "gitlab.empresa.com", "--show-token"])
+    }
+
+    @Test func authStatusTokenWithInnerSpaceIsIgnored() async {
+        let token = await discovery(
+            config: fixture(),
+            respond: { args in
+                args.first == "auth" ? (0, "  ✓ Token: abc def\n  ✓ Token:\n", "") : (0, "\n", "")
+            }
+        ).token(host: "gitlab.empresa.com")
+        #expect(token == nil)
+    }
+
+    @Test func aliasesBlockIsNotHost() {
+        let text = "hosts:\n  gitlab.com:\n    user: adriano\naliases:\n  co: mr checkout\n  ci: ci status\n"
+        #expect(GlabConfigFile.accounts(fromYAML: text).map(\.host) == ["gitlab.com"])
     }
 
     @Test func nothingFoundReturnsNil() async {

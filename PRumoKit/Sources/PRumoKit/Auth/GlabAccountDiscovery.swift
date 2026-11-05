@@ -78,8 +78,10 @@ public struct GlabAccountDiscovery: Sendable {
 
     private func tokenLine(in output: String) -> String? {
         for line in output.components(separatedBy: .newlines) {
-            guard let range = line.range(of: "Token:") else { continue }
-            if let token = clean(String(line[range.upperBound...])) { return token }
+            guard let colon = line.firstIndex(of: ":"),
+                  line[..<colon].contains("Token") else { continue }
+            let value = String(line[line.index(after: colon)...]).trimmingCharacters(in: .whitespaces)
+            if !value.isEmpty, !value.contains(where: \.isWhitespace) { return value }
         }
         return nil
     }
