@@ -2,7 +2,7 @@ import Foundation
 
 public enum TransitionEngine {
     public static func events(from old: Snapshot?, to new: Snapshot) -> [NotificationEvent] {
-        guard let old else { return [] }
+        guard let old, old.viewer == new.viewer else { return [] }
         let oldMine = Dictionary(old.mine.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var result: [NotificationEvent] = []
         let threshold = old.fetchedAt.addingTimeInterval(-TransitionConstants.dateTolerance)

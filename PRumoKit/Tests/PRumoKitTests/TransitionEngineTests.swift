@@ -22,6 +22,17 @@ private func review(_ id: String, author: String = "maria", state: ReviewState, 
         #expect(TransitionEngine.events(from: nil, to: new).isEmpty)
     }
 
+    @Test func accountSwitchEmitsNothing() {
+        let old = Snapshot.fixture(viewer: "adriano", mine: [.fixture(ci: .pending(done: 1, total: 3))])
+        let new = Snapshot.fixture(
+            viewer: "maria",
+            mine: [.fixture(ci: .failure(failedChecks: ["lint"], total: 3), comments: [comment("c1", author: "joao")])],
+            toReview: [.fixture(id: "PR_9", number: 9)],
+            fetchedAt: t1
+        )
+        #expect(TransitionEngine.events(from: old, to: new).isEmpty)
+    }
+
     @Test func ciPendingToFailureEmitsOneEventWithChecksURL() {
         let old = Snapshot.fixture(mine: [.fixture(number: 809, ci: .pending(done: 1, total: 3))])
         let new = Snapshot.fixture(
