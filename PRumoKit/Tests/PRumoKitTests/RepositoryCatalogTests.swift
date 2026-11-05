@@ -27,6 +27,14 @@ import Testing
         #expect(groups[2].entries.map(\.count) == [1, 2])
     }
 
+    @Test func catalogSortsIgnoringCase() {
+        let groups = RepositoryCatalog.groups(
+            snapshot: Snapshot.fixture(), known: ["Zeta/b", "acme/Z", "acme/a"], favorites: [], hideEmpty: false, search: ""
+        )
+        #expect(groups.map(\.title) == ["ACME", "ZETA"])
+        #expect(groups[0].entries.map(\.name) == ["acme/a", "acme/Z"])
+    }
+
     @Test func catalogHidesEmptyButKeepsFavorites() {
         let groups = RepositoryCatalog.groups(
             snapshot: snapshot, known: ["contoso/menu-sso", "acme/vazio"], favorites: ["acme/vazio"], hideEmpty: true,

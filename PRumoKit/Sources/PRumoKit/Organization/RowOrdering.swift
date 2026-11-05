@@ -9,7 +9,7 @@ public enum RowOrdering {
             return [RowSection(repository: nil, items: applyMarks(sorted, marks))]
         }
         let grouped = Dictionary(grouping: sorted, by: \.repository)
-        return grouped.keys.sorted().map { RowSection(repository: $0, items: applyMarks(grouped[$0] ?? [], marks)) }
+        return grouped.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }.map { RowSection(repository: $0, items: applyMarks(grouped[$0] ?? [], marks)) }
     }
 
     private static func applyMarks(_ prs: [PullRequest], _ marks: RowMarks) -> [PullRequest] {
@@ -21,7 +21,7 @@ public enum RowOrdering {
     }
 
     private static func precedes(
-        _ a: PullRequest, _ b: PullRequest, tab: ListTab, order: SortOrder, viewer: String
+        _ a: PullRequest, _ b: PullRequest, tab: ListTab, order: RowSortOrder, viewer: String
     ) -> Bool {
         switch order {
         case .recentActivity:
@@ -36,13 +36,17 @@ public enum RowOrdering {
         case .newestFirst:
             if a.createdAt != b.createdAt { return a.createdAt > b.createdAt }
         case .repository:
-            if a.repository != b.repository { return a.repository < b.repository }
+            let byName = a.repository.localizedStandardCompare(b.repository)
+            if byName != .orderedSame { return byName == .orderedAscending }
         case .diffSize:
             let left = a.additions + a.deletions
             let right = b.additions + b.deletions
             if left != right { return left > right }
         }
-        return a.number > b.number
+        if a.number != b.number { return a.number > b.number }
+        let byRepository = a.repository.localizedStandardCompare(b.repository)
+        if byRepository != .orderedSame { return byRepository == .orderedAscending }
+        return a.id < b.id
     }
 
     private static func needsAction(_ pr: PullRequest, tab: ListTab, viewer: String) -> Bool {

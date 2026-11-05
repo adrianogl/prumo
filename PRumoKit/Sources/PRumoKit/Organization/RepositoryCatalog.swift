@@ -15,7 +15,7 @@ public enum RepositoryCatalog {
             .filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) }
             .map { RepositoryEntry(name: $0, count: counts[$0] ?? 0, isFavorite: favorites.contains($0)) }
             .filter { !hideEmpty || $0.count > 0 || $0.isFavorite }
-            .sorted { $0.name < $1.name }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 
         var groups: [RepositoryGroup] = []
         let favoriteEntries = entries.filter(\.isFavorite)
@@ -23,7 +23,8 @@ public enum RepositoryCatalog {
             groups.append(RepositoryGroup(title: OrganizationText.favoritesTitle, entries: favoriteEntries))
         }
         let byOrg = Dictionary(grouping: entries, by: organization)
-        for org in byOrg.keys.sorted() {
+        let orgs = byOrg.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        for org in orgs {
             groups.append(RepositoryGroup(title: org.uppercased(), entries: byOrg[org] ?? []))
         }
         return groups

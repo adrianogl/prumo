@@ -1,4 +1,4 @@
-import struct Foundation.Date
+import Foundation
 import Testing
 @testable import PRumoKit
 
@@ -10,25 +10,51 @@ import Testing
     func hours(_ h: Double) -> Date { Date.fixed.addingTimeInterval(-h * 3600) }
 
     func ids(
-        _ prs: [PullRequest], tab: ListTab = .mine, order: SortOrder, group: Bool = false, marks: RowMarks = RowMarks()
+        _ prs: [PullRequest], tab: ListTab = .mine, order: RowSortOrder, group: Bool = false, marks: RowMarks = RowMarks()
     ) -> [[String]] {
         RowOrdering.sections(
             prs, tab: tab, ordering: TabOrdering(order: order, groupByRepository: group), marks: marks, viewer: "adriano"
         ).map { $0.items.map(\.id) }
     }
 
-    @Test(arguments: SortOrder.allCases)
-    func pinnedAlwaysTopMutedAlwaysBottom(order: SortOrder) {
+    @Test(arguments: RowSortOrder.allCases)
+    func pinnedAlwaysTopMutedAlwaysBottom(order: RowSortOrder) {
         let prs = [
             PullRequest.fixture(id: "A", number: 1, updatedAt: hours(1)),
             .fixture(id: "B", number: 2, updatedAt: hours(2)),
             .fixture(id: "C", number: 3, updatedAt: hours(3)),
-            .fixture(id: "D", number: 4, updatedAt: hours(4))
+            .fixture(id: "D", number: 4, updatedAt: hours(4)),
+            .fixture(id: "E", number: 5, updatedAt: hours(5))
         ]
-        let marks = RowMarks(pinned: ["D"], muted: ["A": muted(prs[0])])
+        let marks = RowMarks(pinned: ["D", "E"], muted: ["A": muted(prs[0]), "E": muted(prs[4])])
         let result = ids(prs, order: order, marks: marks)[0]
+        let base = ids(prs, order: order)[0]
+        let pinnedOnly = base.filter { $0 == "D" }
+        let plain = base.filter { ["B", "C"].contains($0) }
+        let mutedOnes = base.filter { ["A", "E"].contains($0) }
+        #expect(result == pinnedOnly + plain + mutedOnes)
         #expect(result.first == "D")
-        #expect(result.last == "A")
+        #expect(Set(result.suffix(2)) == ["A", "E"])
+    }
+
+    @Test func totalOrderIgnoresInputOrder() {
+        let prs = [
+            PullRequest.fixture(id: "X", number: 7, repository: "acme/b", updatedAt: .fixed),
+            .fixture(id: "Y", number: 7, repository: "acme/a", updatedAt: .fixed)
+        ]
+        for order in RowSortOrder.allCases {
+            #expect(ids(prs, order: order) == [["Y", "X"]])
+            #expect(ids(prs.reversed(), order: order) == [["Y", "X"]])
+        }
+    }
+
+    @Test func repositoryOrderIgnoresCase() {
+        let prs = [
+            PullRequest.fixture(id: "A", number: 1, repository: "Zeta/x"),
+            .fixture(id: "B", number: 2, repository: "acme/x")
+        ]
+        #expect(ids(prs, order: .repository) == [["B", "A"]])
+        #expect(ids(prs, order: .recentActivity, group: true) == [["B"], ["A"]])
     }
 
     @Test func recentActivityBreaksTiesByNumberDescending() {
