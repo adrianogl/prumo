@@ -5,7 +5,7 @@ enum ClaudeMessages {
     static let commandTimedOut = "O comando demorou demais para responder."
 
     static func claudeNotFound(_ command: String) -> String {
-        "Não encontrei o comando \(command) no seu shell. Confira o nome em Ajustes › Claude."
+        "Não encontrei o comando \(command) no seu shell. Confira o nome em Ajustes › IA."
     }
 
     static func invalidBranch(_ branch: String) -> String {

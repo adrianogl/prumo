@@ -19,6 +19,10 @@ struct JiraTests {
         #expect(JiraKeyDetector.key(title: "ABC-1", branch: "", prefixes: ["ON"]) == nil)
     }
 
+    @Test func detectsKeyFollowedByUnderscore() {
+        #expect(JiraKeyDetector.key(title: "", branch: "feat/on-1234_filtro", prefixes: ["ON"]) == "ON-1234")
+    }
+
     @Test func ignoresPrefixInsideWord() {
         #expect(JiraKeyDetector.key(title: "MON-12", branch: "", prefixes: ["ON"]) == nil)
         #expect(JiraKeyDetector.key(title: "ON-", branch: "", prefixes: ["ON"]) == nil)

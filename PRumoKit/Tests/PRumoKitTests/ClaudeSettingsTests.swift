@@ -51,7 +51,7 @@ import Testing
         #expect(ClaudeCommandName.isValid(name))
     }
 
-    @Test(arguments: ["claude --x", "-x", "a;b", "$(x)", "a b", ""])
+    @Test(arguments: ["claude --x", "-x", "a;b", "$(x)", "a b", "", ".", "..", "/", "//", "./", "eval", "source", "exec", "builtin", "command", "noglob"])
     func invalidCommandNames(name: String) {
         #expect(!ClaudeCommandName.isValid(name))
     }

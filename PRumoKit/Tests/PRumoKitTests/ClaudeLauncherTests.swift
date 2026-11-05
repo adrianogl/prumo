@@ -200,7 +200,7 @@ private func launcher(
     @Test func claudeNotFoundFails() async {
         let runner = FakeRunner()
         let sink = ScriptSink()
-        await #expect(throws: ClaudeLaunchError.launchFailed("Não encontrei o comando claude no seu shell. Confira o nome em Ajustes › Claude.")) {
+        await #expect(throws: ClaudeLaunchError.launchFailed("Não encontrei o comando claude no seu shell. Confira o nome em Ajustes › IA.")) {
             try await launcher(runner, sink: sink, claude: { _ in false }).launch(pr: .fixture(), purpose: .review)
         }
         #expect(sink.written.isEmpty)
@@ -285,7 +285,7 @@ private func launcher(
         #expect(asked.values == ["claude-ems"])
         #expect(sink.written[0].contents.contains("'claude-ems' -- "))
 
-        await #expect(throws: ClaudeLaunchError.launchFailed("Não encontrei o comando claude-ems no seu shell. Confira o nome em Ajustes › Claude.")) {
+        await #expect(throws: ClaudeLaunchError.launchFailed("Não encontrei o comando claude-ems no seu shell. Confira o nome em Ajustes › IA.")) {
             try await launcher(FakeRunner(), settings: settings, claude: { _ in false }).launch(pr: .fixture(), purpose: .review)
         }
     }

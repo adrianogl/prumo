@@ -18,11 +18,10 @@ extension RowMenuEntry {
         switch self {
         case .claude(_, let primary):
             primary ? KeyboardShortcut(KeyEquivalent(Character(ClaudeText.shortcutKey)), modifiers: .command) : nil
-        case .openInBrowser: KeyboardShortcut(.return, modifiers: [])
         case .openJira: KeyboardShortcut(KeyEquivalent(RowMenuKey.openJira), modifiers: .command)
         case .copyLink: KeyboardShortcut(KeyEquivalent(RowMenuKey.copy), modifiers: .command)
         case .copyCheckout: KeyboardShortcut(KeyEquivalent(RowMenuKey.copy), modifiers: [.command, .shift])
-        case .rerunFailedJobs, .separator: nil
+        case .openInBrowser, .rerunFailedJobs, .separator: nil
         }
     }
 }

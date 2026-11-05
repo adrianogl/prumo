@@ -1,7 +1,7 @@
 import Foundation
 
 public enum JiraKeyDetector {
-    private static let token = try! NSRegularExpression(pattern: #"\b([A-Za-z][A-Za-z0-9]*)-(\d+)\b"#)
+    private static let token = try! NSRegularExpression(pattern: #"(?<![A-Za-z0-9])([A-Za-z][A-Za-z0-9]*)-(\d+)(?![A-Za-z0-9])"#)
 
     public static func key(title: String, branch: String, prefixes: Set<String>) -> String? {
         let valid = Set(prefixes.compactMap(normalizedPrefix))

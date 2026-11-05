@@ -28,7 +28,7 @@ enum ClaudeText {
     static let shortcutKey = "k"
     static let alertTitle = "Não foi possível abrir o Claude"
     static let alertOK = "OK"
-    static let customTerminalEmpty = "Configure o comando do terminal personalizado em Ajustes › Claude."
+    static let customTerminalEmpty = "Configure o comando do terminal personalizado em Ajustes › IA."
     static let chooseClonePrompt = "Usar esta pasta"
     static let worktreePrefix = "Não consegui preparar a worktree: "
 
