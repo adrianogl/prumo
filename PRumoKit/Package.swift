@@ -9,6 +9,10 @@ let package = Package(
     ],
     targets: [
         .target(name: "PRumoKit"),
-        .testTarget(name: "PRumoKitTests", dependencies: ["PRumoKit"])
+        .testTarget(
+            name: "PRumoKitTests",
+            dependencies: ["PRumoKit"],
+            resources: [.copy("Fixtures")]
+        )
     ]
 )
