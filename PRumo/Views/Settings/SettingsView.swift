@@ -75,7 +75,7 @@ struct SettingsView: View {
         guard launchAtLogin != LaunchAtLogin.isEnabled else { return }
         do {
             try LaunchAtLogin.set(launchAtLogin)
-            launchError = nil
+            launchError = LaunchAtLogin.needsApproval ? LaunchAtLogin.approvalMessage : nil
         } catch {
             launchError = error.localizedDescription
             launchAtLogin = LaunchAtLogin.isEnabled

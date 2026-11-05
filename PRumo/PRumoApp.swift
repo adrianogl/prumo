@@ -26,6 +26,7 @@ struct PRumoApp: App {
             OnboardingView(app: model)
         }
         .windowResizability(.contentSize)
+        .defaultLaunchBehavior(.suppressed)
 
         Settings {
             SettingsView(model: model)

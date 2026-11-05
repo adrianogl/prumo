@@ -28,9 +28,12 @@ final class OnboardingModel {
         isCheckingGh = true
         defer { isCheckingGh = false }
         guard let token = await GhCLITokenSource(runner: SystemProcessRunner()).token() else { return }
-        if let snapshot = try? await GitHubClient(token: token).fetchSnapshot() {
+        do {
+            let snapshot = try await GitHubClient(token: token).fetchSnapshot()
             ghToken = token
             ghLogin = snapshot.viewer
+        } catch {
+            errorMessage = Self.message(for: error)
         }
     }
 
@@ -49,11 +52,7 @@ final class OnboardingModel {
             let snapshot = try await GitHubClient(token: token).fetchSnapshot()
             finishConnection(token: token, origin: .pasted, login: snapshot.viewer)
         } catch {
-            if case .network = error {
-                errorMessage = OnboardingText.offline
-            } else {
-                errorMessage = OnboardingText.invalidToken
-            }
+            errorMessage = Self.message(for: error)
         }
     }
 
@@ -68,17 +67,34 @@ final class OnboardingModel {
     }
 
     func applyLaunchAtLogin() {
+        guard launchAtLogin != LaunchAtLogin.isEnabled else { return }
         do {
             try LaunchAtLogin.set(launchAtLogin)
-            launchError = nil
+            launchError = LaunchAtLogin.needsApproval ? LaunchAtLogin.approvalMessage : nil
         } catch {
             launchError = error.localizedDescription
+            launchAtLogin = LaunchAtLogin.isEnabled
+        }
+    }
+
+    func useOtherToken() {
+        errorMessage = nil
+        step = .token
+    }
+
+    private static func message(for error: GitHubError) -> String {
+        switch error {
+        case .unauthorized: OnboardingText.invalidToken
+        case .network: OnboardingText.offline
+        default: OnboardingText.unavailable
         }
     }
 
     private func finishConnection(token: String, origin: TokenOrigin, login: String) {
         do {
             try app.connect(token: token, origin: origin, login: login)
+            tokenInput = ""
+            errorMessage = nil
             step = .notifications
         } catch {
             errorMessage = OnboardingText.keychainFailure

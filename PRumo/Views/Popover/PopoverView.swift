@@ -27,12 +27,12 @@ struct PopoverView: View {
 
     private func showOnboarding() {
         openWindow(id: PopoverText.onboardingWindowID)
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
     }
 
     private func showSettings() {
         openSettings()
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
     }
 
     private var header: some View {

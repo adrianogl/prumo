@@ -43,14 +43,16 @@ struct OnboardingView: View {
                 HStack(spacing: 8) {
                     Button(OnboardingText.useThisAccount, action: flow.useGh)
                         .buttonStyle(PrimaryButtonStyle())
-                    Button(OnboardingText.useOtherToken) { flow.step = .token }
+                    Button(OnboardingText.useOtherToken, action: flow.useOtherToken)
                         .buttonStyle(SecondaryButtonStyle())
                 }
                 .padding(.top, 10)
                 errorLine
             } else {
-                Button(OnboardingText.useToken) { flow.step = .token }
+                errorLine
+                Button(OnboardingText.useToken, action: flow.useOtherToken)
                     .buttonStyle(PrimaryButtonStyle())
+                    .padding(.top, 6)
             }
         }
     }

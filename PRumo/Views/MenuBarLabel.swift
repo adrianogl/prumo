@@ -27,7 +27,7 @@ struct MenuBarLabel: View {
         .onChange(of: model.needsOnboarding, initial: true) {
             if model.needsOnboarding {
                 openWindow(id: OnboardingText.id)
-                NSApp.activate(ignoringOtherApps: true)
+                NSApp.activate()
             }
         }
     }

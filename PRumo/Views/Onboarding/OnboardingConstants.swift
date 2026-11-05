@@ -22,6 +22,7 @@ enum OnboardingText {
     static let connect = "Conectar"
     static let invalidToken = "Token inválido ou sem os escopos necessários."
     static let offline = "Não consegui falar com o GitHub. Confira a conexão e tente de novo."
+    static let unavailable = "O GitHub não respondeu. Tente de novo em instantes."
     static let keychainFailure = "Não consegui guardar o token no Keychain."
     static let notificationsTitle = "Notificações"
     static let notificationsBody = "O PRumo avisa quando um PR recebe review, comentário ou muda o resultado do CI."

@@ -57,6 +57,8 @@ final class AppModel {
                 defaults.set(resolved.origin.rawValue, forKey: AppConstants.tokenOriginKey)
             }
             defaults.set(true, forKey: AppConstants.onboardingDoneKey)
+            let notifications = notifications
+            Task.detached { _ = await notifications.requestAuthorization() }
             await begin(token: resolved.token)
         }
     }
@@ -65,7 +67,7 @@ final class AppModel {
         if origin == .pasted {
             try tokenStore.write(token)
         } else {
-            try? tokenStore.delete()
+            try tokenStore.delete()
         }
         startupTask?.cancel()
         self.login = login
