@@ -2,6 +2,7 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
     public var reviewTemplate: String
     public var ciTemplate: String
     public var conflictTemplate: String
+    public var commentsTemplate: String
     public var extraFlags: String
     public var terminal: TerminalKind
     public var clonesRoot: String
@@ -13,6 +14,7 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         reviewTemplate: String = ClaudeDefaults.reviewTemplate,
         ciTemplate: String = ClaudeDefaults.ciTemplate,
         conflictTemplate: String = ClaudeDefaults.conflictTemplate,
+        commentsTemplate: String = ClaudeDefaults.commentsTemplate,
         extraFlags: String = ClaudeDefaults.extraFlags,
         terminal: TerminalKind = ClaudeDefaults.terminal,
         clonesRoot: String = ClaudeDefaults.clonesRoot,
@@ -23,6 +25,7 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         self.reviewTemplate = reviewTemplate
         self.ciTemplate = ciTemplate
         self.conflictTemplate = conflictTemplate
+        self.commentsTemplate = commentsTemplate
         self.extraFlags = extraFlags
         self.terminal = terminal
         self.clonesRoot = clonesRoot
@@ -36,6 +39,7 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         reviewTemplate = try container.decodeIfPresent(String.self, forKey: .reviewTemplate) ?? ClaudeDefaults.reviewTemplate
         ciTemplate = try container.decodeIfPresent(String.self, forKey: .ciTemplate) ?? ClaudeDefaults.ciTemplate
         conflictTemplate = try container.decodeIfPresent(String.self, forKey: .conflictTemplate) ?? ClaudeDefaults.conflictTemplate
+        commentsTemplate = try container.decodeIfPresent(String.self, forKey: .commentsTemplate) ?? ClaudeDefaults.commentsTemplate
         extraFlags = try container.decodeIfPresent(String.self, forKey: .extraFlags) ?? ClaudeDefaults.extraFlags
         terminal = try container.decodeIfPresent(TerminalKind.self, forKey: .terminal) ?? ClaudeDefaults.terminal
         clonesRoot = try container.decodeIfPresent(String.self, forKey: .clonesRoot) ?? ClaudeDefaults.clonesRoot

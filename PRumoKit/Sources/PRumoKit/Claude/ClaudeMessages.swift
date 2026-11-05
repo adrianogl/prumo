@@ -18,10 +18,18 @@ enum ClaudeMessages {
     }
 
     static func dirtyWorktree(_ path: String, purpose: SessionPurpose) -> String {
-        let action = purpose == .resolveConflict ? dirtyConflictAction : dirtyCIAction
+        let action: String
+        switch purpose {
+        case .review: action = dirtyReviewAction
+        case .fixCI: action = dirtyCIAction
+        case .resolveConflict: action = dirtyConflictAction
+        case .addressComments: action = dirtyCommentsAction
+        }
         return "A worktree \(path) tem alterações; finalize ou descarte antes de \(action)."
     }
 
+    private static let dirtyReviewAction = "revisar o PR"
     private static let dirtyCIAction = "corrigir a CI"
     private static let dirtyConflictAction = "resolver o conflito"
+    private static let dirtyCommentsAction = "resolver os comentários"
 }

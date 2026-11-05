@@ -11,10 +11,12 @@ public struct RowPresentation: Equatable, Sendable {
     public let badges: [Badge]
     public let ciFailureBadgeIndex: Int?
     public let conflictBadgeIndex: Int?
+    public let commentsBadgeIndex: Int?
 
     public init(
         dot: StatusDot, title: String, subtitle: String, badges: [Badge],
-        ciFailureBadgeIndex: Int? = nil, conflictBadgeIndex: Int? = nil
+        ciFailureBadgeIndex: Int? = nil, conflictBadgeIndex: Int? = nil,
+        commentsBadgeIndex: Int? = nil
     ) {
         self.dot = dot
         self.title = title
@@ -22,6 +24,7 @@ public struct RowPresentation: Equatable, Sendable {
         self.badges = badges
         self.ciFailureBadgeIndex = ciFailureBadgeIndex
         self.conflictBadgeIndex = conflictBadgeIndex
+        self.commentsBadgeIndex = commentsBadgeIndex
     }
 }
 
@@ -40,7 +43,11 @@ public enum RowPresenter {
         if approvals > 0 {
             badges.append(Badge("\(PresentationText.approvalMark) \(approvals) \(approvals == 1 ? PresentationText.approvalSingular : PresentationText.approvalPlural)", .positive))
         }
-        if hasChangesRequested { badges.append(Badge(PresentationText.changesRequested, .negative)) }
+        var changesRequestedIndex: Int?
+        if hasChangesRequested {
+            changesRequestedIndex = badges.count
+            badges.append(Badge(PresentationText.changesRequested, .negative))
+        }
         if pr.isDraft { badges.append(Badge(PresentationText.draft, .neutral)) }
         var conflictIndex: Int?
         if pr.mergeable == .conflicting {
@@ -48,7 +55,11 @@ public enum RowPresenter {
             badges.append(Badge(PresentationText.conflict, .warning, .conflict))
         }
         let commentTotal = pr.commentCount + pr.reviews.filter(\.isComment).count
-        if commentTotal > 0 { badges.append(Badge(String(commentTotal), .neutral, .comments)) }
+        var commentsIndex = changesRequestedIndex
+        if commentTotal > 0 {
+            commentsIndex = badges.count
+            badges.append(Badge(String(commentTotal), .neutral, .comments))
+        }
 
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: hasChangesRequested),
@@ -56,7 +67,8 @@ public enum RowPresenter {
             subtitle: subtitle(pr, from: pr.createdAt, now: now),
             badges: badges,
             ciFailureBadgeIndex: ciFailureIndex,
-            conflictBadgeIndex: conflictIndex
+            conflictBadgeIndex: conflictIndex,
+            commentsBadgeIndex: commentsIndex
         )
     }
 

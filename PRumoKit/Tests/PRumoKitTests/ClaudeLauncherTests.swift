@@ -121,6 +121,25 @@ private func launcher(
         #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add --detach -- \(worktree) refs/prumo/pull/812"))
     }
 
+    @Test func addressCommentsUsesCommentsTemplateInBranchWorktree() async throws {
+        let sink = ScriptSink()
+        let runner = FakeRunner()
+        _ = try await launcher(runner, sink: sink).launch(pr: .fixture(commentCount: 2), purpose: .addressComments)
+        let script = sink.written[0].contents
+        #expect(script.contains("O PR #812 (acme/loja) recebeu comentários de review. Leia os comentários com gh pr view 812 --comments e gh api repos/acme/loja/pulls/812/comments, aplique as alterações pedidas que fizerem sentido, rode os testes e faça commit. Não responda nem resolva as conversas no GitHub; me mostre um resumo do que mudou e do que você não aplicou.'\n"))
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add -B feat/carrinho -- \(worktree) refs/remotes/origin/feat/carrinho"))
+        #expect(!script.contains("não faça push"))
+    }
+
+    @Test func forkAddressCommentsIsDetachedWithNoPushNotice() async throws {
+        let sink = ScriptSink()
+        let runner = FakeRunner()
+        let pr = PullRequest.fixture(commentCount: 2, isCrossRepository: true)
+        _ = try await launcher(runner, sink: sink).launch(pr: pr, purpose: .addressComments)
+        #expect(sink.written[0].contents.contains("do que você não aplicou. O PR vem de um fork; não faça push.'\n"))
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add --detach -- \(worktree) refs/prumo/pull/812"))
+    }
+
     @Test func missingCloneThrowsCloneNotFound() async {
         let runner = FakeRunner()
         let sink = ScriptSink()

@@ -33,6 +33,7 @@ import Testing
         #expect(defaults.reviewTemplate == "/code-review {numero}")
         #expect(defaults.ciTemplate == "A CI do PR #{numero} ({repo}) falhou no job {job}. Leia o log com gh run view {run} --log-failed, encontre a causa e corrija.")
         #expect(defaults.conflictTemplate == "O PR #{numero} ({repo}) está em conflito com {base}. Atualize a branch com git fetch origin {base} e git merge origin/{base}, resolva os conflitos mantendo a intenção das duas partes, rode os testes e faça commit do merge.")
+        #expect(defaults.commentsTemplate == "O PR #{numero} ({repo}) recebeu comentários de review. Leia os comentários com gh pr view {numero} --comments e gh api repos/{repo}/pulls/{numero}/comments, aplique as alterações pedidas que fizerem sentido, rode os testes e faça commit. Não responda nem resolva as conversas no GitHub; me mostre um resumo do que mudou e do que você não aplicou.")
         #expect(defaults.extraFlags == "")
         #expect(defaults.terminal == .ghostty)
         #expect(defaults.clonesRoot == "~/Code")
@@ -55,6 +56,11 @@ import Testing
         #expect(values["numero"] == "812")
         #expect(values["branch"] == "feat/carrinho")
         #expect(PromptValues.review(.fixture())["base"] == nil)
+    }
+
+    @Test func commentsValuesMatchReviewValues() {
+        let pr = PullRequest.fixture()
+        #expect(PromptValues.comments(pr) == PromptValues.review(pr))
     }
 
     @Test func ciValuesAreEmptyWithoutFailure() {

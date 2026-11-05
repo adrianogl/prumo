@@ -82,6 +82,33 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
         }
     }
 
+    @Test func addressCommentsOnOwnBranchMatchesFixCI() async throws {
+        let ci = RecordingRunner()
+        _ = try await manager(ci).prepare(pr: .fixture(), clone: clone, purpose: .fixCI)
+        let comments = RecordingRunner()
+        let path = try await manager(comments).prepare(pr: .fixture(), clone: clone, purpose: .addressComments)
+        #expect(path.path == target)
+        #expect(comments.commands == ci.commands)
+    }
+
+    @Test func addressCommentsOnForkIsDetached() async throws {
+        let runner = RecordingRunner()
+        let pr = PullRequest.fixture(isCrossRepository: true)
+        _ = try await manager(runner).prepare(pr: pr, clone: clone, purpose: .addressComments)
+        #expect(runner.commands.contains("/usr/bin/git -C /code/loja worktree add --detach -- \(target) refs/prumo/pull/812"))
+        #expect(!runner.commands.contains { $0.contains("-B") })
+    }
+
+    @Test func addressCommentsOnDirtyDetachedTargetThrows() async {
+        let runner = RecordingRunner(results: [
+            "/usr/bin/git -C \(target) symbolic-ref -q HEAD": (1, "", ""),
+            "/usr/bin/git -C \(target) status --porcelain": (0, " M a\n", "")
+        ])
+        await #expect(throws: WorktreeError.gitFailed("A worktree \(target) tem alterações; finalize ou descarte antes de resolver os comentários.")) {
+            try await manager(runner, existing: [target]).prepare(pr: .fixture(), clone: clone, purpose: .addressComments)
+        }
+    }
+
     @Test func reviewUsesDetachedPullHead() async throws {
         let runner = RecordingRunner()
         let path = try await manager(runner).prepare(pr: .fixture(), clone: clone, purpose: .review)

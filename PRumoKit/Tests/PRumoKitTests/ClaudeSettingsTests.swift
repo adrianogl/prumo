@@ -11,6 +11,7 @@ import Testing
         #expect(settings.reviewTemplate == ClaudeDefaults.reviewTemplate)
         #expect(settings.ciTemplate == ClaudeDefaults.ciTemplate)
         #expect(settings.conflictTemplate == ClaudeDefaults.conflictTemplate)
+        #expect(settings.commentsTemplate == ClaudeDefaults.commentsTemplate)
         #expect(settings.terminal == ClaudeDefaults.terminal)
         #expect(settings.clonesRoot == ClaudeDefaults.clonesRoot)
         #expect(settings.worktreesRoot == ClaudeDefaults.worktreesRoot)

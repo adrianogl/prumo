@@ -147,4 +147,37 @@ import Testing
         let row = RowPresenter.mine(.fixture(commentCount: 0), viewer: "adriano", now: .fixed)
         #expect(row.badges.contains { $0.icon == .comments } == false)
     }
+
+    @Test func commentsBadgeIndexPointsToCommentsBadge() {
+        let pr = PullRequest.fixture(commentCount: 2)
+        let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed)
+        let index = row.commentsBadgeIndex
+        #expect(index != nil)
+        #expect(row.badges[index!].icon == .comments)
+    }
+
+    @Test func commentsBadgeIndexFallsBackToChangesRequestedBadge() {
+        let pr = PullRequest.fixture(reviews: [review("ana", .changesRequested, 1)])
+        let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed)
+        let index = row.commentsBadgeIndex
+        #expect(index != nil)
+        #expect(row.badges[index!] == Badge(PresentationText.changesRequested, .negative))
+    }
+
+    @Test func commentsBadgeIndexPrefersCommentsBadgeWhenBothApply() {
+        let pr = PullRequest.fixture(reviews: [review("ana", .changesRequested, 1)], commentCount: 1)
+        let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed)
+        let index = row.commentsBadgeIndex
+        #expect(index != nil)
+        #expect(row.badges[index!].icon == .comments)
+    }
+
+    @Test func commentsBadgeIndexIsNilWithoutCommentsOrChangesRequested() {
+        #expect(RowPresenter.mine(.fixture(), viewer: "adriano", now: .fixed).commentsBadgeIndex == nil)
+    }
+
+    @Test func commentsBadgeIndexIsNilOnReviewRows() {
+        let pr = PullRequest.fixture(reviews: [review("ana", .changesRequested, 1)], commentCount: 3)
+        #expect(RowPresenter.review(pr, now: .fixed).commentsBadgeIndex == nil)
+    }
 }
