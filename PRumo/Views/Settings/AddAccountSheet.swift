@@ -62,7 +62,7 @@ struct AddAccountSheet: View {
 
     private func detectedRow(_ account: GhAccount) -> some View {
         HStack(spacing: AccountsSettingsMetrics.detectedSpacing) {
-            Image(systemName: AccountsSettingsSymbol.provider(.github))
+            ProviderIcon(kind: .github, size: AccountsSettingsMetrics.detectedIconSize)
             Text(AccountsSettingsText.foundInGh(login: account.login, host: GhHostsFile.normalizeHost(account.host)))
                 .font(.system(size: AccountsSettingsMetrics.detectedTextSize))
             Spacer()

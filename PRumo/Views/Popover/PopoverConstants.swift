@@ -13,6 +13,9 @@ enum PopoverMetrics {
     static let menuReserve: CGFloat = 26
     static let newDotSize: CGFloat = 7
     static let mutedOpacity: Double = 0.55
+    static let staleAccountOpacity: Double = 0.55
+    static let providerIconSize: CGFloat = 11
+    static let providerIconSpacing: CGFloat = 4
     static let pinSize: CGFloat = 10
     static let mergedIconSize: CGFloat = 11
     static let dndIconSize: CGFloat = 13
@@ -102,8 +105,9 @@ enum PopoverText {
 
     static func mergedAt(time: String) -> String { "merge às \(time)" }
 
-    static func mergedSubtitle(repository: String, number: Int, time: String) -> String {
-        "\(repository) #\(number) · \(mergedAt(time: time))"
+    static func mergedSubtitle(account: String? = nil, repository: String, number: Int, time: String) -> String {
+        let parts = [account, "\(repository) #\(number)", mergedAt(time: time)].compactMap { $0 }
+        return parts.joined(separator: " · ")
     }
 
     static func mutedOn(date: String) -> String { "Silenciado em \(date)" }
@@ -122,6 +126,28 @@ enum PopoverText {
     static func unexpectedResponse(lastSuccess: String?, retryIn: Int) -> String {
         let data = lastSuccess.map { "Mostrando dados de \($0). " } ?? ""
         return "O GitHub mandou uma resposta que o PRumo não entendeu. \(data)Tentando de novo em \(retryIn)s."
+    }
+
+    static let accountSettings = "Ajustes"
+    static let accountReconnect = "Reconectar"
+    static let accountOthersKeepUpdating = "Os outros PRs continuam atualizando."
+
+    static func accountOffline(name: String, host: String, age: String?) -> String {
+        let since = age.map { " há \($0)" } ?? ""
+        return "\(name) (\(host)) sem acesso\(since). \(accountOthersKeepUpdating)"
+    }
+
+    static func accountInvalidToken(name: String, host: String) -> String {
+        "\(name) (\(host)) com token inválido. \(accountOthersKeepUpdating)"
+    }
+
+    static func accountRateLimited(name: String, host: String, resetAt: String?) -> String {
+        let until = resetAt.map { " até \($0)" } ?? ""
+        return "\(name) (\(host)) no limite da API\(until)."
+    }
+
+    static func accountUnexpectedResponse(name: String, host: String) -> String {
+        "\(name) (\(host)) respondeu de um jeito inesperado. Mostrando o último dado."
     }
 
     static func openJiraLabel(key: String) -> String { "\(openJiraHelp) \(key)" }

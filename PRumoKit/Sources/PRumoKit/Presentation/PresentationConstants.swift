@@ -22,6 +22,8 @@ enum PresentationText {
     static let ciFailed = "CI falhou"
     static let separator = " · "
     static let waitingPrefix = "esperando há"
+    static let lastDataPrefix = "último dado"
+    static let lastDataSuffix = "atrás"
 }
 
 enum PresentationMetrics {

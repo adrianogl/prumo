@@ -4,11 +4,13 @@ import PRumoKit
 
 struct MergedRowView: View {
     let item: MergedPullRequest
+    var account: AccountLabel?
+    var isStale = false
     @State private var hovering = false
 
     private var subtitle: String {
         PopoverText.mergedSubtitle(
-            repository: item.repository, number: item.number, time: ClockFormat.string(from: item.mergedAt))
+            account: account?.text, repository: item.repository, number: item.number, time: ClockFormat.string(from: item.mergedAt))
     }
 
     var body: some View {
@@ -25,9 +27,14 @@ struct MergedRowView: View {
                     Text(item.title)
                         .font(.system(size: 13, weight: .medium))
                         .lineLimit(1)
-                    Text(subtitle)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                    HStack(alignment: .firstTextBaseline, spacing: PopoverMetrics.providerIconSpacing) {
+                        if let account {
+                            ProviderIcon(kind: account.provider, size: PopoverMetrics.providerIconSize)
+                        }
+                        Text(subtitle)
+                    }
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
             }
@@ -37,6 +44,7 @@ struct MergedRowView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .opacity(isStale ? PopoverMetrics.staleAccountOpacity : 1)
         .background(hovering ? Color.primary.opacity(0.04) : Color.clear)
         .onHover { hovering = $0 }
         .accessibilityLabel([item.title, subtitle].joined(separator: ", "))

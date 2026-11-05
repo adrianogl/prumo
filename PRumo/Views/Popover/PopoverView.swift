@@ -41,7 +41,7 @@ struct PopoverView: View {
             if !model.needsOnboarding {
                 SearchField(text: $query, focus: $focus, onListKey: { handleListKey($0) ?? .ignored })
             }
-            StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
+            banners
             Divider()
             list
             Divider()
@@ -267,6 +267,28 @@ struct PopoverView: View {
             .filter { trimmedQuery.isEmpty || SearchMatcher.matches($0, query: trimmedQuery) }
     }
 
+    private var hasMultipleAccounts: Bool { model.accounts.list.accounts.count > 1 }
+
+    @ViewBuilder
+    private var banners: some View {
+        if hasMultipleAccounts {
+            ForEach(model.accounts.list.accounts) { account in
+                if let status = model.accounts.statuses[account.id], status.isProblem {
+                    AccountProblemBanner(account: account, status: status, onSettings: showSettings)
+                }
+            }
+        } else {
+            StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
+        }
+    }
+
+    private func staleSince(accountID: String) -> (isStale: Bool, since: Date?) {
+        guard hasMultipleAccounts, let status = model.accounts.statuses[accountID], status.isProblem else {
+            return (false, nil)
+        }
+        return (true, status.lastSuccess)
+    }
+
     private func showOnboarding() {
         openWindow(id: PopoverText.onboardingWindowID)
         NSApp.activate()
@@ -421,11 +443,14 @@ struct PopoverView: View {
         return PRRowView(
             pr: pr,
             presentation: presentation(for: pr, now: now),
-            compactLine: compact ? RowPresenter.compactLine(pr, tab: tab, viewer: viewer(for: pr), now: now) : nil,
+            compactLine: compact
+                ? RowPresenter.compactLine(pr, tab: tab, viewer: viewer(for: pr), now: now, account: model.accountLabel(for: pr))
+                : nil,
             tab: tab,
             isHighlighted: highlighted.contains(pr.id),
             isSelected: isSelected,
             hasOtherSelection: selectedID != nil && !isSelected,
+            isStale: staleSince(accountID: pr.accountID).isStale,
             model: model)
             .background {
                 GeometryReader { geometry in
@@ -450,18 +475,26 @@ struct PopoverView: View {
                 .padding(.top, 10)
                 .padding(.bottom, 4)
             ForEach(merged) { item in
-                MergedRowView(item: item)
+                MergedRowView(
+                    item: item,
+                    account: AccountLabel.forRow(accountID: item.accountID, accounts: model.accounts.list.accounts),
+                    isStale: staleSince(accountID: item.accountID).isStale)
             }
         }
     }
 
     private func presentation(for pr: PullRequest, now: Date) -> RowPresentation {
         let jiraKey = model.integrations.link(for: pr)?.key
+        let account = model.accountLabel(for: pr)
+        let stale = staleSince(accountID: pr.accountID).since
         return switch tab {
         case .mine: RowPresenter.mine(
-            pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey, commentFilter: organization.settings.commentAuthorFilter)
-        case .review: RowPresenter.review(pr, now: now, jiraKey: jiraKey, staleLimit: staleLimit)
-        case .merge: RowPresenter.merge(pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey)
+            pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey, commentFilter: organization.settings.commentAuthorFilter,
+            account: account, staleSince: stale)
+        case .review: RowPresenter.review(
+            pr, now: now, jiraKey: jiraKey, staleLimit: staleLimit, account: account, staleSince: stale)
+        case .merge: RowPresenter.merge(
+            pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey, account: account, staleSince: stale)
         }
     }
 

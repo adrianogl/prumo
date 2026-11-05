@@ -11,8 +11,7 @@ struct AccountRowView: View {
 
     var body: some View {
         HStack(spacing: AccountsSettingsMetrics.rowSpacing) {
-            Image(systemName: AccountsSettingsSymbol.provider(account.provider))
-                .font(.system(size: AccountsSettingsMetrics.providerIconSize))
+            ProviderIcon(kind: account.provider, size: AccountsSettingsMetrics.providerIconSize)
                 .frame(width: AccountsSettingsMetrics.providerIconSize + AccountsSettingsMetrics.stateSpacing)
             VStack(alignment: .leading, spacing: AccountsSettingsMetrics.nameSpacing) {
                 Text(account.displayName).fontWeight(.semibold)

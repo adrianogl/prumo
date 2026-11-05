@@ -19,6 +19,7 @@ enum AccountsSettingsMetrics {
     static let detectedPadding: CGFloat = 10
     static let detectedCornerRadius: CGFloat = 8
     static let detectedTextSize: CGFloat = 12
+    static let detectedIconSize: CGFloat = 14
     static let errorSize: CGFloat = 12
     static let buttonSpacing: CGFloat = 8
 }
@@ -26,12 +27,6 @@ enum AccountsSettingsMetrics {
 enum AccountsSettingsSymbol {
     static let tab = "person.2"
     static let more = "ellipsis"
-
-    static func provider(_ kind: ProviderKind) -> String {
-        switch kind {
-        case .github: "chevron.left.forwardslash.chevron.right"
-        }
-    }
 }
 
 enum AccountsSettingsText {

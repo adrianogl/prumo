@@ -328,3 +328,37 @@ private typealias RowComment = Comment
         #expect(RowPresenter.review(pr, now: .fixed, staleLimit: 24 * 3600).dot == .failed)
     }
 }
+
+@Suite struct RowPresentationAccountTests {
+    private let label = AccountLabel(provider: .github, text: "adrianogl")
+    private let pr = PullRequest.fixture(createdAt: Date.fixed.addingTimeInterval(-2 * 3600))
+
+    @Test func subtitleWithoutAccountUnchanged() {
+        #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).subtitle == "acme/loja #812 · 2h")
+    }
+
+    @Test func subtitleWithAccountPrefix() {
+        let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed, account: label)
+        #expect(row.subtitle == "adrianogl · acme/loja #812 · 2h")
+    }
+
+    @Test func staleAccountShowsLastData() {
+        let row = RowPresenter.merge(pr, viewer: "adriano", now: .fixed, staleSince: Date.fixed.addingTimeInterval(-12 * 60))
+        #expect(row.subtitle == "acme/loja #812 · último dado 12min atrás")
+    }
+
+    @Test func staleAccountWithLabelKeepsPrefix() {
+        let row = RowPresenter.review(pr, now: .fixed, account: label, staleSince: Date.fixed.addingTimeInterval(-12 * 60))
+        #expect(row.subtitle == "adrianogl · acme/loja #812 · último dado 12min atrás")
+    }
+
+    @Test func compactLineWithAccount() {
+        let line = RowPresenter.compactLine(pr, tab: .mine, viewer: "adriano", now: .fixed, account: label)
+        #expect(line.hasPrefix("adrianogl · loja #812"))
+    }
+
+    @Test func providerSetOnlyWithAccount() {
+        #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).accountProvider == nil)
+        #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed, account: label).accountProvider == .github)
+    }
+}

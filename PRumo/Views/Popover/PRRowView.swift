@@ -10,6 +10,7 @@ struct PRRowView: View {
     let isHighlighted: Bool
     let isSelected: Bool
     let hasOtherSelection: Bool
+    var isStale = false
     let model: AppModel
     @State private var hovering = false
     @State private var menuOpen = false
@@ -60,6 +61,7 @@ struct PRRowView: View {
             } else {
                 openButton
                 content
+                    .opacity(isStale ? PopoverMetrics.staleAccountOpacity : 1)
             }
 
             if showsMenu {
@@ -140,12 +142,17 @@ struct PRRowView: View {
             statusMark
             VStack(alignment: .leading, spacing: 3) {
                 titleLine
-                Text(compactLine ?? presentation.subtitle)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(compactLine == nil ? nil : 1)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+                HStack(alignment: .firstTextBaseline, spacing: PopoverMetrics.providerIconSpacing) {
+                    if let provider = presentation.accountProvider {
+                        ProviderIcon(kind: provider, size: PopoverMetrics.providerIconSize)
+                    }
+                    Text(compactLine ?? presentation.subtitle)
+                        .lineLimit(compactLine == nil ? nil : 1)
+                }
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
                 if compactLine == nil, !presentation.badges.isEmpty {
                     FlowLayout(spacing: PopoverMetrics.badgeSpacing, lineSpacing: PopoverMetrics.badgeLineSpacing) {
                         ForEach(Array(presentation.badges.enumerated()), id: \.offset) { index, badge in

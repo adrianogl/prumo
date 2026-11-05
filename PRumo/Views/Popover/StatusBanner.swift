@@ -43,9 +43,21 @@ struct StatusBanner: View {
     }
 
     private func banner<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        WarningBanner { content() }
+    }
+}
+
+struct WarningBanner<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
         HStack(alignment: .top, spacing: 6) {
             Image(systemName: PopoverSymbol.warning)
-            content()
+            content
             Spacer(minLength: 0)
         }
         .font(.system(size: 11.5))
