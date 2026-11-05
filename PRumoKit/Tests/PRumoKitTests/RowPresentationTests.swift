@@ -107,6 +107,13 @@ import Testing
         #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).subtitle == "acme/loja #812 · 3d")
     }
 
+    @Test func ciFailureBadgeIndexPointsToTheFailedCIBadge() {
+        let failed = PullRequest.fixture(ci: .failure(failedChecks: ["unit-tests"], total: 9))
+        #expect(RowPresenter.mine(failed, viewer: "adriano", now: .fixed).ciFailureBadgeIndex == 0)
+        let passing = PullRequest.fixture(ci: .success(total: 9))
+        #expect(RowPresenter.mine(passing, viewer: "adriano", now: .fixed).ciFailureBadgeIndex == nil)
+    }
+
     @Test func failureBadgeFallsBackWhenNoCheckNames() {
         let pr = PullRequest.fixture(ci: .failure(failedChecks: [], total: 7))
         #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).badges == [Badge("✗ CI 7", .negative)])

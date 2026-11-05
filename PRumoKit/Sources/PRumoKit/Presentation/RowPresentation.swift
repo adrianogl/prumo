@@ -9,12 +9,14 @@ public struct RowPresentation: Equatable, Sendable {
     public let title: String
     public let subtitle: String
     public let badges: [Badge]
+    public let ciFailureBadgeIndex: Int?
 
-    public init(dot: StatusDot, title: String, subtitle: String, badges: [Badge]) {
+    public init(dot: StatusDot, title: String, subtitle: String, badges: [Badge], ciFailureBadgeIndex: Int? = nil) {
         self.dot = dot
         self.title = title
         self.subtitle = subtitle
         self.badges = badges
+        self.ciFailureBadgeIndex = ciFailureBadgeIndex
     }
 }
 
@@ -25,7 +27,11 @@ public enum RowPresenter {
         let hasChangesRequested = verdicts.contains(.changesRequested)
 
         var badges: [Badge] = []
-        if let ci = ciBadge(pr.ci) { badges.append(ci) }
+        var ciFailureIndex: Int?
+        if let ci = ciBadge(pr.ci) {
+            if case .failure = pr.ci { ciFailureIndex = badges.count }
+            badges.append(ci)
+        }
         if approvals > 0 {
             badges.append(Badge("\(PresentationText.approvalMark) \(approvals) \(approvals == 1 ? PresentationText.approvalSingular : PresentationText.approvalPlural)", .positive))
         }
@@ -39,7 +45,8 @@ public enum RowPresenter {
             dot: dot(ci: pr.ci, hasChangesRequested: hasChangesRequested),
             title: pr.title,
             subtitle: subtitle(pr, from: pr.createdAt, now: now),
-            badges: badges
+            badges: badges,
+            ciFailureBadgeIndex: ciFailureIndex
         )
     }
 

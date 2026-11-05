@@ -42,6 +42,10 @@ final class ClaudeSettingsStore {
         settings.cloneOverrides[repository.lowercased()] = abbreviate(path.path)
     }
 
+    func removeOverride(repository: String) {
+        settings.cloneOverrides.removeValue(forKey: repository.lowercased())
+    }
+
     func setClonesRoot(_ url: URL) {
         settings.clonesRoot = abbreviate(url.path)
     }

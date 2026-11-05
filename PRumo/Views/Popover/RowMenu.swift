@@ -9,6 +9,15 @@ extension PullRequest {
     }
 }
 
+enum ClaudeMarkImage {
+    @MainActor static let menuIcon: NSImage = {
+        let image = (NSImage(named: ClaudeSymbol.mark)?.copy() as? NSImage) ?? NSImage()
+        image.isTemplate = false
+        image.size = NSSize(width: ClaudeMetrics.menuIconSize, height: ClaudeMetrics.menuIconSize)
+        return image
+    }()
+}
+
 struct RowActions {
     let claudePurpose: SessionPurpose?
     let launch: (SessionPurpose) -> Void
@@ -26,7 +35,7 @@ struct RowMenuItems: View {
                 Label {
                     Text(purpose == .review ? ClaudeText.review : ClaudeText.fixCI)
                 } icon: {
-                    Image(ClaudeSymbol.mark).renderingMode(.original)
+                    Image(nsImage: ClaudeMarkImage.menuIcon)
                 }
             }
             .keyboardShortcut(KeyEquivalent(Character(ClaudeText.shortcutKey)), modifiers: .command)
@@ -46,6 +55,7 @@ struct RowMenuButton: View {
     let pr: PullRequest
     let actions: RowActions
     let isLaunching: Bool
+    @Binding var menuOpen: Bool
 
     var body: some View {
         if isLaunching {
@@ -56,6 +66,8 @@ struct RowMenuButton: View {
         } else {
             Menu {
                 RowMenuItems(pr: pr, actions: actions)
+                    .onAppear { menuOpen = true }
+                    .onDisappear { menuOpen = false }
             } label: {
                 Image(systemName: ClaudeSymbol.more)
                     .font(.system(size: 12, weight: .semibold))
@@ -68,6 +80,7 @@ struct RowMenuButton: View {
             .fixedSize()
             .foregroundStyle(.secondary)
             .help(ClaudeText.moreActions)
+            .accessibilityLabel(ClaudeText.moreActions)
         }
     }
 }

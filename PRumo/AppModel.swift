@@ -215,7 +215,8 @@ final class AppModel {
         switch error {
         case .cloneNotFound(let repository):
             guard mayAskForClone else {
-                showAlert(ClaudeText.cloneQuestion(repository))
+                claude.removeOverride(repository: repository)
+                showAlert(ClaudeText.wrongClone(repository))
                 return
             }
             NSApp.activate()

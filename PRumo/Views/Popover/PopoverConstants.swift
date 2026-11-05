@@ -10,10 +10,6 @@ enum PopoverMetrics {
     static let menuReserve: CGFloat = 26
 }
 
-enum PresentationMarks {
-    static let failedCI = "✗ "
-}
-
 enum PopoverSymbol {
     static let refresh = "arrow.clockwise"
     static let settings = "gearshape"

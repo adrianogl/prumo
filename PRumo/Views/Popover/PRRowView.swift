@@ -8,6 +8,7 @@ struct PRRowView: View {
     let tab: PopoverTab
     let model: AppModel
     @State private var hovering = false
+    @State private var menuOpen = false
 
     private var claudePurpose: SessionPurpose? {
         switch tab {
@@ -20,8 +21,12 @@ struct PRRowView: View {
         RowActions(claudePurpose: claudePurpose) { model.launchClaude(pr: pr, purpose: $0) }
     }
 
-    private func offersFix(_ badge: Badge) -> Bool {
-        tab == .mine && badge.tone == .negative && badge.text.hasPrefix(PresentationMarks.failedCI)
+    private func offersFix(badgeAt index: Int) -> Bool {
+        tab == .mine && presentation.ciFailureBadgeIndex == index
+    }
+
+    private var accessibilitySummary: String {
+        ([presentation.title, presentation.subtitle] + presentation.badges.map(\.text)).joined(separator: ", ")
     }
 
     var body: some View {
@@ -32,11 +37,13 @@ struct PRRowView: View {
                 Color.clear.contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(accessibilitySummary)
+            .accessibilityAddTraits(.isButton)
 
             content
 
-            if hovering || model.isLaunching(pr) {
-                RowMenuButton(pr: pr, actions: actions, isLaunching: model.isLaunching(pr))
+            if hovering || menuOpen || model.isLaunching(pr) {
+                RowMenuButton(pr: pr, actions: actions, isLaunching: model.isLaunching(pr), menuOpen: $menuOpen)
                     .padding(.top, 6)
                     .padding(.trailing, 8)
             }
@@ -59,15 +66,17 @@ struct PRRowView: View {
                     .multilineTextAlignment(.leading)
                     .padding(.trailing, PopoverMetrics.menuReserve)
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)
                 Text(presentation.subtitle)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)
                 if !presentation.badges.isEmpty {
                     HStack(spacing: 5) {
-                        ForEach(Array(presentation.badges.enumerated()), id: \.offset) { _, badge in
-                            BadgeView(badge: badge).allowsHitTesting(false)
-                            if offersFix(badge), let purpose = claudePurpose {
+                        ForEach(Array(presentation.badges.enumerated()), id: \.offset) { index, badge in
+                            BadgeView(badge: badge).allowsHitTesting(false).accessibilityHidden(true)
+                            if offersFix(badgeAt: index), let purpose = claudePurpose {
                                 fixButton(purpose)
                             }
                         }
@@ -102,6 +111,7 @@ struct PRRowView: View {
         .buttonStyle(ClaudeButtonStyle())
         .disabled(model.isLaunching(pr))
         .help(ClaudeText.fixCI)
+        .accessibilityLabel(ClaudeText.fixCI)
     }
 }
 
