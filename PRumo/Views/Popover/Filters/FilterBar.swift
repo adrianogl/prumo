@@ -5,6 +5,7 @@ struct FilterBar: View {
     let organization: OrganizationStore
     let snapshot: Snapshot?
     let tab: ListTab
+    let staleHours: Int
     @State private var showsRepositories = false
     @State private var showsFilters = false
     @State private var showsOrder = false
@@ -34,14 +35,14 @@ struct FilterBar: View {
                     FiltersText.withCount(FiltersText.filters, count: settings.filter.criteriaCount),
                     isPresented: $showsFilters
                 ) {
-                    FilterPicker(organization: organization, snapshot: snapshot, tab: tab)
+                    FilterPicker(organization: organization, snapshot: snapshot, tab: tab, staleHours: staleHours)
                 }
                 Spacer(minLength: 0)
                 barButton(orderTitle, symbol: FiltersSymbol.order, isPresented: $showsOrder) {
                     OrderPicker(organization: organization, tab: tab)
                 }
             }
-            FilterChipsView(organization: organization)
+            FilterChipsView(organization: organization, staleHours: staleHours)
         }
         .padding(.horizontal, FiltersMetrics.barHorizontalPadding)
         .padding(.bottom, FiltersMetrics.barBottomPadding)

@@ -27,7 +27,7 @@ struct PopoverView: View {
             }
             tabs
             if !model.needsOnboarding {
-                FilterBar(organization: organization, snapshot: model.snapshot, tab: tab, isPresentingPicker: $isPresentingPicker)
+                FilterBar(organization: organization, snapshot: model.snapshot, tab: tab, staleHours: model.preferences.preferences.staleReviewHours, isPresentingPicker: $isPresentingPicker)
             }
             StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
             Divider()

@@ -29,6 +29,9 @@ public struct NotificationPreferences: Codable, Equatable, Sendable {
         disabled = c.decodeLossySet(NotificationToggle.self, forKey: .disabled)
         groupByPullRequest = c.decodeLossy(Bool.self, forKey: .groupByPullRequest, default: defaults.groupByPullRequest)
         staleReviewHours = c.decodeLossy(Int.self, forKey: .staleReviewHours, default: defaults.staleReviewHours)
+        if staleReviewHours <= 0 {
+            staleReviewHours = defaults.staleReviewHours
+        }
         dnd = c.decodeLossy(DoNotDisturb.self, forKey: .dnd, default: defaults.dnd)
         workingHours = c.decodeLossy(WorkingHours.self, forKey: .workingHours, default: defaults.workingHours)
     }

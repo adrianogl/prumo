@@ -183,6 +183,14 @@ import Testing
         #expect(preferences == NotificationPreferences())
     }
 
+    @Test func nonPositiveStaleReviewHoursFallBackToDefault() throws {
+        for hours in [0, -5] {
+            let json = #"{"staleReviewHours": \#(hours)}"#
+            let preferences = try JSONDecoder().decode(NotificationPreferences.self, from: Data(json.utf8))
+            #expect(preferences.staleReviewHours == 24)
+        }
+    }
+
     @Test func newKindsDefaultOn() throws {
         let json = #"{"disabled":["ci","approved","kindFromTheFuture"]}"#
         let preferences = try JSONDecoder().decode(NotificationPreferences.self, from: Data(json.utf8))

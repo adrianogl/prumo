@@ -29,6 +29,7 @@ final class AppModel {
     @ObservationIgnored private var pruningMarks = false
     @ObservationIgnored private var lastMarksPrune = Date.distantPast
     @ObservationIgnored private var activityBaseline: Snapshot?
+    @ObservationIgnored private var reminders: ReminderState?
     @ObservationIgnored private var githubClient: GitHubClient?
     @ObservationIgnored private var coordinator: RefreshCoordinator?
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
@@ -180,6 +181,9 @@ final class AppModel {
         coordinator = nil
         githubClient = nil
         activityBaseline = nil
+        reminders = ReminderState()
+        let reminderStore = reminderStore
+        Task { try? await reminderStore.save(ReminderState()) }
         snapshot = nil
         lastRefresh = nil
         connection = .ok
@@ -245,13 +249,19 @@ final class AppModel {
     private func deliverNotifications(fresh: Snapshot, events: [NotificationEvent]) async {
         let now = Date.now
         preferences.refreshQuiet(now: now)
-        let reminders = await reminderStore.load()
+        let current: ReminderState
+        if let reminders {
+            current = reminders
+        } else {
+            current = await reminderStore.load()
+        }
         let outcome = NotificationPipeline.run(
             events: events, snapshot: fresh, preferences: preferences.preferences,
             muted: Set(organization.settings.marks.muted.keys),
             ignoreDrafts: organization.settings.ignoreDraftsInReview,
             includeTeam: organization.settings.includeTeamRequests,
-            reminders: reminders, now: now, calendar: .current)
+            reminders: current, now: now, calendar: .current)
+        reminders = outcome.reminders
         try? await reminderStore.save(outcome.reminders)
         notifications.post(outcome.deliver, grouped: preferences.preferences.groupByPullRequest)
     }

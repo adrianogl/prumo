@@ -3,9 +3,10 @@ import PRumoKit
 
 struct FilterChipsView: View {
     let organization: OrganizationStore
+    let staleHours: Int
 
     private var chips: [FilterChip] {
-        FilterChips.chips(organization.settings.filter, staleHours: FiltersDefaults.staleHours)
+        FilterChips.chips(organization.settings.filter, staleHours: staleHours)
     }
 
     var body: some View {

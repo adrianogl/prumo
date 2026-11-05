@@ -35,15 +35,15 @@ final class NotificationPreferencesStore {
         defaults.set(data, forKey: AppConstants.notificationPreferencesKey)
     }
 
-    private static var encoder: JSONEncoder {
+    private static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .deferredToDate
         return encoder
-    }
+    }()
 
-    private static var decoder: JSONDecoder {
+    private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .deferredToDate
         return decoder
-    }
+    }()
 }

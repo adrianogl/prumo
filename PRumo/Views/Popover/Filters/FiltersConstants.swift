@@ -165,7 +165,3 @@ enum FiltersText {
         }
     }
 }
-
-enum FiltersDefaults {
-    static let staleHours = Int(OrganizationConstants.defaultStaleLimit / 3600)
-}

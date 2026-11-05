@@ -6,6 +6,7 @@ struct FilterPicker: View {
     let organization: OrganizationStore
     let snapshot: Snapshot?
     let tab: ListTab
+    let staleHours: Int
     @State private var personSearch = ""
 
     private var filter: RowFilter { organization.settings.filter }
@@ -52,7 +53,7 @@ struct FilterPicker: View {
                         group(FiltersText.requestTitle) {
                             ForEach(RequestFilter.allCases, id: \.self) { value in
                                 chip(
-                                    FiltersText.label(value, staleHours: FiltersDefaults.staleHours),
+                                    FiltersText.label(value, staleHours: staleHours),
                                     isOn: filter.request.contains(value)
                                 ) {
                                     organization.settings.filter.request.formSymmetricDifference([value])
