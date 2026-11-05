@@ -4,6 +4,8 @@ enum PopoverMetrics {
     static let width: CGFloat = 390
     static let listMaxHeight: CGFloat = 520
     static let headerIconSize: CGFloat = 26
+    static let badgeSpacing: CGFloat = 5
+    static let badgeLineSpacing: CGFloat = 4
     static let dotSize: CGFloat = 9
     static let menuBarGlyphSize: CGFloat = 15
     static let menuBarDotSize: CGFloat = 5

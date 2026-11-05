@@ -70,7 +70,7 @@ struct PRRowView: View {
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
                 if !presentation.badges.isEmpty {
-                    HStack(spacing: 5) {
+                    FlowLayout(spacing: PopoverMetrics.badgeSpacing, lineSpacing: PopoverMetrics.badgeLineSpacing) {
                         ForEach(Array(presentation.badges.enumerated()), id: \.offset) { index, badge in
                             BadgeView(badge: badge).allowsHitTesting(false).accessibilityHidden(true)
                             if let purpose = purpose(forBadgeAt: index) {
@@ -103,7 +103,9 @@ struct PRRowView: View {
                         .frame(width: ClaudeMetrics.markSize, height: ClaudeMetrics.markSize)
                 }
                 Text(purpose.badgeTitle)
+                    .lineLimit(1)
             }
+            .fixedSize()
         }
         .buttonStyle(ClaudeButtonStyle())
         .disabled(model.isLaunching(pr))
