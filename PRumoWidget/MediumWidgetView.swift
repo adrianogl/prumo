@@ -68,7 +68,7 @@ struct MediumWidgetView: View {
     private func dotColor(_ reason: WidgetReason) -> Color {
         switch reason {
         case .ciFailing: .red
-        case .staleReview: .orange
+        case .staleReview: .blue
         case .readyToMerge: .green
         }
     }
