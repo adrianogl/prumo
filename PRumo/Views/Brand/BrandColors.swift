@@ -13,3 +13,11 @@ extension Color {
             : NSColor(srgbRed: 0xfb / 255, green: 0xf8 / 255, blue: 0xf2 / 255, alpha: 1)
     })
 }
+
+extension Color {
+    static let prumoBadgeBackground = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? NSColor(srgbRed: 0x34 / 255, green: 0x30 / 255, blue: 0x2d / 255, alpha: 1)
+            : NSColor(srgbRed: 0xef / 255, green: 0xe6 / 255, blue: 0xd6 / 255, alpha: 1)
+    })
+}

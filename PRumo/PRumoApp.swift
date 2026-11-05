@@ -16,10 +16,9 @@ struct PRumoApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            Text("PRumo")
-            Text("\(model.snapshot?.mine.count ?? 0) PRs minhas")
+            PopoverView(model: model)
         } label: {
-            Image("MenuBarGlyph")
+            MenuBarLabel(model: model)
         }
         .menuBarExtraStyle(.window)
     }

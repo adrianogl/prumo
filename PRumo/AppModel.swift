@@ -7,6 +7,7 @@ final class AppModel {
     var snapshot: Snapshot?
     var connection: ConnectionState = .ok
     var lastRefresh: Date?
+    var nextRefresh: Date?
     var needsOnboarding = false
 
     @ObservationIgnored private let notifications: NotificationService
@@ -95,6 +96,7 @@ final class AppModel {
                 let shouldContinue = await self.runRefresh()
                 guard shouldContinue else { return }
                 let interval = self.refreshInterval
+                self.nextRefresh = Date.now.addingTimeInterval(interval)
                 let sleeper = Task<Void, Never> { try? await Task.sleep(for: .seconds(interval)) }
                 self.sleepTask = sleeper
                 await sleeper.value
