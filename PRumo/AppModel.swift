@@ -38,6 +38,13 @@ final class AppModel {
         self.claude = claude ?? ClaudeSettingsStore(defaults: defaults)
         login = defaults.string(forKey: AppConstants.accountLoginKey)
         origin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
+        notifications.onFixWithClaude = { [weak self] id, url in
+            guard let self, let pr = self.snapshot?.mine.first(where: { $0.id == id }) else {
+                NSWorkspace.shared.open(url)
+                return
+            }
+            self.launchClaude(pr: pr, purpose: .fixCI)
+        }
     }
 
     private var refreshInterval: TimeInterval {
