@@ -12,6 +12,7 @@ struct PRumoApp: App {
         let model = AppModel(notifications: notifications)
         _model = State(initialValue: model)
         model.start()
+        model.registerHotKey()
     }
 
     var body: some Scene {

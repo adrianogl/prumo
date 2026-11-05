@@ -284,14 +284,26 @@ struct PopoverView: View {
         }
     }
 
+    private func footerStatus(now: Date) -> String? {
+        if let last = model.lastRefresh ?? model.snapshot?.fetchedAt {
+            return PopoverText.updatedAgo(seconds: max(0, Int(now.timeIntervalSince(last))))
+        }
+        return model.connection == .ok ? PopoverText.updating : nil
+    }
+
     private var footer: some View {
         HStack {
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                if let last = model.lastRefresh ?? model.snapshot?.fetchedAt {
-                    Text(PopoverText.updatedAgo(seconds: max(0, Int(context.date.timeIntervalSince(last)))))
-                } else if model.connection == .ok {
-                    Text(PopoverText.updating)
+            HStack(spacing: PopoverMetrics.footerSpacing) {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    if let status = footerStatus(now: context.date) {
+                        HStack(spacing: PopoverMetrics.footerSpacing) {
+                            Text(status)
+                            Text(PopoverText.footerSeparator)
+                        }
+                    }
                 }
+                Text(model.hotKey.display)
+                    .font(.system(size: 11, design: .monospaced))
             }
             Spacer()
             Button(action: showSettings) {

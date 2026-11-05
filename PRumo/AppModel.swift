@@ -18,6 +18,7 @@ final class AppModel {
     let preferences: NotificationPreferencesStore
     private(set) var launching: Set<String> = []
     private(set) var rerunning: Set<String> = []
+    private(set) var hotKey: HotKeyCombo
 
     @ObservationIgnored private let notifications: NotificationService
     @ObservationIgnored private let tokenStore: TokenStore
@@ -35,6 +36,7 @@ final class AppModel {
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var sleepTask: Task<Void, Never>?
     @ObservationIgnored private var startupTask: Task<Void, Never>?
+    @ObservationIgnored private let globalHotKey = GlobalHotKey { _ = StatusItemToggle.toggle() }
 
     init(
         notifications: NotificationService,
@@ -60,6 +62,9 @@ final class AppModel {
         self.preferences = preferences ?? NotificationPreferencesStore(defaults: defaults)
         login = defaults.string(forKey: AppConstants.accountLoginKey)
         origin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
+        hotKey = defaults.data(forKey: AppConstants.hotKeyKey)
+            .flatMap { try? JSONDecoder().decode(HotKeyCombo.self, from: $0) }
+            .flatMap { $0.isValid ? $0 : nil } ?? .standard
         notifications.onFixWithClaude = { [weak self] id, url in
             guard let self, let pr = self.snapshot?.mine.first(where: { $0.id == id }) else {
                 NSWorkspace.shared.open(url)
@@ -121,6 +126,23 @@ final class AppModel {
             Task.detached { _ = await notifications.requestAuthorization() }
             await begin(token: resolved.token)
         }
+    }
+
+    func registerHotKey() {
+        _ = globalHotKey.register(hotKey)
+    }
+
+    func setHotKey(_ combo: HotKeyCombo) -> Bool {
+        guard combo.isValid else { return false }
+        guard globalHotKey.register(combo) else {
+            _ = globalHotKey.register(hotKey)
+            return false
+        }
+        hotKey = combo
+        if let data = try? JSONEncoder().encode(combo) {
+            defaults.set(data, forKey: AppConstants.hotKeyKey)
+        }
+        return true
     }
 
     func connect(token: String, origin: TokenOrigin, login: String) throws {

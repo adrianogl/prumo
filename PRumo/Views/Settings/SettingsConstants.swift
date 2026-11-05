@@ -5,7 +5,8 @@ enum SettingsMetrics {
     static let width: CGFloat = 600
     static let height: CGFloat = 220
     static let aboutHeight: CGFloat = 280
-    static let generalHeight: CGFloat = 270
+    static let generalHeight: CGFloat = 340
+    static let hotKeyButtonWidth: CGFloat = 110
 }
 
 enum SettingsSymbol {
@@ -32,6 +33,11 @@ enum SettingsText {
     static let version = "Versão"
     static let iconCredit = "Símbolo pull-request do IBM Carbon, licença Apache 2.0"
     static let license = "Ver licença"
+    static let hotKey = "Atalho global"
+    static let hotKeyRecording = "Digite o atalho…"
+    static let hotKeyRestore = "Restaurar padrão"
+    static let hotKeyNeedsModifier = "Use ⌘, ⌥ ou ⌃ no atalho."
+    static let hotKeyInUse = "Esse atalho já está em uso."
 }
 
 enum SettingsTab: Hashable {

@@ -14,6 +14,10 @@ enum AppConstants {
     static let notificationPreferencesKey = "notificationPreferences"
     static let unseenActivityKey = "unseenActivity"
     static let organizationTeamDefaultMigratedKey = "organizationTeamDefaultMigrated"
+    static let hotKeyKey = "globalHotKey"
+    static let hotKeySignature: UInt32 = 0x5052_6D6F
+    static let hotKeyID: UInt32 = 1
+    static let statusBarWindowClass = "NSStatusBarWindow"
     static let ghTokenRetryAttempts = 3
     static let ghTokenRetryDelay: Duration = .seconds(2)
     static let longCommandTimeout: Duration = .seconds(300)

@@ -81,6 +81,7 @@ struct SettingsView: View {
                 Text(SettingsText.rowStyleDetailed).tag(RowStyle.detailed)
                 Text(SettingsText.rowStyleCompact).tag(RowStyle.compact)
             }
+            HotKeyRecorder(model: model)
             Toggle(SettingsText.launchAtLogin, isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) { applyLaunchAtLogin() }
             if let launchError {

@@ -19,6 +19,7 @@ enum PopoverMetrics {
     static let dndSleepOffsetX: CGFloat = 4
     static let dndSleepOffsetY: CGFloat = -4
     static let dndFrameSize: CGFloat = 20
+    static let footerSpacing: CGFloat = 4
 }
 
 enum PopoverSymbol {
@@ -61,6 +62,7 @@ enum PopoverText {
     static let dndReactivate = "Reativar notificações"
     static let dndUntilIndefinite = "Não perturbe até você reativar"
     static let outsideWorkingHours = "Fora do horário de trabalho"
+    static let footerSeparator = "·"
 
     static func dndUntil(time: String) -> String { "Não perturbe até \(time)" }
 
