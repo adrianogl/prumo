@@ -11,8 +11,7 @@ final class AppModel {
     var nextRefresh: Date?
     var needsOnboarding = false
     private(set) var ghActiveLogin: String?
-    private(set) var glabLogins: [String: String] = [:]
-    private(set) var glabUnauthenticatedHosts: Set<String> = []
+    private(set) var glabLoginState = GlabLoginState()
     let accounts: AccountsStore
     let claude: ClaudeSettingsStore
     let integrations: IntegrationSettingsStore
@@ -37,7 +36,6 @@ final class AppModel {
     @ObservationIgnored private var pruningMarks = false
     @ObservationIgnored private var lastMarksPrune = Date.distantPast
     @ObservationIgnored private var lastGhActiveLoginRead = Date.distantPast
-    @ObservationIgnored private var resolvedGlabHosts: Set<String> = []
     @ObservationIgnored private var scannedGitLabHosts: Set<String> = []
     @ObservationIgnored private let ghDiscovery = GhAccountDiscovery.system()
     @ObservationIgnored private let glabDiscovery = GlabAccountDiscovery.system()
@@ -136,19 +134,17 @@ final class AppModel {
     }
 
     private func refreshGlabLogins() async {
+        let accountCount = accounts.list.accounts.count
         for host in gitlabHosts {
-            if let login = await glabDiscovery.account(host: host)?.login {
-                glabLogins[host] = login
-                glabUnauthenticatedHosts.remove(host)
-                continue
-            }
-            guard resolvedGlabHosts.insert(host).inserted else { continue }
-            guard let token = await glabDiscovery.token(host: host) else {
-                glabUnauthenticatedHosts.insert(host)
-                continue
-            }
-            if let login = try? await GitLabClient(host: host, token: token).currentUsername() {
-                glabLogins[host] = login
+            let configLogin = await glabDiscovery.account(host: host)?.login
+            var step = glabLoginState.apply(host: host, configLogin: configLogin, accountCount: accountCount)
+            if step == .checkToken {
+                let token = await glabDiscovery.token(host: host)
+                step = glabLoginState.tokenChecked(host: host, hasToken: token != nil)
+                if step == .resolveByNetwork, let token {
+                    let login = try? await GitLabClient(host: host, token: token).currentUsername()
+                    glabLoginState.networkResolved(host: host, login: login)
+                }
             }
         }
     }
@@ -159,8 +155,8 @@ final class AppModel {
         var activeLogin = ghActiveLogin
         if account.provider == .gitlab {
             let host = account.host.lowercased()
-            activeLogin = glabLogins[host]
-            if activeLogin == nil, !glabUnauthenticatedHosts.contains(host) { return nil }
+            activeLogin = glabLoginState.logins[host]
+            if activeLogin == nil, !glabLoginState.unauthenticatedHosts.contains(host) { return nil }
         }
         return CheckoutWarning.text(account: account, activeLogin: activeLogin, accountCount: list.count)
     }
