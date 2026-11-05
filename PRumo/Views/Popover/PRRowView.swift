@@ -24,7 +24,9 @@ struct PRRowView: View {
 
     private var actions: RowActions {
         let purposes = pr.claudePurposes(in: tab, offersComments: presentation.commentsBadgeIndex != nil)
-        let entries = RowMenuPlan.entries(pr: pr, claudePurposes: purposes, jira: model.integrations.link(for: pr))
+        let entries = RowMenuPlan.entries(
+            pr: pr, claudePurposes: purposes, jira: model.integrations.link(for: pr),
+            isPinned: isPinned, isMuted: muted != nil)
         return RowActions(entries: entries) { model.perform($0, on: pr) }
     }
 

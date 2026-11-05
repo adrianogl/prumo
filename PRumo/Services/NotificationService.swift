@@ -6,6 +6,8 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, Sen
     @MainActor var onFixWithClaude: (String, URL) -> Void = { _, _ in }
     @MainActor var onRerun: (String, URL) -> Void = { _, _ in }
 
+    @MainActor var onMute: (String) -> Void = { _ in }
+
     override init() {
         super.init()
         let open = UNNotificationAction(
@@ -17,12 +19,15 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, Sen
         let fix = UNNotificationAction(
             identifier: NotificationCategories.fixWithClaudeAction,
             title: NotificationCategories.fixWithClaudeTitle, options: [.foreground])
+        let mute = UNNotificationAction(
+            identifier: NotificationCategories.muteAction,
+            title: NotificationCategories.muteTitle, options: [.foreground])
         let categories = [
             UNNotificationCategory(
-                identifier: NotificationCategories.ciFailed, actions: [open, rerun, fix],
+                identifier: NotificationCategories.ciFailed, actions: [open, rerun, fix, mute],
                 intentIdentifiers: [], options: []),
             UNNotificationCategory(
-                identifier: NotificationCategories.ciFailedNoRun, actions: [open, fix],
+                identifier: NotificationCategories.ciFailedNoRun, actions: [open, fix, mute],
                 intentIdentifiers: [], options: []),
             UNNotificationCategory(
                 identifier: NotificationCategories.pullRequest, actions: [open],
@@ -77,6 +82,10 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, Sen
         let id = userInfo[NotificationCategories.pullRequestIDKey] as? String
         if response.actionIdentifier == NotificationCategories.fixWithClaudeAction, let id {
             await MainActor.run { onFixWithClaude(id, url) }
+            return
+        }
+        if response.actionIdentifier == NotificationCategories.muteAction {
+            if let id { await MainActor.run { onMute(id) } }
             return
         }
         if response.actionIdentifier == NotificationCategories.rerunAction, let id {

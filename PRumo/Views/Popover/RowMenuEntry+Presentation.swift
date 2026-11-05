@@ -11,6 +11,8 @@ extension RowMenuEntry {
         case .copyLink: RowMenuText.copyLink
         case .copyCheckout(let command): RowMenuText.copyCheckout(command)
         case .separator: ""
+        case .pin(let isPinned): isPinned ? RowMenuText.unpin : RowMenuText.pin
+        case .mute(let isMuted): isMuted ? RowMenuText.unmute : RowMenuText.mute
         }
     }
 
@@ -21,7 +23,7 @@ extension RowMenuEntry {
         case .openJira: KeyboardShortcut(KeyEquivalent(RowMenuKey.openJira), modifiers: .command)
         case .copyLink: KeyboardShortcut(KeyEquivalent(RowMenuKey.copy), modifiers: .command)
         case .copyCheckout: KeyboardShortcut(KeyEquivalent(RowMenuKey.copy), modifiers: [.command, .shift])
-        case .openInBrowser, .rerunFailedJobs, .separator: nil
+        case .openInBrowser, .rerunFailedJobs, .separator, .pin, .mute: nil
         }
     }
 }

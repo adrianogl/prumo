@@ -5,8 +5,10 @@ enum NotificationCategories {
     static let openAction = "abrir"
     static let rerunAction = "re-rodar"
     static let fixWithClaudeAction = "corrigir-claude"
+    static let muteAction = "silenciar"
     static let openTitle = "Abrir"
     static let rerunTitle = "Re-rodar"
     static let fixWithClaudeTitle = "Corrigir com Claude"
+    static let muteTitle = "Silenciar"
     static let pullRequestIDKey = "pullRequestID"
 }

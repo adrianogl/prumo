@@ -24,6 +24,8 @@ final class AppModel {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let worktreeRegistry: WorktreeRegistry
     @ObservationIgnored private var cleaningWorktrees = false
+    @ObservationIgnored private var pruningMarks = false
+    @ObservationIgnored private var lastMarksPrune = Date.distantPast
     @ObservationIgnored private var activityBaseline: Snapshot?
     @ObservationIgnored private var githubClient: GitHubClient?
     @ObservationIgnored private var coordinator: RefreshCoordinator?
@@ -57,6 +59,13 @@ final class AppModel {
                 return
             }
             self.launchClaude(pr: pr, purpose: .fixCI)
+        }
+        notifications.onMute = { [weak self] id in
+            guard let self,
+                  let pr = ((self.snapshot?.mine ?? []) + (self.snapshot?.toReview ?? [])).first(where: { $0.id == id }),
+                  !self.organization.settings.marks.isMuted(id)
+            else { return }
+            self.organization.toggleMute(pr, now: .now)
         }
         notifications.onRerun = { [weak self] id, url in
             guard let self,
@@ -221,6 +230,7 @@ final class AppModel {
             trackActivity(fresh: fresh, events: result.events)
             organization.learnRepositories(from: fresh)
             cleanUpWorktrees(snapshot: fresh)
+            pruneMarks(snapshot: fresh)
         }
         let marks = organization.settings.marks
         notifications.post(result.events.filter { !marks.isMuted($0.pullRequestID) })
@@ -250,6 +260,10 @@ final class AppModel {
             copyToPasteboard(pr.url.absoluteString)
         case .copyCheckout(let command):
             copyToPasteboard(command)
+        case .pin:
+            organization.togglePin(pr)
+        case .mute:
+            organization.toggleMute(pr, now: .now)
         case .separator:
             break
         }
@@ -391,6 +405,32 @@ final class AppModel {
             }
             await self?.finishWorktreeCleanup()
         }
+    }
+
+    private func pruneMarks(snapshot: Snapshot) {
+        let marks = organization.settings.marks
+        let marked = marks.pinned.union(marks.muted.keys)
+        let present = Set((snapshot.mine + snapshot.toReview).map(\.id))
+        let absent = marked.subtracting(present)
+        guard !absent.isEmpty, !pruningMarks, let client = githubClient,
+              Date.now.timeIntervalSince(lastMarksPrune) >= AppConstants.marksPruneInterval
+        else { return }
+        pruningMarks = true
+        lastMarksPrune = .now
+        let ids = absent.sorted()
+        Task.detached { [weak self] in
+            let states = try? await client.pullRequestStates(ids: ids)
+            await self?.finishMarksPrune(states: states)
+        }
+    }
+
+    private func finishMarksPrune(states: [String: PRState]?) {
+        pruningMarks = false
+        guard let states else { return }
+        let marks = organization.settings.marks
+        let pruned = marks.pruned(states: states)
+        guard pruned != marks else { return }
+        organization.settings.marks = pruned
     }
 
     private func finishWorktreeCleanup() {

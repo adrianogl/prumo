@@ -20,13 +20,32 @@ import Testing
             .rerunFailedJobs(jobName: "unit-tests", runID: 555),
             .copyLink,
             .copyCheckout(command: "gh pr checkout 812"),
+            .separator,
+            .pin(isPinned: false),
+            .mute(isMuted: false),
         ])
+    }
+
+    @Test func pinAndMuteEntriesComeLast() {
+        let entries = RowMenuPlan.entries(pr: .fixture(), claudePurposes: [], jira: nil)
+        #expect(entries.suffix(4) == [
+            .copyCheckout(command: "gh pr checkout 812"),
+            .separator,
+            .pin(isPinned: false),
+            .mute(isMuted: false),
+        ])
+    }
+
+    @Test func entriesReflectPinnedAndMuted() {
+        let entries = RowMenuPlan.entries(
+            pr: .fixture(), claudePurposes: [], jira: nil, isPinned: true, isMuted: true)
+        #expect(entries.suffix(2) == [.pin(isPinned: true), .mute(isMuted: true)])
     }
 
     @Test func noClaudeNoSeparator() {
         let entries = RowMenuPlan.entries(pr: .fixture(), claudePurposes: [], jira: nil)
         #expect(entries.first == .openInBrowser)
-        #expect(!entries.contains(.separator))
+        #expect(entries.filter { $0 == .separator }.count == 1)
     }
 
     @Test func noJiraEntryWithoutURL() {

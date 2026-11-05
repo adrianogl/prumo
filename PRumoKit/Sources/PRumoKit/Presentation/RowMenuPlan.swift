@@ -1,7 +1,12 @@
 import Foundation
 
 public enum RowMenuPlan {
-    public static func entries(pr: PullRequest, claudePurposes: [SessionPurpose], jira: JiraLink?) -> [RowMenuEntry] {
+    public static func entries(
+        pr: PullRequest, claudePurposes: [SessionPurpose],
+        jira: JiraLink?,
+        isPinned: Bool = false,
+        isMuted: Bool = false
+    ) -> [RowMenuEntry] {
         var entries: [RowMenuEntry] = []
         for (index, purpose) in claudePurposes.enumerated() {
             entries.append(.claude(purpose, primary: index == 0))
@@ -14,6 +19,9 @@ public enum RowMenuPlan {
         }
         entries.append(.copyLink)
         entries.append(.copyCheckout(command: "gh pr checkout \(pr.number)"))
+        entries.append(.separator)
+        entries.append(.pin(isPinned: isPinned))
+        entries.append(.mute(isMuted: isMuted))
         return entries
     }
 }

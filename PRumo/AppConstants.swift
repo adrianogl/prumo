@@ -3,6 +3,7 @@ import Foundation
 enum AppConstants {
     static let refreshIntervalKey = "refreshInterval"
     static let defaultRefreshInterval: TimeInterval = 60
+    static let marksPruneInterval: TimeInterval = 3600
     static let notificationURLKey = "url"
     static let accountLoginKey = "accountLogin"
     static let tokenOriginKey = "tokenOrigin"

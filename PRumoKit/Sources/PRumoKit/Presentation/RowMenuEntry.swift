@@ -8,4 +8,6 @@ public enum RowMenuEntry: Equatable, Sendable {
     case copyLink
     case copyCheckout(command: String)
     case separator
+    case pin(isPinned: Bool)
+    case mute(isMuted: Bool)
 }

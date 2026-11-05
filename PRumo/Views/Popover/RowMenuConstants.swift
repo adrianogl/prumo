@@ -4,6 +4,10 @@ import PRumoKit
 enum RowMenuText {
     static let openInBrowser = "Abrir no navegador"
     static let copyLink = "Copiar link"
+    static let pin = "Fixar no topo"
+    static let unpin = "Desafixar"
+    static let mute = "Silenciar este PR"
+    static let unmute = "Reativar notificações"
     static let rerunFailedJobs = "Re-rodar job que falhou"
     static let rerunAlertTitle = "Não foi possível re-rodar o job"
     static let unauthorized = "Token inválido. Conecte de novo pelo popover."
