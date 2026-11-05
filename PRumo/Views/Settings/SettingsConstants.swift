@@ -37,6 +37,7 @@ enum SettingsText {
 enum SettingsTab: Hashable {
     case account
     case general
+    case notifications
     case filters
     case claude
     case integrations
