@@ -2,6 +2,8 @@ public enum Queries {
     public static let mine = "is:pr is:open author:@me archived:false"
     public static let review = "is:pr is:open user-review-requested:@me archived:false"
 
+    public static let states = "query($ids:[ID!]!){ nodes(ids:$ids){ ... on PullRequest { id state } } }"
+
     public static let searchQuery = """
     query($q: String!) {
       viewer { login }
@@ -18,6 +20,9 @@ public enum Queries {
             additions
             deletions
             mergeable
+            headRefName
+            baseRefName
+            isCrossRepository
             repository { nameWithOwner }
             author { __typename login }
             commits(last: 1) {
@@ -30,7 +35,7 @@ public enum Queries {
                       totalCount
                       nodes {
                         __typename
-                        ... on CheckRun { name status conclusion }
+                        ... on CheckRun { name status conclusion detailsUrl }
                         ... on StatusContext { context state }
                       }
                     }

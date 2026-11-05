@@ -33,12 +33,31 @@ public struct GitHubClient: Sendable {
         do { return .success(try await work()) } catch { return .failure(error) }
     }
 
+    public func pullRequestStates(ids: [String]) async throws(GitHubError) -> [String: PRState] {
+        guard !ids.isEmpty else { return [:] }
+        let data = try await post(query: Queries.states, variables: ["ids": ids])
+        do {
+            let decoded = try JSONDecoder().decode(StatesResponse.self, from: data)
+            var states: [String: PRState] = [:]
+            for node in decoded.data.nodes.compactMap(\.value) {
+                if let state = PRState(rawValue: node.state) { states[node.id] = state }
+            }
+            return states
+        } catch {
+            throw .unexpectedResponse
+        }
+    }
+
     private func search(_ query: String) async throws(GitHubError) -> Data {
+        try await post(query: Queries.searchQuery, variables: ["q": query])
+    }
+
+    private func post(query: String, variables: [String: Any]) async throws(GitHubError) -> Data {
         var request = URLRequest(url: Self.endpoint)
         request.httpMethod = "POST"
         request.setValue("bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Any] = ["query": Queries.searchQuery, "variables": ["q": query]]
+        let body: [String: Any] = ["query": query, "variables": variables]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         let data: Data
@@ -83,5 +102,18 @@ public struct GitHubClient: Sendable {
             object["data"] is NSNull || object["data"] == nil
         else { return }
         throw .graphQL(messages: errors.compactMap { $0["message"] as? String })
+    }
+}
+
+private struct StatesResponse: Decodable {
+    let data: DataNode
+
+    struct DataNode: Decodable {
+        let nodes: [LossyNode<StateNode>]
+    }
+
+    struct StateNode: Decodable {
+        let id: String
+        let state: String
     }
 }

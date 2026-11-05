@@ -16,6 +16,9 @@
           "additions": 10,
           "deletions": 2,
           "mergeable": "MERGEABLE",
+          "headRefName": "feat/branch-201",
+          "baseRefName": "main",
+          "isCrossRepository": false,
           "repository": {
             "nameWithOwner": "acme/api"
           },
@@ -36,13 +39,15 @@
                           "__typename": "CheckRun",
                           "name": "a",
                           "status": "COMPLETED",
-                          "conclusion": "SUCCESS"
+                          "conclusion": "SUCCESS",
+                          "detailsUrl": "https://github.com/acme/api/actions/runs/201001/job/2011"
                         },
                         {
                           "__typename": "CheckRun",
                           "name": "b",
                           "status": "COMPLETED",
-                          "conclusion": "SUCCESS"
+                          "conclusion": "SUCCESS",
+                          "detailsUrl": "https://github.com/acme/api/actions/runs/201002/job/2012"
                         },
                         {
                           "__typename": "StatusContext",
@@ -103,6 +108,9 @@
           "additions": 10,
           "deletions": 2,
           "mergeable": "MERGEABLE",
+          "headRefName": "feat/branch-202",
+          "baseRefName": "main",
+          "isCrossRepository": true,
           "repository": {
             "nameWithOwner": "acme/web"
           },

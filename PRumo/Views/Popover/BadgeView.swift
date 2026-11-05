@@ -44,7 +44,9 @@ struct BadgeView: View {
                 Image(systemName: name).font(.system(size: 10))
             }
             Text(badge.text)
+                .lineLimit(1)
         }
+        .fixedSize()
         .font(.system(size: 10.5, weight: .medium))
         .foregroundStyle(badge.tone.color)
         .padding(.horizontal, 6)

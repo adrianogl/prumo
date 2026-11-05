@@ -47,6 +47,9 @@ struct GraphQLResponse: Decodable {
         let additions: Int
         let deletions: Int
         let mergeable: String
+        let headRefName: String?
+        let baseRefName: String?
+        let isCrossRepository: Bool?
         let repository: Repository
         let author: Author?
         let commits: Nodes<CommitNode>
@@ -79,12 +82,13 @@ struct GraphQLResponse: Decodable {
         let name: String?
         let status: String?
         let conclusion: String?
+        let detailsUrl: String?
         let context: String?
         let state: String?
 
         enum CodingKeys: String, CodingKey {
             case typename = "__typename"
-            case name, status, conclusion, context, state
+            case name, status, conclusion, detailsUrl, context, state
         }
     }
 

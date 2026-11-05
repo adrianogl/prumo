@@ -27,10 +27,11 @@ struct OnboardingView: View {
 
     private var welcome: some View {
         VStack(spacing: 4) {
-            Image(nsImage: NSApp.applicationIconImage)
+            Image(PopoverSymbol.appLogo)
                 .resizable()
+                .interpolation(.high)
                 .frame(width: OnboardingMetrics.iconSize, height: OnboardingMetrics.iconSize)
-            Wordmark(size: 22).padding(.top, 4)
+            Wordmark(size: 28).padding(.top, 4)
             Text(OnboardingText.tagline)
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 12)

@@ -3,10 +3,13 @@ import SwiftUI
 enum PopoverMetrics {
     static let width: CGFloat = 390
     static let listMaxHeight: CGFloat = 520
-    static let headerIconSize: CGFloat = 20
+    static let headerIconSize: CGFloat = 26
+    static let badgeSpacing: CGFloat = 5
+    static let badgeLineSpacing: CGFloat = 4
     static let dotSize: CGFloat = 9
-    static let menuBarGlyphSize: CGFloat = 16
+    static let menuBarGlyphSize: CGFloat = 15
     static let menuBarDotSize: CGFloat = 5
+    static let menuReserve: CGFloat = 26
 }
 
 enum PopoverSymbol {
@@ -17,6 +20,7 @@ enum PopoverSymbol {
     static let conflict = "arrow.triangle.merge"
     static let clock = "clock"
     static let menuBarGlyph = "MenuBarGlyph"
+    static let appLogo = "AppLogo"
 }
 
 enum PopoverText {

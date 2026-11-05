@@ -48,7 +48,11 @@ public enum PullRequestMapper {
             reviewRequestedAt: node.timelineItems.nodes
                 .filter { $0.typename == "ReviewRequestedEvent" && $0.requestedReviewer?.login == viewer }
                 .compactMap(\.createdAt)
-                .max()
+                .max(),
+            headRefName: node.headRefName ?? "",
+            baseRefName: node.baseRefName ?? "",
+            isCrossRepository: node.isCrossRepository ?? false,
+            failedRunID: failedRunID(commit?.statusCheckRollup)
         )
     }
 
@@ -91,6 +95,17 @@ public enum PullRequestMapper {
             return .failure(failedChecks: failed, total: total)
         }
         return .success(total: total)
+    }
+
+    private static func failedRunID(_ rollup: GraphQLResponse.Rollup?) -> Int? {
+        guard let rollup, let failed = rollup.contexts.nodes.first(where: isFailedCheckRun),
+              let details = failed.detailsUrl,
+              let match = details.firstMatch(of: /\/actions\/runs\/(\d+)\//) else { return nil }
+        return Int(match.1)
+    }
+
+    private static func isFailedCheckRun(_ context: GraphQLResponse.Context) -> Bool {
+        context.typename == "CheckRun" && failedName(context) != nil
     }
 
     private static func isDone(_ context: GraphQLResponse.Context) -> Bool {

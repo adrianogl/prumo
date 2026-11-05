@@ -9,12 +9,22 @@ public struct RowPresentation: Equatable, Sendable {
     public let title: String
     public let subtitle: String
     public let badges: [Badge]
+    public let ciFailureBadgeIndex: Int?
+    public let conflictBadgeIndex: Int?
+    public let commentsBadgeIndex: Int?
 
-    public init(dot: StatusDot, title: String, subtitle: String, badges: [Badge]) {
+    public init(
+        dot: StatusDot, title: String, subtitle: String, badges: [Badge],
+        ciFailureBadgeIndex: Int? = nil, conflictBadgeIndex: Int? = nil,
+        commentsBadgeIndex: Int? = nil
+    ) {
         self.dot = dot
         self.title = title
         self.subtitle = subtitle
         self.badges = badges
+        self.ciFailureBadgeIndex = ciFailureBadgeIndex
+        self.conflictBadgeIndex = conflictBadgeIndex
+        self.commentsBadgeIndex = commentsBadgeIndex
     }
 }
 
@@ -25,21 +35,40 @@ public enum RowPresenter {
         let hasChangesRequested = verdicts.contains(.changesRequested)
 
         var badges: [Badge] = []
-        if let ci = ciBadge(pr.ci) { badges.append(ci) }
+        var ciFailureIndex: Int?
+        if let ci = ciBadge(pr.ci) {
+            if case .failure = pr.ci { ciFailureIndex = badges.count }
+            badges.append(ci)
+        }
         if approvals > 0 {
             badges.append(Badge("\(PresentationText.approvalMark) \(approvals) \(approvals == 1 ? PresentationText.approvalSingular : PresentationText.approvalPlural)", .positive))
         }
-        if hasChangesRequested { badges.append(Badge(PresentationText.changesRequested, .negative)) }
+        var changesRequestedIndex: Int?
+        if hasChangesRequested {
+            changesRequestedIndex = badges.count
+            badges.append(Badge(PresentationText.changesRequested, .negative))
+        }
         if pr.isDraft { badges.append(Badge(PresentationText.draft, .neutral)) }
-        if pr.mergeable == .conflicting { badges.append(Badge(PresentationText.conflict, .warning, .conflict)) }
+        var conflictIndex: Int?
+        if pr.mergeable == .conflicting {
+            conflictIndex = badges.count
+            badges.append(Badge(PresentationText.conflict, .warning, .conflict))
+        }
         let commentTotal = pr.commentCount + pr.reviews.filter(\.isComment).count
-        if commentTotal > 0 { badges.append(Badge(String(commentTotal), .neutral, .comments)) }
+        var commentsIndex = changesRequestedIndex
+        if commentTotal > 0 {
+            commentsIndex = badges.count
+            badges.append(Badge(String(commentTotal), .neutral, .comments))
+        }
 
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: hasChangesRequested),
             title: pr.title,
             subtitle: subtitle(pr, from: pr.createdAt, now: now),
-            badges: badges
+            badges: badges,
+            ciFailureBadgeIndex: ciFailureIndex,
+            conflictBadgeIndex: conflictIndex,
+            commentsBadgeIndex: commentsIndex
         )
     }
 

@@ -1,8 +1,10 @@
 import Foundation
 
 enum SettingsMetrics {
+    static let aboutLogoSize: CGFloat = 64
     static let width: CGFloat = 420
     static let height: CGFloat = 220
+    static let aboutHeight: CGFloat = 280
 }
 
 enum SettingsSymbol {
@@ -26,4 +28,11 @@ enum SettingsText {
     static let version = "Versão"
     static let iconCredit = "Símbolo pull-request do IBM Carbon, licença Apache 2.0"
     static let license = "Ver licença"
+}
+
+enum SettingsTab: Hashable {
+    case account
+    case general
+    case claude
+    case about
 }

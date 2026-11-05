@@ -20,13 +20,18 @@ extension PullRequest {
         additions: Int = 10,
         deletions: Int = 2,
         mergeable: Mergeable = .mergeable,
-        reviewRequestedAt: Date? = nil
+        reviewRequestedAt: Date? = nil,
+        headRefName: String = "feat/carrinho",
+        baseRefName: String = "main",
+        isCrossRepository: Bool = false,
+        failedRunID: Int? = nil
     ) -> PullRequest {
         PullRequest(
             id: id, number: number, title: title, url: url, repository: repository, author: author,
             isDraft: isDraft, createdAt: createdAt, updatedAt: updatedAt, headSHA: headSHA, ci: ci,
             reviews: reviews, comments: comments, commentCount: commentCount, additions: additions,
-            deletions: deletions, mergeable: mergeable, reviewRequestedAt: reviewRequestedAt
+            deletions: deletions, mergeable: mergeable, reviewRequestedAt: reviewRequestedAt,
+            headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository, failedRunID: failedRunID
         )
     }
 }

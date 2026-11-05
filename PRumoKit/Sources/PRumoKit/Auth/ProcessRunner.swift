@@ -1,7 +1,7 @@
 import Foundation
 
 public protocol ProcessRunner: Sendable {
-    func run(_ executable: String, _ args: [String]) async throws -> (status: Int32, stdout: String)
+    func run(_ executable: String, _ args: [String]) async throws -> (status: Int32, stdout: String, stderr: String)
 }
 
 public enum ProcessRunnerError: Error, Equatable {
@@ -15,13 +15,14 @@ public struct SystemProcessRunner: ProcessRunner {
         self.timeout = timeout
     }
 
-    public func run(_ executable: String, _ args: [String]) async throws -> (status: Int32, stdout: String) {
+    public func run(_ executable: String, _ args: [String]) async throws -> (status: Int32, stdout: String, stderr: String) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = args
         let output = Pipe()
         process.standardOutput = output
-        process.standardError = Pipe()
+        let errors = Pipe()
+        process.standardError = errors
 
         let terminated = AsyncStream<Void>.makeStream()
         process.terminationHandler = { _ in
@@ -31,6 +32,7 @@ public struct SystemProcessRunner: ProcessRunner {
         try process.run()
 
         let reader = Task.detached { output.fileHandleForReading.readDataToEndOfFile() }
+        let errorReader = Task.detached { errors.fileHandleForReading.readDataToEndOfFile() }
 
         let timedOut = await withTaskGroup(of: Bool.self) { group in
             group.addTask {
@@ -49,10 +51,12 @@ public struct SystemProcessRunner: ProcessRunner {
         if timedOut && process.isRunning {
             process.terminate()
             reader.cancel()
+            errorReader.cancel()
             throw ProcessRunnerError.timedOut
         }
 
         let data = await reader.value
-        return (process.terminationStatus, String(decoding: data, as: UTF8.self))
+        let errorData = await errorReader.value
+        return (process.terminationStatus, String(decoding: data, as: UTF8.self), String(decoding: errorData, as: UTF8.self))
     }
 }
