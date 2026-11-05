@@ -130,6 +130,72 @@ import Testing
         #expect(fallback.submittedAt == date("2026-11-05T12:00:00.123Z"))
     }
 
+    @Test func fallbackReviewIDIgnoresUpdatedAt() throws {
+        func changes(updatedAt: String) throws -> (PullRequest, Review) {
+            let data = try mutatedFixture { mr in
+                mr["notes"] = ["nodes": []]
+                mr["updatedAt"] = updatedAt
+            }
+            let pr = try #require(try MergeRequestMapper.snapshot(data, host: host, capabilities: full, now: .fixed).mine.first)
+            return (pr, try #require(pr.reviews.first { $0.state == .changesRequested }))
+        }
+        let (firstPR, first) = try changes(updatedAt: "2026-11-05T12:00:00.123Z")
+        let (secondPR, second) = try changes(updatedAt: "2026-11-05T12:30:00.000Z")
+        #expect(first.id == "changes:carla")
+        #expect(first.id == second.id)
+        #expect(second.submittedAt == date("2026-11-05T12:30:00.000Z"))
+        let approval = try #require(secondPR.reviews.first { $0.state == .approved })
+        #expect(approval.id == "approval:bruna")
+
+        let start = date("2026-11-05T11:00:00Z")
+        let old = Snapshot(viewer: "adriano", mine: [firstPR], toReview: [], mergedToday: [], fetchedAt: start)
+        let new = Snapshot(viewer: "adriano", mine: [secondPR], toReview: [], mergedToday: [], fetchedAt: start.addingTimeInterval(60))
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(!events.contains { $0.kind == .changesRequested || $0.kind == .approved })
+
+        let bare = try mutatedFixture { mr in
+            mr["approvedBy"] = ["nodes": []]
+            mr["reviewers"] = ["nodes": []]
+        }
+        let baseline = try MergeRequestMapper.snapshot(bare, host: host, capabilities: full, now: start)
+        #expect(baseline.mine.first?.reviews.isEmpty == true)
+        #expect(TransitionEngine.events(from: baseline, to: new).contains { $0.kind == .changesRequested })
+    }
+
+    @Test func jobWithNullNameAndStatusKeepsMergeRequest() throws {
+        let data = try mutatedFixture(at: 1) { mr in
+            var pipeline = mr["headPipeline"] as! [String: Any]
+            var jobs = pipeline["jobs"] as! [String: Any]
+            var nodes = jobs["nodes"] as! [[String: Any]]
+            nodes[1]["name"] = NSNull()
+            nodes[2]["status"] = NSNull()
+            jobs["nodes"] = nodes
+            pipeline["jobs"] = jobs
+            mr["headPipeline"] = pipeline
+        }
+        let mapped = try MergeRequestMapper.snapshot(data, host: host, capabilities: full, now: .fixed)
+        let pr = try #require(mapped.mine.first { $0.number == 13 })
+        #expect(pr.ci == .failure(failedChecks: ["job"], total: 3))
+        #expect(pr.failedRunName == "job")
+        #expect(pr.failedJobID == 9102)
+    }
+
+    @Test func jobWithNullStatusIsNotTerminal() throws {
+        let data = try mutatedFixture(at: 2) { mr in
+            var pipeline = mr["headPipeline"] as! [String: Any]
+            var jobs = pipeline["jobs"] as! [String: Any]
+            var nodes = jobs["nodes"] as! [[String: Any]]
+            nodes[0]["status"] = NSNull()
+            nodes[1]["name"] = NSNull()
+            jobs["nodes"] = nodes
+            pipeline["jobs"] = jobs
+            mr["headPipeline"] = pipeline
+        }
+        let mapped = try MergeRequestMapper.snapshot(data, host: host, capabilities: full, now: .fixed)
+        let pr = try #require(mapped.mine.first { $0.number == 14 })
+        #expect(pr.ci == .pending(done: 2, total: 7))
+    }
+
     @Test func requestedChangesFromReviewerState() throws {
         let changes = try mine(12, in: snapshot()).reviews.filter { $0.state == .changesRequested }
         #expect(changes.map(\.author) == ["carla"])
@@ -197,13 +263,13 @@ import Testing
         #expect(mapped.mine.map(\.number) == [13, 14, 15, 16, 17])
     }
 
-    private func mutatedFixture(_ change: (inout [String: Any]) -> Void) throws -> Data {
+    private func mutatedFixture(at index: Int = 0, _ change: (inout [String: Any]) -> Void) throws -> Data {
         var root = try #require(try JSONSerialization.jsonObject(with: fixture("gitlab-snapshot")) as? [String: Any])
         var data = try #require(root["data"] as? [String: Any])
         var user = try #require(data["currentUser"] as? [String: Any])
         var authored = try #require(user["authored"] as? [String: Any])
         var nodes = try #require(authored["nodes"] as? [[String: Any]])
-        change(&nodes[0])
+        change(&nodes[index])
         authored["nodes"] = nodes
         user["authored"] = authored
         data["currentUser"] = user

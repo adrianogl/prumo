@@ -50,8 +50,8 @@ struct GitLabResponse: Decodable {
 
     struct Job: Decodable {
         let id: String
-        let name: String
-        let status: String
+        let name: String?
+        let status: String?
         let allowFailure: Bool?
     }
 

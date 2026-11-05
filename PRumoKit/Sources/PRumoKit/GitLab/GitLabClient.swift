@@ -3,7 +3,7 @@ import Foundation
 public struct GitLabClient: AccountClient {
     private static let stateLimit = 20
     private static let mergeStatusField = "detailedMergeStatus"
-    private static let reviewStateField = "mergeRequestInteraction"
+    private static let reviewStateFields = ["mergeRequestInteraction", "reviewState"]
     private static let missingFieldMarker = "exist"
     private static let restStates: [String: PRState] = ["opened": .open, "closed": .closed, "merged": .merged]
 
@@ -91,7 +91,7 @@ public struct GitLabClient: AccountClient {
         var reduced = capabilities
         for message in messages where message.contains(missingFieldMarker) {
             if message.contains(mergeStatusField) { reduced.hasDetailedMergeStatus = false }
-            if message.contains(reviewStateField) { reduced.hasReviewState = false }
+            if reviewStateFields.contains(where: message.contains) { reduced.hasReviewState = false }
         }
         return reduced
     }

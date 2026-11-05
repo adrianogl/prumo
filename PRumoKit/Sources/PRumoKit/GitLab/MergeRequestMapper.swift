@@ -10,6 +10,7 @@ enum MergeRequestMapper {
     private static let failedJobStatus = "FAILED"
     private static let terminalJobStatuses: Set<String> = ["SUCCESS", "FAILED", "CANCELED", "SKIPPED", "MANUAL"]
     private static let pipelineFallbackName = "pipeline"
+    private static let jobFallbackName = "job"
     private static let approvalPrefix = "approval"
     private static let changesPrefix = "changes"
 
@@ -112,21 +113,24 @@ enum MergeRequestMapper {
         let approvals = (node.approvedBy?.nodes ?? [])
             .filter { !context.isViewer($0.username) }
             .map { approver in
-                let date = ReviewRequestNote.approvedAt(notes: notes, username: approver.username) ?? node.updatedAt
-                return review(prefix: approvalPrefix, author: approver.username, state: .approved, date: date)
+                let noteDate = ReviewRequestNote.approvedAt(notes: notes, username: approver.username)
+                return review(prefix: approvalPrefix, author: approver.username, state: .approved, noteDate: noteDate, fallback: node.updatedAt)
             }
         let changes = (node.reviewers?.nodes ?? [])
             .filter { $0.mergeRequestInteraction?.reviewState == requestedChangesState }
             .map { reviewer in
-                let date = ReviewRequestNote.changesRequestedAt(notes: notes, username: reviewer.username) ?? node.updatedAt
-                return review(prefix: changesPrefix, author: reviewer.username, state: .changesRequested, date: date)
+                let noteDate = ReviewRequestNote.changesRequestedAt(notes: notes, username: reviewer.username)
+                return review(prefix: changesPrefix, author: reviewer.username, state: .changesRequested, noteDate: noteDate, fallback: node.updatedAt)
             }
         return approvals + changes
     }
 
-    private static func review(prefix: String, author: String, state: ReviewState, date: Date) -> Review {
-        let stamp = ISO8601DateFormatter().string(from: date)
-        return Review(id: "\(prefix):\(author)@\(stamp)", author: author, state: state, submittedAt: date)
+    private static func review(prefix: String, author: String, state: ReviewState, noteDate: Date?, fallback: Date) -> Review {
+        guard let noteDate else {
+            return Review(id: "\(prefix):\(author)", author: author, state: state, submittedAt: fallback)
+        }
+        let stamp = ISO8601DateFormatter().string(from: noteDate)
+        return Review(id: "\(prefix):\(author)@\(stamp)", author: author, state: state, submittedAt: noteDate)
     }
 
     private static func comments(_ node: Node, notes: [GitLabNote]) -> [Comment] {
@@ -146,11 +150,11 @@ enum MergeRequestMapper {
         let total = pipeline.jobs?.count ?? jobs.count
         if successStatuses.contains(pipeline.status) { return .success(total: total) }
         if failedStatuses.contains(pipeline.status) {
-            let names = blockingFailedJobs(jobs).map(\.name)
+            let names = blockingFailedJobs(jobs).map { $0.name ?? jobFallbackName }
             return .failure(failedChecks: names.isEmpty ? [pipelineFallbackName] : names, total: total)
         }
         if pipeline.status == skippedStatus { return .none }
-        return .pending(done: jobs.filter { terminalJobStatuses.contains($0.status) }.count, total: total)
+        return .pending(done: jobs.filter { $0.status.map(terminalJobStatuses.contains) ?? false }.count, total: total)
     }
 
     private static func blockingFailedJobs(_ jobs: [GitLabResponse.Job]) -> [GitLabResponse.Job] {
@@ -162,7 +166,7 @@ enum MergeRequestMapper {
     ) -> (pipelineID: Int?, jobName: String?, jobID: Int?)? {
         guard let pipeline, case .failure = ci else { return nil }
         let job = blockingFailedJobs(pipeline.jobs?.nodes ?? []).first
-        return (numericID(pipeline.id), job?.name, job.flatMap { numericID($0.id) })
+        return (numericID(pipeline.id), job.map { $0.name ?? jobFallbackName }, job.flatMap { numericID($0.id) })
     }
 
     private static func mapMerged(_ node: GitLabResponse.MergedNode, host: String) -> MergedPullRequest? {

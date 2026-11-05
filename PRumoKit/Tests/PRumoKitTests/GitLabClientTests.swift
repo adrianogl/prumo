@@ -91,6 +91,21 @@ private func client(_ transport: FakeTransport) -> GitLabClient {
         #expect(snapshot.mine.first?.mergeReady == nil)
     }
 
+    @Test func reviewStateFieldErrorDropsReviewState() async throws {
+        let transport = FakeTransport { request in
+            if graphQLQuery(request).contains("reviewState") {
+                return (missingField("reviewState", type: "UserMergeRequestInteraction"), gitLabResponse(200))
+            }
+            return (fixture("gitlab-snapshot-old"), gitLabResponse(200))
+        }
+        let gitlab = client(transport)
+        _ = try await gitlab.fetchSnapshot()
+
+        #expect(transport.requests.count == 2)
+        #expect(!graphQLQuery(transport.requests[1]).contains("reviewState"))
+        #expect(await gitlab.capabilities() == GitLabCapabilities(hasReviewState: false, hasDetailedMergeStatus: true))
+    }
+
     @Test func bothMissingFieldsDroppedInOneRetry() async throws {
         let transport = FakeTransport { request in
             let query = graphQLQuery(request)
