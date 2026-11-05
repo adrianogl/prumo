@@ -6,10 +6,25 @@ import Testing
     @Test func emptyJSONDecodesToDefaults() throws {
         let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data("{}".utf8))
         #expect(settings.ignoreDraftsInReview == true)
-        #expect(settings.includeTeamRequests == false)
+        #expect(settings.includeTeamRequests == true)
         #expect(settings.rowStyle == .detailed)
         #expect(settings.ordering(for: .review) == TabOrdering())
         #expect(settings == OrganizationSettings.defaults)
+    }
+
+    @Test func organizationDefaultsIncludeTeam() {
+        #expect(OrganizationSettings.defaults.includeTeamRequests == true)
+        #expect(OrganizationSettings().includeTeamRequests == true)
+    }
+
+    @Test func jsonWithoutTeamKeyDecodesToIncluded() throws {
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(#"{"rowStyle":"compact"}"#.utf8))
+        #expect(settings.includeTeamRequests == true)
+    }
+
+    @Test func savedTeamOptionOffIsRespected() throws {
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(#"{"includeTeamRequests":false}"#.utf8))
+        #expect(settings.includeTeamRequests == false)
     }
 
     @Test func partialNestedJSONDecodesWithDefaults() throws {

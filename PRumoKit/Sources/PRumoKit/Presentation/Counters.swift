@@ -1,6 +1,6 @@
 public enum Counters {
-    public static func reviewBadge(_ s: Snapshot, ignoreDrafts: Bool) -> Int {
-        ReviewInclusion.visible(s.toReview, ignoreDrafts: ignoreDrafts, includeTeam: false).count
+    public static func reviewBadge(_ s: Snapshot, ignoreDrafts: Bool, includeTeam: Bool) -> Int {
+        ReviewInclusion.visible(s.toReview, ignoreDrafts: ignoreDrafts, includeTeam: includeTeam).count
     }
 
     public static func hasFailingCI(_ s: Snapshot) -> Bool {

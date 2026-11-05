@@ -26,8 +26,8 @@
 - Testes nunca rodam `git`, `gh` ou `osascript` reais nem chamam a API do GitHub: usar `ProcessRunner` e `HTTPTransport` fakes.
 - Tudo que é persistido (snapshot em disco, JSON no UserDefaults) decodifica versões antigas: campo novo com `decodeIfPresent` e default, com teste usando JSON sem o campo.
 - Pronto para merge: não é draft, `mergeable == MERGEABLE`, CI em sucesso ou sem checks, e aprovação: `reviewDecision == APPROVED`, ou `reviewDecision == null` (sem branch protection) com ao menos uma aprovação e nenhuma alteração pedida pendente.
-- Padrões: "Ignorar drafts em Revisar" ligado; "Incluir reviews pedidos ao time" desligado; linha detalhada; ordem "Atividade recente" em todas as abas.
-- Reviews pedidos ao time: aparecem em Revisar (com a opção ligada) com o badge do time, mas não notificam, não entram no contador da barra de menu e não recebem lembrete de review parado (etapa 5).
+- Padrões: "Ignorar drafts em Revisar" ligado; "Incluir reviews pedidos ao time" ligado; linha detalhada; ordem "Atividade recente" em todas as abas.
+- Reviews pedidos ao time: com a opção ligada (padrão), valem como pedido a você: aparecem em Revisar com o badge do time, notificam, entram no contador da barra de menu e recebem lembrete de review parado (etapa 5). Desligada, o time some de tudo.
 
 ## Review Focus
 
@@ -139,7 +139,7 @@ Linha compacta (`repo` = parte depois da `/`):
 
 Regras de review pedido no engine: só PRs `.you` contam, em `old` e em `new`; com `ignoreDraftReviews`, drafts saem dos dois conjuntos. PR que estava em `old.toReview` como draft e chega em `new` sem draft notifica mesmo com `reviewRequestedAt` antigo (Review Focus 3). PR que passa de `.team` para `.you` notifica.
 
-- [ ] **Step 1: Testes** `teamRequestDoesNotNotify`, `teamRequestBecomingDirectNotifies`, `draftReviewRequestIgnoredWhenOptionOn`, `draftReviewRequestNotifiesWhenOptionOff`, `draftBecomingReadyNotifiesWhenIgnoringDrafts`, `coordinatorPassesOptionsToEngine`, `reviewBadgeExcludesTeamAndIgnoredDrafts`, `visibleReviewsRespectDraftAndTeamOptions`, `readyCountUsesMergeReadiness`.
+- [ ] **Step 1: Testes** `teamRequestNotifiesWhenIncluded`, `teamRequestSilentWhenExcluded`, `togglingTeamOptionDoesNotBurst`, `teamRequestBecomingDirectNotifies`, `draftReviewRequestIgnoredWhenOptionOn`, `draftReviewRequestNotifiesWhenOptionOff`, `draftBecomingReadyNotifiesWhenIgnoringDrafts`, `coordinatorPassesOptionsToEngine`, `reviewBadgeExcludesTeamAndIgnoredDrafts`, `reviewBadgeCountsTeamWhenIncluded`, `visibleReviewsRespectDraftAndTeamOptions`, `readyCountUsesMergeReadiness`.
 - [ ] **Step 2:** `swift test --filter "TransitionEngineTests|RefreshCoordinatorTests|CountersTests"` → FAIL.
 - [ ] **Step 3:** Implementar.
 - [ ] **Step 4:** `swift test` → PASS.

@@ -21,7 +21,7 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
         hideEmptyRepositories: Bool = false,
         rowStyle: RowStyle = .detailed,
         ignoreDraftsInReview: Bool = true,
-        includeTeamRequests: Bool = false,
+        includeTeamRequests: Bool = true,
         marks: RowMarks = RowMarks()
     ) {
         self.filter = filter
@@ -46,7 +46,7 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
         hideEmptyRepositories = c.decodeLossy(Bool.self, forKey: .hideEmptyRepositories, default: false)
         rowStyle = c.decodeLossy(RowStyle.self, forKey: .rowStyle, default: .detailed)
         ignoreDraftsInReview = c.decodeLossy(Bool.self, forKey: .ignoreDraftsInReview, default: true)
-        includeTeamRequests = c.decodeLossy(Bool.self, forKey: .includeTeamRequests, default: false)
+        includeTeamRequests = c.decodeLossy(Bool.self, forKey: .includeTeamRequests, default: true)
         marks = c.decodeLossy(RowMarks.self, forKey: .marks, default: RowMarks())
     }
 

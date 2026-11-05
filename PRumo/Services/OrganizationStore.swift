@@ -18,6 +18,14 @@ final class OrganizationStore {
         settings = defaults.data(forKey: AppConstants.organizationKey)
             .flatMap { try? JSONDecoder().decode(OrganizationSettings.self, from: $0) } ?? .defaults
         unseen = Set(defaults.stringArray(forKey: AppConstants.unseenActivityKey) ?? [])
+        migrateTeamDefault()
+    }
+
+    private func migrateTeamDefault() {
+        guard defaults.object(forKey: AppConstants.organizationTeamDefaultMigratedKey) == nil else { return }
+        defaults.set(true, forKey: AppConstants.organizationTeamDefaultMigratedKey)
+        guard !settings.includeTeamRequests else { return }
+        settings.includeTeamRequests = true
     }
 
     func togglePin(_ pr: PullRequest) {

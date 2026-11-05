@@ -127,7 +127,7 @@ Eventos (por PR que já existia em `old.mine`, depois dos de comentário):
   - `ReminderStore.defaultURL()`: `~/Library/Application Support/PRumo/reminders.json`. Arquivo ausente ou inválido → `ReminderState()`.
   - `RowPresenter.review(_:now:jiraKey:staleLimit: TimeInterval? = nil)`: espera ≥ limite → acrescenta `Badge("esperando há <h>h", .warning, .clock)` e a bolinha vira `.attention` (CI falhando continua `.failed`).
 
-- [ ] **Step 1: Testes** `dueAfterLimitOnlyOnce`, `notDueBeforeLimit`, `teamRequestNeverDue`, `mutedNeverDue`, `draftSkippedWhenIgnoring`, `newRequestGetsNewKey`, `titleUsesWholeHours` (26h30 → `Review parado há 26h: #798`), `stateCapsAt500KeepingNewest`, `storeRoundTripAndMissingFile`, `reviewRowShowsWaitBadgeAndAttentionDot`.
+- [ ] **Step 1: Testes** `dueAfterLimitOnlyOnce`, `notDueBeforeLimit`, `teamRequestDueWhenIncluded`, `teamRequestNeverDueWhenExcluded`, `mutedNeverDue`, `draftSkippedWhenIgnoring`, `newRequestGetsNewKey`, `titleUsesWholeHours` (26h30 → `Review parado há 26h: #798`), `stateCapsAt500KeepingNewest`, `storeRoundTripAndMissingFile`, `reviewRowShowsWaitBadgeAndAttentionDot`.
 - [ ] **Step 2:** `swift test --filter "StaleReviewTests|RowPresentationTests"` → FAIL.
 - [ ] **Step 3:** Implementar.
 - [ ] **Step 4:** `swift test` → PASS.

@@ -14,7 +14,7 @@ A referência é o pullbar.app. O PRumo não copia nome, visual nem marca dele; 
 ## Objetivos
 
 - Ver, sem abrir o navegador, o estado de cada PR aberto do usuário: CI, aprovações, alterações pedidas, comentários, draft, conflito.
-- Ver a fila de reviews pedidos ao usuário (e, opcionalmente, ao time dele).
+- Ver a fila de reviews pedidos ao usuário (e, por padrão, ao time dele).
 - Receber notificação nativa do macOS quando:
   - a CI de um PR do usuário termina (passou ou falhou);
   - um PR do usuário é aprovado;
@@ -227,7 +227,7 @@ Janela com estas seções:
 - **Conta**: usuário conectado e origem do token (`gh` ou token colado); trocar conta.
 - **Exibição**: linha detalhada ou compacta; intervalo de atualização (padrão 60 s); abrir ao iniciar o macOS; atalho global.
 - **Notificações**: um toggle por tipo; agrupar notificações de CI; lembrete de review parado após N horas (padrão 24 h); só em horário de trabalho (dias e horário).
-- **Filtros**: ignorar drafts em Revisar; incluir reviews pedidos ao time; visões salvas; PRs silenciados (lista, com reativar).
+- **Filtros**: ignorar drafts em Revisar; incluir reviews pedidos ao time (padrão ligado); visões salvas; PRs silenciados (lista, com reativar).
 - **Claude**: template de revisão, template de correção de CI, flags extras do `claude`, terminal (Ghostty padrão, Terminal, iTerm ou comando personalizado), pasta das worktrees, clones encontrados (com adicionar manualmente), apagar worktree quando o PR fechar.
 - **Integrações**: Jira, com uma lista de prefixo de chave → endereço do site (ex.: `ON` → `empresa.atlassian.net`, `DEV` → site da Contoso).
 - **Sobre**: versão e aviso de licença do símbolo do IBM Carbon (Apache 2.0).
@@ -270,7 +270,7 @@ Sem rede ou com erro da API, o popover mantém os últimos dados com um aviso ("
   - **Conflito**: `mergeable` passa a `CONFLICTING`.
 - Drafts: entram em Meus PRs normalmente. Em Revisar, são ignorados se a opção estiver ligada.
 - **Pronto para merge** em repositório sem review obrigatório ou sem CI: basta ao menos uma aprovação e nenhuma alteração pedida pendente. PR sem nenhum check conta como CI verde.
-- **Reviews pedidos ao time** (opção ligada): aparecem na aba Revisar com o badge do time, mas não disparam notificação de review pedido nem lembrete de review parado, e não entram no contador da barra de menu nem no widget. O PR sai da aba quando alguém do time envia um review.
+- **Reviews pedidos ao time** (opção ligada, padrão): valem como pedido a você. Aparecem na aba Revisar com o badge do time, disparam notificação de review pedido e lembrete de review parado, e entram no contador da barra de menu e no widget. Desligada, o time some de tudo. O PR sai da aba quando alguém do time envia um review.
 - **Agrupar notificações de CI**: as notificações de um mesmo PR usam o mesmo `threadIdentifier`, e a Central de Notificações empilha tudo sob o PR. Não existe banner agregado de vários PRs.
 - **Atividade nova** (bolinha caramelo): qualquer evento que geraria notificação (CI terminou, review, comentário, conflito, pronto para merge) ou commit novo no PR. Mudança de label ou de título não conta. A bolinha some quando o popover é aberto com aquele PR visível.
 - **Pausas e review parado**: as horas de espera contam no relógio corrido. Se o limite vence durante o Não perturbe ou fora do horário de trabalho, o lembrete é adiado para o fim da pausa, em vez de ser descartado. As outras notificações continuam descartadas.
@@ -314,7 +314,7 @@ Build local, assinado com o time pessoal (gratuito) do Xcode, para rodar na máq
 - A bolinha de "novo" acende com eventos que gerariam notificação ou com commit novo.
 - O lembrete de review parado é adiado para o fim da pausa, em vez de ser descartado.
 - Pronto para merge sem branch protection: uma aprovação basta; PR sem checks conta como CI verde (sugestão aceita).
-- Reviews do time: na lista, sem notificação e fora dos contadores (sugestão aceita).
+- Reviews do time: com a opção ligada (padrão), valem como pedido a você em lista, notificação, contador e lembrete de review parado.
 - Ordem escolhida por aba; filtros e repositórios valem para as três abas.
 - Distribuição local, sem App Store.
 - Claude no terminal vira a etapa 2, porque é o uso principal; o menu `⋯` básico vem junto.

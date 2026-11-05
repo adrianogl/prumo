@@ -323,10 +323,25 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         #expect(TransitionEngine.events(from: old, to: new).isEmpty)
     }
 
-    @Test func teamRequestDoesNotNotify() {
+    @Test func teamRequestNotifiesWhenIncluded() {
         let old = Snapshot.fixture(toReview: [])
         let new = Snapshot.fixture(toReview: [.fixture(id: "PR_7", number: 7, reviewTarget: .team(name: "time"))], fetchedAt: t1)
-        #expect(TransitionEngine.events(from: old, to: new).isEmpty)
+        let events = TransitionEngine.events(from: old, to: new, options: TransitionOptions(includeTeamRequests: true))
+        #expect(events.map(\.kind) == [.reviewRequested])
+        #expect(events[0].pullRequestID == "PR_7")
+    }
+
+    @Test func teamRequestSilentWhenExcluded() {
+        let old = Snapshot.fixture(toReview: [])
+        let new = Snapshot.fixture(toReview: [.fixture(id: "PR_7", number: 7, reviewTarget: .team(name: "time"))], fetchedAt: t1)
+        #expect(TransitionEngine.events(from: old, to: new, options: TransitionOptions(includeTeamRequests: false)).isEmpty)
+    }
+
+    @Test func togglingTeamOptionDoesNotBurst() {
+        let pr = PullRequest.fixture(id: "PR_7", number: 7, reviewRequestedAt: t0, reviewTarget: .team(name: "time"))
+        let old = Snapshot.fixture(toReview: [pr], fetchedAt: t2)
+        let new = Snapshot.fixture(toReview: [pr], fetchedAt: t2.addingTimeInterval(60))
+        #expect(TransitionEngine.events(from: old, to: new, options: TransitionOptions(includeTeamRequests: true)).isEmpty)
     }
 
     @Test func teamRequestBecomingDirectNotifies() {
@@ -335,7 +350,7 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
             toReview: [.fixture(id: "PR_7", number: 7, reviewRequestedAt: t0, reviewTarget: .you)],
             fetchedAt: t2.addingTimeInterval(60)
         )
-        let events = TransitionEngine.events(from: old, to: new)
+        let events = TransitionEngine.events(from: old, to: new, options: TransitionOptions(includeTeamRequests: false))
         #expect(events.map(\.kind) == [.reviewRequested])
         #expect(events[0].pullRequestID == "PR_7")
     }

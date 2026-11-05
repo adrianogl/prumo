@@ -13,8 +13,8 @@ public enum TransitionEngine {
             result += commentEvents(before, pr, viewer: new.viewer, since: threshold)
         }
         let oldToReviewIDs = Set(old.toReview.map(\.id))
-        let knownReviewRequests = Set(directRequests(old.toReview, options).map(\.id))
-        for pr in directRequests(new.toReview, options) where !knownReviewRequests.contains(pr.id) {
+        let knownReviewRequests = Set(requests(old.toReview, options).map(\.id))
+        for pr in requests(new.toReview, options) where !knownReviewRequests.contains(pr.id) {
             if !oldToReviewIDs.contains(pr.id), let requestedAt = pr.reviewRequestedAt, requestedAt <= threshold { continue }
             result.append(NotificationEvent(
                 kind: .reviewRequested, pullRequestID: pr.id,
@@ -25,8 +25,8 @@ public enum TransitionEngine {
         return result
     }
 
-    private static func directRequests(_ prs: [PullRequest], _ options: TransitionOptions) -> [PullRequest] {
-        ReviewInclusion.visible(prs, ignoreDrafts: options.ignoreDraftReviews, includeTeam: false)
+    private static func requests(_ prs: [PullRequest], _ options: TransitionOptions) -> [PullRequest] {
+        ReviewInclusion.visible(prs, ignoreDrafts: options.ignoreDraftReviews, includeTeam: options.includeTeamRequests)
     }
 
     private static func ciEvents(_ old: PullRequest, _ new: PullRequest) -> [NotificationEvent] {

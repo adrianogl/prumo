@@ -9,8 +9,18 @@ import Testing
             .fixture(id: "B", number: 2, isDraft: true),
             .fixture(id: "C", number: 3, reviewTarget: .team(name: "time"))
         ])
-        #expect(Counters.reviewBadge(snapshot, ignoreDrafts: true) == 1)
-        #expect(Counters.reviewBadge(snapshot, ignoreDrafts: false) == 2)
+        #expect(Counters.reviewBadge(snapshot, ignoreDrafts: true, includeTeam: false) == 1)
+        #expect(Counters.reviewBadge(snapshot, ignoreDrafts: false, includeTeam: false) == 2)
+    }
+
+    @Test func reviewBadgeCountsTeamWhenIncluded() {
+        let snapshot = Snapshot.fixture(toReview: [
+            .fixture(id: "A", number: 1),
+            .fixture(id: "B", number: 2, isDraft: true),
+            .fixture(id: "C", number: 3, reviewTarget: .team(name: "time"))
+        ])
+        #expect(Counters.reviewBadge(snapshot, ignoreDrafts: true, includeTeam: true) == 2)
+        #expect(Counters.reviewBadge(snapshot, ignoreDrafts: false, includeTeam: true) == 3)
     }
 
     @Test func visibleReviewsRespectDraftAndTeamOptions() {

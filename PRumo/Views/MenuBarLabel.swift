@@ -8,7 +8,8 @@ struct MenuBarLabel: View {
 
     private var reviewCount: Int {
         guard let snapshot = model.snapshot else { return 0 }
-        return Counters.reviewBadge(snapshot, ignoreDrafts: model.organization.settings.ignoreDraftsInReview)
+        return Counters.reviewBadge(snapshot, ignoreDrafts: model.organization.settings.ignoreDraftsInReview,
+            includeTeam: model.organization.settings.includeTeamRequests)
     }
     private var hasFailure: Bool { model.snapshot.map(Counters.hasFailingCI) ?? false }
 

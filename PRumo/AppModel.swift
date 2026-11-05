@@ -204,7 +204,10 @@ final class AppModel {
 
     private func runRefresh() async -> Bool {
         guard let coordinator else { return false }
-        let options = TransitionOptions(ignoreDraftReviews: organization.settings.ignoreDraftsInReview)
+        let options = TransitionOptions(
+            ignoreDraftReviews: organization.settings.ignoreDraftsInReview,
+            includeTeamRequests: organization.settings.includeTeamRequests
+        )
         let result = await coordinator.refresh(options: options)
         guard !Task.isCancelled else { return false }
         snapshot = result.snapshot
