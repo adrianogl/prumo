@@ -52,6 +52,24 @@ Os prompts, o comando e as flags do `claude`, o terminal (Ghostty, Terminal, iTe
 - Para as ações do Claude: [Claude Code](https://claude.com/claude-code) disponível no shell como `claude` (ou outro nome configurado).
 - Para compilar: Xcode 27 e [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
+## Download
+
+Baixe o DMG em [prumo.aglv.dev](https://prumo.aglv.dev) e arraste o PRumo para Applications.
+
+O app não é notarizado pela Apple. Na primeira abertura, o macOS bloqueia. Para liberar, vá em Ajustes do Sistema › Privacidade e Segurança e clique em "Abrir mesmo assim", ou rode:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/PRumo.app
+```
+
+O widget pode não aparecer em outros Macs, porque o app não tem assinatura de desenvolvedor.
+
+Para gerar o DMG localmente (saída em `site/PRumo.dmg`, fora do git):
+
+```bash
+scripts/make-dmg.sh
+```
+
 ## Como compilar e rodar
 
 ```bash

@@ -71,7 +71,13 @@ h1 em{font-style:normal;color:var(--caramel)}
 .cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .btn{display:inline-flex;align-items:center;gap:9px;border-radius:12px;padding:13px 20px;font:600 15px var(--font);text-decoration:none;border:1px solid transparent}
 .btn.primary{background:var(--ink);color:var(--bg)}
+.btn.download{background:var(--caramel);color:#fff}
+.btn.download:hover{filter:brightness(1.08)}
 .btn.ghost{border-color:var(--line);color:var(--ink);background:var(--surface)}
+.dl-meta{font-size:13px;color:var(--muted);margin:10px 0 0}
+.notice{border:1px solid var(--line);border-left:3px solid var(--caramel);background:var(--surface);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--muted);margin:18px 0 0;max-width:42em}
+.notice b{color:var(--ink)}
+.notice p{margin:0 0 8px}.notice p:last-child{margin:0}
 .req{font-size:13px;color:var(--muted);margin-top:14px;font-family:var(--mono)}
 
 .stage{position:relative;border-radius:22px;background:linear-gradient(135deg,var(--sand),var(--sand-deep));padding:0 16px 22px;box-shadow:var(--shadow);overflow:hidden}
@@ -240,9 +246,11 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
       <h1>Seus PRs no <em>prumo</em>, sem abrir o GitHub.</h1>
       <p class="lede">O PRumo fica no canto da tela e acompanha os PRs que você abriu e os reviews pedidos a você e ao seu time. Avisa quando a CI termina, quando aprovam, quando chega comentário e quando o PR fica pronto para merge. Para CI quebrada, conflito e comentários, abre o Claude Code já na branch do PR.</p>
       <div class="cta">
-        <a class="btn primary" href="#instalar">Como instalar</a>
+        <a class="btn download" href="PRumo.dmg" download>Baixar para macOS</a>
+        <a class="btn ghost" href="#instalar">Como instalar</a>
         <a class="btn ghost" href="#claude">Ver o Claude no fluxo</a>
       </div>
+      <div class="dl-meta">Versão 0.1.0 · macOS 26 ou mais novo · <a href="#instalar">leia o aviso sobre a primeira abertura</a></div>
       <div class="req">macOS 26 ou mais novo · usa o seu gh · sem servidor</div>
     </div>
 
@@ -470,10 +478,18 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
   <div class="wrap">
     <div class="sec-head">
       <h2>Como instalar</h2>
-      <p>Por enquanto o PRumo é compilado a partir do código e roda assinado localmente, sem passar pela App Store.</p>
+      <p>Baixe o DMG ou compile do código. O PRumo não passa pela App Store.</p>
     </div>
+    <a class="btn download" href="PRumo.dmg" download>Baixar para macOS</a>
+    <p class="dl-meta">Versão 0.1.0 · macOS 26 ou mais novo</p>
+    <div class="notice">
+      <p><b>O app não é notarizado pela Apple.</b> Na primeira abertura, o macOS bloqueia. Para liberar, abra Ajustes do Sistema › Privacidade e Segurança e clique em "Abrir mesmo assim", ou rode no terminal:</p>
+      <pre class="code">xattr -dr com.apple.quarantine /Applications/PRumo.app</pre>
+      <p>O widget pode não aparecer em outros Macs, porque o app não tem assinatura de desenvolvedor.</p>
+    </div>
+    <p class="muted" style="margin:28px 0 0">Prefere compilar? Siga os passos abaixo.</p>
     <ol class="steps">
-      <li><div><b>Tenha o básico</b><p class="muted" style="margin:4px 0 0">macOS 26, Xcode 27, <code>brew install xcodegen gh</code> e o GitHub CLI logado com <code>gh auth login</code>. Para as ações do Claude, o Claude Code disponível no shell como <code>claude</code> ou com o nome que você configurar.</p></div></li>
+      <li><div><b>Compilar do código: tenha o básico</b><p class="muted" style="margin:4px 0 0">macOS 26, Xcode 27, <code>brew install xcodegen gh</code> e o GitHub CLI logado com <code>gh auth login</code>. Para as ações do Claude, o Claude Code disponível no shell como <code>claude</code> ou com o nome que você configurar.</p></div></li>
       <li><div><b>Compile e abra</b><pre class="code">xcodegen generate
 xcodebuild -project PRumo.xcodeproj -scheme PRumo -destination 'platform=macOS' build
 open ~/Library/Developer/Xcode/DerivedData/PRumo-*/Build/Products/Debug/PRumo.app</pre></div></li>
