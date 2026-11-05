@@ -3,6 +3,10 @@ options:
   bundleIdPrefix: dev.aglv
   deploymentTarget:
     macOS: "26.0"
+settings:
+  base:
+    MARKETING_VERSION: 0.2.0
+    CURRENT_PROJECT_VERSION: 1
 packages:
   PRumoKit:
     path: PRumoKit

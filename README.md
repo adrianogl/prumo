@@ -64,11 +64,22 @@ xattr -dr com.apple.quarantine /Applications/PRumo.app
 
 O widget pode não aparecer em outros Macs, porque o app não tem assinatura de desenvolvedor.
 
-Para gerar o DMG localmente (saída em `site/PRumo.dmg`, fora do git):
+Para gerar o DMG localmente (saída em `build/PRumo.dmg` e o hash em `build/PRumo.dmg.sha256`, fora do git):
 
 ```bash
 scripts/make-dmg.sh
 ```
+
+## Release
+
+A versão fica em `MARKETING_VERSION` no `project.yml`. Para publicar uma versão no GitHub Releases:
+
+```bash
+scripts/release.sh --dry-run 0.3.0
+scripts/release.sh 0.3.0
+```
+
+O script exige árvore limpa na `main` e o `gh` logado. Ele grava a versão, roda os testes do kit, gera o DMG, cria o commit `chore: versão X.Y.Z` e a tag `vX.Y.Z`, faz push e publica o release com `PRumo.dmg` e `PRumo.dmg.sha256`. As notas saem dos commits `feat` e `fix` desde a tag anterior. A landing baixa sempre o último release, e o app avisa e instala a versão nova em Ajustes › Atualizações.
 
 ## Como compilar e rodar
 
