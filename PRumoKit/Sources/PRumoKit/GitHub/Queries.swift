@@ -18,6 +18,8 @@ public enum Queries {
             additions
             deletions
             mergeable
+            headRefName
+            isCrossRepository
             repository { nameWithOwner }
             author { __typename login }
             commits(last: 1) {
@@ -30,7 +32,7 @@ public enum Queries {
                       totalCount
                       nodes {
                         __typename
-                        ... on CheckRun { name status conclusion }
+                        ... on CheckRun { name status conclusion detailsUrl }
                         ... on StatusContext { context state }
                       }
                     }

@@ -75,6 +75,36 @@ struct PullRequestMapperTests {
         #expect(s.mine.map(\.id) == ["PR_102", "PR_103", "PR_104"])
     }
 
+    @Test func mapsHeadRefAndForkFlag() throws {
+        let s = try snapshot()
+        #expect(s.mine[0].headRefName == "feat/branch-101")
+        #expect(!s.mine[0].isCrossRepository)
+        #expect(s.mine[3].headRefName == "feat/branch-104")
+        #expect(s.mine[3].isCrossRepository)
+    }
+
+    @Test func failedRunIDFromDetailsURL() throws {
+        let s = try snapshot()
+        #expect(s.mine[1].failedRunID == 102001)
+        #expect(s.mine[0].failedRunID == nil)
+        #expect(s.mine[3].failedRunID == nil)
+    }
+
+    @Test func failedRunIDFromFirstFailingCheckRun() throws {
+        let json = String(decoding: try fixture("search-mine"), as: UTF8.self)
+            .replacingOccurrences(of: "https://github.com/acme/api/actions/runs/102001/job/1021", with: "https://github.com/globex/web-app/actions/runs/1234567/job/89")
+        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), now: .fixed)
+        #expect(s.mine[1].failedRunID == 1234567)
+    }
+
+    @Test func failedRunIDNilForExternalCI() throws {
+        let json = String(decoding: try fixture("search-mine"), as: UTF8.self)
+            .replacingOccurrences(of: "https://github.com/acme/api/actions/runs/102001/job/1021", with: "https://ci.example.com/builds/9876")
+        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), now: .fixed)
+        #expect(s.mine[1].ci == .failure(failedChecks: ["unit-tests"], total: 12))
+        #expect(s.mine[1].failedRunID == nil)
+    }
+
     @Test func ciIsTerminal() {
         #expect(!CIStatus.none.isTerminal)
         #expect(!CIStatus.pending(done: 1, total: 2).isTerminal)

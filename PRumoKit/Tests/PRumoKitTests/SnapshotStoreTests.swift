@@ -46,6 +46,21 @@ struct SnapshotStoreTests {
         #expect(!review.authorIsBot)
     }
 
+    @Test func oldSnapshotWithoutNewFieldsDecodes() throws {
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(PullRequest.fixture(headRefName: "feat/x", isCrossRepository: true, failedRunID: 7))
+        var object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        object.removeValue(forKey: "headRefName")
+        object.removeValue(forKey: "isCrossRepository")
+        object.removeValue(forKey: "failedRunID")
+        let old = try JSONSerialization.data(withJSONObject: object)
+        let pr = try JSONDecoder().decode(PullRequest.self, from: old)
+        #expect(pr.headRefName == "")
+        #expect(!pr.isCrossRepository)
+        #expect(pr.failedRunID == nil)
+        #expect(pr.id == "PR_812")
+    }
+
     @Test func missingFileReturnsNil() async {
         let directory = temporaryDirectory()
         let store = SnapshotStore(fileURL: directory.appendingPathComponent("snapshot.json"))
