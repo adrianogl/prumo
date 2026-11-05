@@ -8,7 +8,7 @@ struct Wordmark: View {
     }
 
     var body: some View {
-        (Text("PR").foregroundStyle(Color.prumoCaramel) + Text("umo"))
+        Text("\(Text("PR").foregroundStyle(Color.prumoCaramel))umo")
             .font(.system(size: size, weight: .bold))
             .tracking(-0.03 * size)
     }

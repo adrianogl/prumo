@@ -7,6 +7,8 @@ enum AppConstants {
     static let accountLoginKey = "accountLogin"
     static let tokenOriginKey = "tokenOrigin"
     static let onboardingDoneKey = "onboardingDone"
+    static let ghTokenRetryAttempts = 3
+    static let ghTokenRetryDelay: Duration = .seconds(2)
     static let refreshIntervalOptions: [(label: String, seconds: TimeInterval)] = [
         ("30 s", 30), ("60 s", 60), ("2 min", 120), ("5 min", 300)
     ]

@@ -44,9 +44,17 @@ final class AppModel {
         startupTask?.cancel()
         startupTask = Task {
             let resolver = TokenResolver(store: tokenStore, gh: GhCLITokenSource(runner: SystemProcessRunner()))
-            let resolved = await resolver.resolve()
-            guard !Task.isCancelled else { return }
             let onboarded = defaults.bool(forKey: AppConstants.onboardingDoneKey)
+            var resolved = await resolver.resolve()
+            if resolved == nil, onboarded, origin == .ghCLI {
+                for _ in 0..<AppConstants.ghTokenRetryAttempts {
+                    try? await Task.sleep(for: AppConstants.ghTokenRetryDelay)
+                    guard !Task.isCancelled else { return }
+                    resolved = await resolver.resolve()
+                    if resolved != nil { break }
+                }
+            }
+            guard !Task.isCancelled else { return }
             guard let resolved, resolved.origin == .pasted || onboarded else {
                 needsOnboarding = true
                 return
@@ -97,9 +105,9 @@ final class AppModel {
     }
 
     func refreshNow() {
-        guard coordinator != nil else { return }
+        guard !needsOnboarding else { return }
         if pollingTask == nil {
-            startPolling()
+            start()
         } else {
             sleepTask?.cancel()
         }
@@ -134,7 +142,10 @@ final class AppModel {
             while !Task.isCancelled {
                 guard let self else { return }
                 let shouldContinue = await self.runRefresh()
-                guard shouldContinue else { return }
+                guard shouldContinue else {
+                    if !Task.isCancelled { self.pollingTask = nil }
+                    return
+                }
                 let interval = self.refreshInterval
                 self.nextRefresh = Date.now.addingTimeInterval(interval)
                 let sleeper = Task<Void, Never> { try? await Task.sleep(for: .seconds(interval)) }

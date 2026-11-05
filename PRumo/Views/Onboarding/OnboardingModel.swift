@@ -67,14 +67,16 @@ final class OnboardingModel {
     }
 
     func applyLaunchAtLogin() {
-        guard launchAtLogin != LaunchAtLogin.isEnabled else { return }
-        do {
-            try LaunchAtLogin.set(launchAtLogin)
-            launchError = LaunchAtLogin.needsApproval ? LaunchAtLogin.approvalMessage : nil
-        } catch {
-            launchError = error.localizedDescription
-            launchAtLogin = LaunchAtLogin.isEnabled
+        if launchAtLogin != LaunchAtLogin.isEnabled {
+            do {
+                try LaunchAtLogin.set(launchAtLogin)
+            } catch {
+                launchError = error.localizedDescription
+                launchAtLogin = LaunchAtLogin.isEnabled
+                return
+            }
         }
+        launchError = LaunchAtLogin.approvalMessage(enabled: launchAtLogin)
     }
 
     func useOtherToken() {

@@ -12,6 +12,10 @@ enum LaunchAtLogin {
         SMAppService.mainApp.status == .requiresApproval
     }
 
+    static func approvalMessage(enabled: Bool) -> String? {
+        enabled && needsApproval ? approvalMessage : nil
+    }
+
     static func set(_ enabled: Bool) throws {
         if enabled {
             guard !isEnabled else { return }

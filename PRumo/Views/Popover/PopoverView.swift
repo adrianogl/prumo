@@ -145,9 +145,9 @@ struct PopoverView: View {
     private var footer: some View {
         HStack {
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                if let last = model.lastRefresh {
+                if let last = model.lastRefresh ?? model.snapshot?.fetchedAt {
                     Text(PopoverText.updatedAgo(seconds: max(0, Int(context.date.timeIntervalSince(last)))))
-                } else {
+                } else if model.connection == .ok {
                     Text(PopoverText.updating)
                 }
             }
