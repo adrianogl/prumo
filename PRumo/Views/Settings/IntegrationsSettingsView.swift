@@ -6,11 +6,10 @@ struct IntegrationsSettingsView: View {
     @FocusState private var focusedPrefix: UUID?
 
     var body: some View {
-        @Bindable var store = store
         Form {
             Section {
-                ForEach($store.jira.sites) { $site in
-                    siteRow($site)
+                ForEach(store.jira.sites) { site in
+                    siteRow(site)
                 }
                 Button(IntegrationsSettingsText.addPrefix) {
                     store.jira.sites.append(JiraSite(prefix: "", host: ""))
@@ -28,32 +27,44 @@ struct IntegrationsSettingsView: View {
         .onChange(of: focusedPrefix) { old, _ in
             if let old { normalizePrefix(of: old) }
         }
+        .onDisappear { store.jira.sites.forEach { normalizePrefix(of: $0.id) } }
     }
 
-    private func siteRow(_ site: Binding<JiraSite>) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+    private func siteRow(_ site: JiraSite) -> some View {
+        let id = site.id
+        return VStack(alignment: .leading, spacing: 2) {
             HStack {
-                TextField(IntegrationsSettingsText.prefix, text: site.prefix)
-                    .focused($focusedPrefix, equals: site.wrappedValue.id)
-                    .onSubmit { normalizePrefix(of: site.wrappedValue.id) }
+                TextField(IntegrationsSettingsText.prefix, text: field(id, \.prefix))
+                    .focused($focusedPrefix, equals: id)
+                    .onSubmit { normalizePrefix(of: id) }
                     .frame(width: IntegrationsSettingsMetrics.prefixWidth)
                 TextField(
-                    IntegrationsSettingsText.site, text: site.host,
+                    IntegrationsSettingsText.site, text: field(id, \.host),
                     prompt: Text(IntegrationsSettingsText.sitePlaceholder))
                 Button {
-                    store.jira.sites.removeAll { $0.id == site.wrappedValue.id }
+                    store.jira.sites.removeAll { $0.id == id }
                 } label: {
-                    Image(systemName: IntegrationsSettingsSymbol.remove)
+                    Label(IntegrationsSettingsText.remove, systemImage: IntegrationsSettingsSymbol.remove)
+                        .labelStyle(.iconOnly)
                 }
                 .buttonStyle(.borderless)
                 .help(IntegrationsSettingsText.remove)
             }
-            if site.wrappedValue.host.trimmingCharacters(in: .whitespaces).isEmpty {
+            if site.host.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(IntegrationsSettingsText.noSite)
                     .font(.system(size: IntegrationsSettingsMetrics.hintSize))
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func field(_ id: UUID, _ keyPath: WritableKeyPath<JiraSite, String>) -> Binding<String> {
+        Binding(
+            get: { store.jira.sites.first { $0.id == id }?[keyPath: keyPath] ?? "" },
+            set: { value in
+                guard let index = store.jira.sites.firstIndex(where: { $0.id == id }) else { return }
+                store.jira.sites[index][keyPath: keyPath] = value
+            })
     }
 
     private func normalizePrefix(of id: UUID) {
