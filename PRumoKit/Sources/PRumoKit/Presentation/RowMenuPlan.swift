@@ -5,7 +5,8 @@ public enum RowMenuPlan {
         pr: PullRequest, claudePurposes: [SessionPurpose],
         jira: JiraLink?,
         isPinned: Bool = false,
-        isMuted: Bool = false
+        isMuted: Bool = false,
+        checkoutWarning: String? = nil
     ) -> [RowMenuEntry] {
         var entries: [RowMenuEntry] = []
         for (index, purpose) in claudePurposes.enumerated() {
@@ -18,7 +19,7 @@ public enum RowMenuPlan {
             entries.append(.rerunFailedJobs(jobName: pr.failedRunName ?? "", runID: runID))
         }
         entries.append(.copyLink)
-        entries.append(.copyCheckout(command: "gh pr checkout \(pr.number)"))
+        entries.append(.copyCheckout(command: "gh pr checkout \(pr.number)", warning: checkoutWarning))
         entries.append(.separator)
         entries.append(.pin(isPinned: isPinned))
         entries.append(.mute(isMuted: isMuted))

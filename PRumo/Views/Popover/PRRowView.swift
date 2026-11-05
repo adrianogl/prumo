@@ -35,7 +35,8 @@ struct PRRowView: View {
         let purposes = pr.claudePurposes(in: tab, offersComments: presentation.commentsBadgeIndex != nil)
         return RowMenuPlan.entries(
             pr: pr, claudePurposes: purposes, jira: model.integrations.link(for: pr),
-            isPinned: marks.isPinned(pr.id), isMuted: marks.muted[pr.id] != nil)
+            isPinned: marks.isPinned(pr.id), isMuted: marks.muted[pr.id] != nil,
+            checkoutWarning: model.checkoutWarning(for: pr))
     }
 
     private func purpose(forBadgeAt index: Int) -> SessionPurpose? {

@@ -20,6 +20,7 @@ enum RowMenuNSMenu {
         item.keyEquivalentModifierMask = entry.menuKeyModifiers
         item.target = handler
         item.tag = tag
+        item.toolTip = entry.help
         if case .rerunFailedJobs = entry { item.isEnabled = !isRerunning }
         if case .claude = entry { item.image = ClaudeMarkImage.menuIcon }
         return item

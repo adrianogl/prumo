@@ -33,6 +33,7 @@ struct RowMenuItems: View {
         default:
             Button(entry.title) { actions.perform(entry) }
                 .keyboardShortcut(entry.keyboardShortcut)
+                .help(entry.help ?? "")
         }
     }
 }

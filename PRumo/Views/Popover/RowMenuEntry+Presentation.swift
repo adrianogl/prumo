@@ -10,11 +10,16 @@ extension RowMenuEntry {
         case .openJira(let key, _): RowMenuText.openJira(key)
         case .rerunFailedJobs(let jobName, _): RowMenuText.rerunFailedJobs(jobName)
         case .copyLink: RowMenuText.copyLink
-        case .copyCheckout(let command): RowMenuText.copyCheckout(command)
+        case .copyCheckout(let command, _): RowMenuText.copyCheckout(command)
         case .separator: ""
         case .pin(let isPinned): isPinned ? RowMenuText.unpin : RowMenuText.pin
         case .mute(let isMuted): isMuted ? RowMenuText.unmute : RowMenuText.mute
         }
+    }
+
+    var help: String? {
+        if case .copyCheckout(_, let warning) = self { return warning }
+        return nil
     }
 
     var keyboardShortcut: KeyboardShortcut? {

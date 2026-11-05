@@ -19,7 +19,7 @@ import Testing
             .openJira(key: "ON-1234", url: jiraURL),
             .rerunFailedJobs(jobName: "unit-tests", runID: 555),
             .copyLink,
-            .copyCheckout(command: "gh pr checkout 812"),
+            .copyCheckout(command: "gh pr checkout 812", warning: nil),
             .separator,
             .pin(isPinned: false),
             .mute(isMuted: false),
@@ -29,7 +29,7 @@ import Testing
     @Test func pinAndMuteEntriesComeLast() {
         let entries = RowMenuPlan.entries(pr: .fixture(), claudePurposes: [], jira: nil)
         #expect(entries.suffix(4) == [
-            .copyCheckout(command: "gh pr checkout 812"),
+            .copyCheckout(command: "gh pr checkout 812", warning: nil),
             .separator,
             .pin(isPinned: false),
             .mute(isMuted: false),
@@ -62,5 +62,10 @@ import Testing
         let pr = PullRequest.fixture(ci: .success(total: 9), failedRunID: 555, failedRunName: "unit-tests")
         let entries = RowMenuPlan.entries(pr: pr, claudePurposes: [], jira: nil)
         #expect(!entries.contains { if case .rerunFailedJobs = $0 { true } else { false } })
+    }
+
+    @Test func planCarriesWarning() {
+        let entries = RowMenuPlan.entries(pr: .fixture(), claudePurposes: [], jira: nil, checkoutWarning: "aviso")
+        #expect(entries.contains(.copyCheckout(command: "gh pr checkout 812", warning: "aviso")))
     }
 }

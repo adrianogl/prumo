@@ -10,6 +10,7 @@ final class AppModel {
     var lastRefresh: Date?
     var nextRefresh: Date?
     var needsOnboarding = false
+    private(set) var ghActiveLogin: String?
     let accounts: AccountsStore
     let claude: ClaudeSettingsStore
     let integrations: IntegrationSettingsStore
@@ -32,6 +33,8 @@ final class AppModel {
     @ObservationIgnored private var cleaningWorktrees = false
     @ObservationIgnored private var pruningMarks = false
     @ObservationIgnored private var lastMarksPrune = Date.distantPast
+    @ObservationIgnored private var lastGhActiveLoginRead = Date.distantPast
+    @ObservationIgnored private let ghDiscovery = GhAccountDiscovery.system()
     @ObservationIgnored private var lastSnapshots: [String: Snapshot] = [:]
     @ObservationIgnored private var activityBaselines: [String: Snapshot] = [:]
     @ObservationIgnored private var reminders: ReminderState?
@@ -117,7 +120,20 @@ final class AppModel {
         AccountLabel.forRow(accountID: pr.accountID, accounts: accounts.list.accounts)
     }
 
+    func refreshGhActiveLogin(now: Date = .now, force: Bool = false) {
+        guard force || now.timeIntervalSince(lastGhActiveLoginRead) >= AppConstants.ghActiveLoginMinInterval else { return }
+        lastGhActiveLoginRead = now
+        Task { ghActiveLogin = await ghDiscovery.activeLogin() }
+    }
+
+    func checkoutWarning(for pr: PullRequest) -> String? {
+        let list = accounts.list.accounts
+        return CheckoutWarning.text(
+            account: list.first { $0.id == pr.accountID }, activeLogin: ghActiveLogin, accountCount: list.count)
+    }
+
     func start() {
+        refreshGhActiveLogin(force: true)
         Task { await claude.rescan() }
         startupTask?.cancel()
         startupTask = Task {
@@ -642,7 +658,7 @@ final class AppModel {
             rerunFailedJobs(pr: pr, runID: runID)
         case .copyLink:
             copyToPasteboard(pr.url.absoluteString)
-        case .copyCheckout(let command):
+        case .copyCheckout(let command, _):
             copyToPasteboard(command)
         case .pin:
             organization.togglePin(pr)

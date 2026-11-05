@@ -21,6 +21,7 @@ enum AppConstants {
     static let hotKeyID: UInt32 = 1
     static let statusBarWindowClass = "NSStatusBarWindow"
     static let ghTokenRetryAttempts = 3
+    static let ghActiveLoginMinInterval: TimeInterval = 60
     static let ghTokenRetryDelay: Duration = .seconds(2)
     static let longCommandTimeout: Duration = .seconds(300)
     static let secondsPerHour: TimeInterval = 3600

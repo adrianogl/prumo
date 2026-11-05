@@ -91,6 +91,7 @@ struct PopoverView: View {
         if focus == nil { focus = .list }
         highlighted = organization.unseen
         openGeneration += 1
+        model.refreshGhActiveLogin()
     }
 
     private func close() {

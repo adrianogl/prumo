@@ -6,7 +6,7 @@ public enum RowMenuEntry: Equatable, Sendable {
     case openJira(key: String, url: URL)
     case rerunFailedJobs(jobName: String, runID: Int)
     case copyLink
-    case copyCheckout(command: String)
+    case copyCheckout(command: String, warning: String?)
     case separator
     case pin(isPinned: Bool)
     case mute(isMuted: Bool)
