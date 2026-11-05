@@ -6,18 +6,22 @@ struct SettingsView: View {
     @AppStorage(AppConstants.refreshIntervalKey) private var interval = AppConstants.defaultRefreshInterval
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var launchError: String?
+    @State private var selection = SettingsTab.account
 
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     }
 
     var body: some View {
-        TabView {
-            Tab(SettingsText.account, systemImage: SettingsSymbol.account) { account }
-            Tab(SettingsText.general, systemImage: SettingsSymbol.general) { general }
-            Tab(SettingsText.about, systemImage: SettingsSymbol.about) { about }
+        TabView(selection: $selection) {
+            Tab(SettingsText.account, systemImage: SettingsSymbol.account, value: SettingsTab.account) { account }
+            Tab(SettingsText.general, systemImage: SettingsSymbol.general, value: SettingsTab.general) { general }
+            Tab(ClaudeSettingsText.tab, systemImage: ClaudeSettingsSymbol.tab, value: SettingsTab.claude) {
+                ClaudeSettingsView(store: model.claude)
+            }
+            Tab(SettingsText.about, systemImage: SettingsSymbol.about, value: SettingsTab.about) { about }
         }
-        .frame(width: SettingsMetrics.width, height: SettingsMetrics.height)
+        .frame(width: SettingsMetrics.width, height: selection == .claude ? ClaudeSettingsMetrics.height : SettingsMetrics.height)
     }
 
     private var account: some View {

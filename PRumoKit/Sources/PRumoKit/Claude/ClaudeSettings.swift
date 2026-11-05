@@ -28,5 +28,18 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         self.removeWorktreeOnClose = removeWorktreeOnClose
     }
 
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        reviewTemplate = try container.decodeIfPresent(String.self, forKey: .reviewTemplate) ?? ClaudeDefaults.reviewTemplate
+        ciTemplate = try container.decodeIfPresent(String.self, forKey: .ciTemplate) ?? ClaudeDefaults.ciTemplate
+        extraFlags = try container.decodeIfPresent(String.self, forKey: .extraFlags) ?? ClaudeDefaults.extraFlags
+        terminal = try container.decodeIfPresent(TerminalKind.self, forKey: .terminal) ?? ClaudeDefaults.terminal
+        clonesRoot = try container.decodeIfPresent(String.self, forKey: .clonesRoot) ?? ClaudeDefaults.clonesRoot
+        worktreesRoot = try container.decodeIfPresent(String.self, forKey: .worktreesRoot) ?? ClaudeDefaults.worktreesRoot
+        cloneOverrides = try container.decodeIfPresent([String: String].self, forKey: .cloneOverrides) ?? [:]
+        removeWorktreeOnClose = try container.decodeIfPresent(Bool.self, forKey: .removeWorktreeOnClose)
+            ?? ClaudeDefaults.removeWorktreeOnClose
+    }
+
     public static let defaults = ClaudeSettings()
 }

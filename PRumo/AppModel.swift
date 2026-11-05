@@ -11,6 +11,7 @@ final class AppModel {
     var needsOnboarding = false
     var login: String?
     var origin: TokenOrigin?
+    let claude: ClaudeSettingsStore
 
     @ObservationIgnored private let notifications: NotificationService
     @ObservationIgnored private let tokenStore: TokenStore
@@ -25,12 +26,14 @@ final class AppModel {
         notifications: NotificationService,
         tokenStore: TokenStore = KeychainTokenStore(),
         snapshotStore: SnapshotStore = SnapshotStore(fileURL: SnapshotStore.defaultURL()),
-        defaults: UserDefaults = .standard
+        defaults: UserDefaults = .standard,
+        claude: ClaudeSettingsStore? = nil
     ) {
         self.notifications = notifications
         self.tokenStore = tokenStore
         self.snapshotStore = snapshotStore
         self.defaults = defaults
+        self.claude = claude ?? ClaudeSettingsStore(defaults: defaults)
         login = defaults.string(forKey: AppConstants.accountLoginKey)
         origin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
     }
@@ -41,6 +44,7 @@ final class AppModel {
     }
 
     func start() {
+        Task { await claude.rescan() }
         startupTask?.cancel()
         startupTask = Task {
             let resolver = TokenResolver(store: tokenStore, gh: GhCLITokenSource(runner: SystemProcessRunner()))

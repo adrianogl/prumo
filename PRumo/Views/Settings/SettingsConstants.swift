@@ -27,3 +27,10 @@ enum SettingsText {
     static let iconCredit = "Símbolo pull-request do IBM Carbon, licença Apache 2.0"
     static let license = "Ver licença"
 }
+
+enum SettingsTab: Hashable {
+    case account
+    case general
+    case claude
+    case about
+}

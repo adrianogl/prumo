@@ -7,6 +7,7 @@ enum AppConstants {
     static let accountLoginKey = "accountLogin"
     static let tokenOriginKey = "tokenOrigin"
     static let onboardingDoneKey = "onboardingDone"
+    static let claudeSettingsKey = "claudeSettings"
     static let ghTokenRetryAttempts = 3
     static let ghTokenRetryDelay: Duration = .seconds(2)
     static let keychainService = "dev.aglv.prumo"
