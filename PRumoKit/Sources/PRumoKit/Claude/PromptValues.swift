@@ -13,6 +13,7 @@ public enum PromptValues {
         var values = review(pr)
         values["job"] = firstFailedCheck(pr.ci)
         values["run"] = pr.failedRunID.map(String.init) ?? ""
+        values["jobid"] = pr.failedJobID.map(String.init) ?? ""
         return values
     }
 

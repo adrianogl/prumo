@@ -6,6 +6,14 @@ public enum ClaudeDefaults {
         "O PR #{numero} ({repo}) está em conflito com {base}. Atualize a branch com git fetch origin {base} e git merge origin/{base}, resolva os conflitos mantendo a intenção das duas partes, rode os testes e faça commit do merge."
     public static let commentsTemplate =
         "O PR #{numero} ({repo}) recebeu comentários de review. Leia os comentários com gh pr view {numero} --comments e gh api repos/{repo}/pulls/{numero}/comments, aplique as alterações pedidas que fizerem sentido, rode os testes e faça commit. Não responda nem resolva as conversas no GitHub; me mostre um resumo do que mudou e do que você não aplicou."
+    public static let gitlabReviewTemplate =
+        "Revise o MR !{numero} ({repo}). Leia a descrição com glab mr view {numero} e o diff com glab mr diff {numero}, e aponte problemas de correção, segurança e contrato. Não comente no GitLab; mostre o resultado aqui."
+    public static let gitlabCiTemplate =
+        "A pipeline {run} do MR !{numero} ({repo}) falhou no job {job}. Leia o log com glab ci trace {jobid} e o estado da pipeline com glab ci get --pipeline-id {run}, encontre a causa e corrija."
+    public static let gitlabConflictTemplate =
+        "O MR !{numero} ({repo}) está em conflito com {base}. Atualize a branch com git fetch origin {base} e git merge origin/{base}, resolva os conflitos mantendo a intenção das duas partes, rode os testes e faça commit do merge."
+    public static let gitlabCommentsTemplate =
+        "O MR !{numero} ({repo}) recebeu comentários de review. Leia os comentários com glab mr view {numero} --comments, aplique as alterações pedidas que fizerem sentido, rode os testes e faça commit. Não responda nem resolva as discussões no GitLab; me mostre um resumo do que mudou e do que você não aplicou."
     public static let command = "claude"
     public static let extraFlags = ""
     public static let terminal = TerminalKind.ghostty

@@ -92,18 +92,19 @@ public struct ClaudeLauncher: Sendable {
         let directoryPath = directory.standardizedFileURL.path
         let created = candidates.contains(directoryPath) && !preexisting.contains(directoryPath)
 
+        let templates = settings.templates(for: pr.provider)
         var prompt: String
         switch purpose {
         case .review:
-            prompt = PromptTemplate.render(settings.reviewTemplate, values: PromptValues.review(pr))
+            prompt = PromptTemplate.render(templates.review, values: PromptValues.review(pr))
         case .fixCI:
-            prompt = PromptTemplate.render(settings.ciTemplate, values: PromptValues.ci(pr))
+            prompt = PromptTemplate.render(templates.ci, values: PromptValues.ci(pr))
             if pr.isCrossRepository { prompt += ClaudeMessages.forkNotice }
         case .resolveConflict:
-            prompt = PromptTemplate.render(settings.conflictTemplate, values: PromptValues.conflict(pr))
+            prompt = PromptTemplate.render(templates.conflict, values: PromptValues.conflict(pr))
             if pr.isCrossRepository { prompt += ClaudeMessages.forkNotice }
         case .addressComments:
-            prompt = PromptTemplate.render(settings.commentsTemplate, values: PromptValues.comments(pr))
+            prompt = PromptTemplate.render(templates.comments, values: PromptValues.comments(pr))
             if pr.isCrossRepository { prompt += ClaudeMessages.forkNotice }
         }
 

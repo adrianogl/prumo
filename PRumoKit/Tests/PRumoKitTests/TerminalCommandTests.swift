@@ -227,6 +227,30 @@ import Testing
     }
 
     @Test func githubEnvironmentHasGhToken() {
-        #expect(SessionEnvironment.variables(provider: .github, host: "github.com", token: "t1") == ["GH_TOKEN": "t1"])
+        #expect(SessionEnvironment.variables(provider: .github, host: "github.com", token: "t1", isOAuth: false) == ["GH_TOKEN": "t1"])
+    }
+
+    @Test func gitlabEnvironmentHasTokenAndHost() {
+        #expect(
+            SessionEnvironment.variables(provider: .gitlab, host: "gitlab.empresa.com", token: "t2", isOAuth: false)
+                == ["GITLAB_TOKEN": "t2", "GITLAB_HOST": "https://gitlab.empresa.com"])
+    }
+
+    @Test func gitlabOAuthEnvironmentUsesOAuthToken() {
+        #expect(
+            SessionEnvironment.variables(provider: .gitlab, host: "gitlab.com", token: "t3", isOAuth: true)
+                == ["OAUTH_TOKEN": "t3", "GITLAB_HOST": "https://gitlab.com"])
+    }
+
+    @Test func gitlabPromptWithShellTextStaysQuoted() {
+        let pr = PullRequest.fixture(
+            title: "`id` $(rm -rf ~) 'x'", repository: "grupo/app", headRefName: "feat/$(whoami)", provider: .gitlab)
+        let prompt = PromptTemplate.render("MR !{numero} {titulo} {branch}", values: PromptValues.review(pr))
+        let script = TerminalCommand.scriptContents(directory: directory, prompt: prompt, extraFlags: "")
+        let lines = script.components(separatedBy: "\n")
+        #expect(script.components(separatedBy: "$(rm -rf ~)").count == 2)
+        #expect(script.components(separatedBy: "$(whoami)").count == 2)
+        #expect(!lines.contains { $0.hasPrefix("`id`") || $0.hasPrefix("$(") || $0.hasPrefix("feat/") })
+        #expect(script.contains("'claude' -- 'MR !812 `id` $(rm -rf ~) '\\''x'\\'' feat/$(whoami)'\n"))
     }
 }

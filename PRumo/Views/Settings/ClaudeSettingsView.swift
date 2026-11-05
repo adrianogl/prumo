@@ -6,15 +6,19 @@ struct ClaudeSettingsView: View {
     let relevant: Set<String>
     @State private var showsClonesManager = false
     @State private var lastCustomTemplate = ""
+    @State private var provider = ProviderKind.github
 
     var body: some View {
         @Bindable var store = store
         Form {
             Section {
-                templateField(ClaudeSettingsText.reviewTemplate, hint: ClaudeSettingsText.reviewVariables, text: $store.settings.reviewTemplate)
-                templateField(ClaudeSettingsText.ciTemplate, hint: ClaudeSettingsText.ciVariables, text: $store.settings.ciTemplate)
-                templateField(ClaudeSettingsText.conflictTemplate, hint: ClaudeSettingsText.conflictVariables, text: $store.settings.conflictTemplate)
-                templateField(ClaudeSettingsText.commentsTemplate, hint: ClaudeSettingsText.commentsVariables, text: $store.settings.commentsTemplate)
+                Picker(ClaudeSettingsText.provider, selection: $provider) {
+                    ForEach(AddAccountOptions.providers, id: \.self) { provider in
+                        Text(AccountsSettingsText.providerName(provider)).tag(provider)
+                    }
+                }
+                .pickerStyle(.segmented)
+                providerTemplateFields
                 commandField(text: $store.settings.command)
                 TextField(ClaudeSettingsText.flags, text: $store.settings.extraFlags, prompt: Text(ClaudeSettingsText.flagsPlaceholder))
                     .font(.system(.body, design: .monospaced))
@@ -51,6 +55,23 @@ struct ClaudeSettingsView: View {
         .task { await store.rescan() }
         .sheet(isPresented: $showsClonesManager) {
             ClonesManagerView(store: store, relevant: relevant)
+        }
+    }
+
+    @ViewBuilder
+    private var providerTemplateFields: some View {
+        @Bindable var store = store
+        switch provider {
+        case .github:
+            templateField(ClaudeSettingsText.reviewTemplate, hint: ClaudeSettingsText.reviewVariables, text: $store.settings.reviewTemplate)
+            templateField(ClaudeSettingsText.ciTemplate, hint: ClaudeSettingsText.ciVariables, text: $store.settings.ciTemplate)
+            templateField(ClaudeSettingsText.conflictTemplate, hint: ClaudeSettingsText.conflictVariables, text: $store.settings.conflictTemplate)
+            templateField(ClaudeSettingsText.commentsTemplate, hint: ClaudeSettingsText.commentsVariables, text: $store.settings.commentsTemplate)
+        case .gitlab:
+            templateField(ClaudeSettingsText.gitlabReviewTemplate, hint: ClaudeSettingsText.reviewVariables, text: $store.settings.gitlabReviewTemplate)
+            templateField(ClaudeSettingsText.gitlabCiTemplate, hint: ClaudeSettingsText.gitlabCiVariables, text: $store.settings.gitlabCiTemplate)
+            templateField(ClaudeSettingsText.conflictTemplate, hint: ClaudeSettingsText.conflictVariables, text: $store.settings.gitlabConflictTemplate)
+            templateField(ClaudeSettingsText.commentsTemplate, hint: ClaudeSettingsText.commentsVariables, text: $store.settings.gitlabCommentsTemplate)
         }
     }
 

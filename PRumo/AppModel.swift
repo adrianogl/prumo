@@ -37,6 +37,7 @@ final class AppModel {
     @ObservationIgnored private var lastGhActiveLoginRead = Date.distantPast
     @ObservationIgnored private var scannedGitLabHosts: Set<String> = []
     @ObservationIgnored private let ghDiscovery = GhAccountDiscovery.system()
+    @ObservationIgnored private let glabDiscovery = GlabAccountDiscovery.system()
     @ObservationIgnored private var lastSnapshots: [String: Snapshot] = [:]
     @ObservationIgnored private var activityBaselines: [String: Snapshot] = [:]
     @ObservationIgnored private var reminders: ReminderState?
@@ -787,9 +788,16 @@ final class AppModel {
         let launcher = ClaudeLauncher(
             settings: claude.settings, scanned: claude.scanned,
             runner: SystemProcessRunner(timeout: AppConstants.longCommandTimeout))
-        let environment = session(for: pr).map {
-            SessionEnvironment.variables(provider: $0.account.provider, host: $0.account.host, token: $0.token)
-        } ?? [:]
+        var environment: [String: String] = [:]
+        if let session = session(for: pr) {
+            let account = session.account
+            var isOAuth = false
+            if account.provider == .gitlab, account.origin == .glabCLI {
+                isOAuth = await glabDiscovery.account(host: account.host)?.isOAuth == true
+            }
+            environment = SessionEnvironment.variables(
+                provider: account.provider, host: account.host, token: session.token, isOAuth: isOAuth)
+        }
         let result = await Task.detached { () -> Result<LaunchResult, ClaudeLaunchError> in
             do throws(ClaudeLaunchError) {
                 return .success(try await launcher.launch(pr: pr, purpose: purpose, environment: environment))

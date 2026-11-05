@@ -5,6 +5,10 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
     public var ciTemplate: String
     public var conflictTemplate: String
     public var commentsTemplate: String
+    public var gitlabReviewTemplate: String
+    public var gitlabCiTemplate: String
+    public var gitlabConflictTemplate: String
+    public var gitlabCommentsTemplate: String
     public var command: String
     public var extraFlags: String
     public var terminal: TerminalKind
@@ -18,6 +22,10 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         ciTemplate: String = ClaudeDefaults.ciTemplate,
         conflictTemplate: String = ClaudeDefaults.conflictTemplate,
         commentsTemplate: String = ClaudeDefaults.commentsTemplate,
+        gitlabReviewTemplate: String = ClaudeDefaults.gitlabReviewTemplate,
+        gitlabCiTemplate: String = ClaudeDefaults.gitlabCiTemplate,
+        gitlabConflictTemplate: String = ClaudeDefaults.gitlabConflictTemplate,
+        gitlabCommentsTemplate: String = ClaudeDefaults.gitlabCommentsTemplate,
         command: String = ClaudeDefaults.command,
         extraFlags: String = ClaudeDefaults.extraFlags,
         terminal: TerminalKind = ClaudeDefaults.terminal,
@@ -30,6 +38,10 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         self.ciTemplate = ciTemplate
         self.conflictTemplate = conflictTemplate
         self.commentsTemplate = commentsTemplate
+        self.gitlabReviewTemplate = gitlabReviewTemplate
+        self.gitlabCiTemplate = gitlabCiTemplate
+        self.gitlabConflictTemplate = gitlabConflictTemplate
+        self.gitlabCommentsTemplate = gitlabCommentsTemplate
         self.command = command
         self.extraFlags = extraFlags
         self.terminal = terminal
@@ -45,6 +57,10 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         ciTemplate = try container.decodeIfPresent(String.self, forKey: .ciTemplate) ?? ClaudeDefaults.ciTemplate
         conflictTemplate = try container.decodeIfPresent(String.self, forKey: .conflictTemplate) ?? ClaudeDefaults.conflictTemplate
         commentsTemplate = try container.decodeIfPresent(String.self, forKey: .commentsTemplate) ?? ClaudeDefaults.commentsTemplate
+        gitlabReviewTemplate = try container.decodeIfPresent(String.self, forKey: .gitlabReviewTemplate) ?? ClaudeDefaults.gitlabReviewTemplate
+        gitlabCiTemplate = try container.decodeIfPresent(String.self, forKey: .gitlabCiTemplate) ?? ClaudeDefaults.gitlabCiTemplate
+        gitlabConflictTemplate = try container.decodeIfPresent(String.self, forKey: .gitlabConflictTemplate) ?? ClaudeDefaults.gitlabConflictTemplate
+        gitlabCommentsTemplate = try container.decodeIfPresent(String.self, forKey: .gitlabCommentsTemplate) ?? ClaudeDefaults.gitlabCommentsTemplate
         command = try container.decodeIfPresent(String.self, forKey: .command) ?? ClaudeDefaults.command
         extraFlags = try container.decodeIfPresent(String.self, forKey: .extraFlags) ?? ClaudeDefaults.extraFlags
         terminal = try container.decodeIfPresent(TerminalKind.self, forKey: .terminal) ?? ClaudeDefaults.terminal
@@ -53,6 +69,13 @@ public struct ClaudeSettings: Codable, Equatable, Sendable {
         cloneOverrides = try container.decodeIfPresent([String: String].self, forKey: .cloneOverrides) ?? [:]
         removeWorktreeOnClose = try container.decodeIfPresent(Bool.self, forKey: .removeWorktreeOnClose)
             ?? ClaudeDefaults.removeWorktreeOnClose
+    }
+
+    public func templates(for provider: ProviderKind) -> (review: String, ci: String, conflict: String, comments: String) {
+        switch provider {
+        case .github: (reviewTemplate, ciTemplate, conflictTemplate, commentsTemplate)
+        case .gitlab: (gitlabReviewTemplate, gitlabCiTemplate, gitlabConflictTemplate, gitlabCommentsTemplate)
+        }
     }
 
     public var resolvedCommand: String {

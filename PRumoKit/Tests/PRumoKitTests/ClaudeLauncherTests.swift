@@ -55,6 +55,9 @@ private let fixedNow = Date(timeIntervalSince1970: 1_800_000_000)
 private let worktree = "/h/Code/.prumo-worktrees/loja-812"
 private let ownerWorktree = "/h/Code/.prumo-worktrees/loja-812-acme"
 
+private let gitlabURL = URL(string: "https://gitlab.empresa.com/vendas/loja/-/merge_requests/812")!
+private let gitlabScanned = ["gitlab.empresa.com/vendas/loja": [clone]]
+
 private func launcher(
     _ runner: FakeRunner,
     sink: ScriptSink = ScriptSink(),
@@ -103,6 +106,25 @@ private func launcher(
         let script = sink.written[0].contents
         #expect(script.contains("A CI do PR #812 (acme/loja) falhou no job build. Leia o log com gh run view 99 --log-failed, encontre a causa e corrija."))
         #expect(!script.contains("não faça push"))
+    }
+
+    @Test func launcherUsesGitLabTemplateForMR() async throws {
+        let sink = ScriptSink()
+        let pr = PullRequest.fixture(
+            url: gitlabURL, repository: "vendas/loja", ci: .failure(failedChecks: ["test"], total: 2),
+            failedRunID: 987, provider: .gitlab, failedJobID: 555)
+        _ = try await launcher(FakeRunner(), sink: sink, scanned: gitlabScanned).launch(pr: pr, purpose: .fixCI)
+        #expect(sink.written[0].contents.contains("glab ci trace 555 e o estado da pipeline com glab ci get --pipeline-id 987"))
+        let review = ScriptSink()
+        _ = try await launcher(FakeRunner(), sink: review, scanned: gitlabScanned)
+            .launch(pr: .fixture(url: gitlabURL, repository: "vendas/loja", provider: .gitlab), purpose: .review)
+        #expect(review.written[0].contents.contains("glab mr diff 812"))
+    }
+
+    @Test func launcherKeepsGitHubTemplateForPR() async throws {
+        let sink = ScriptSink()
+        _ = try await launcher(FakeRunner(), sink: sink).launch(pr: .fixture(provider: .github), purpose: .review)
+        #expect(sink.written[0].contents.contains("'claude' -- '/code-review 812'\n"))
     }
 
     @Test func forkFixCIAppendsNoPushWarning() async throws {

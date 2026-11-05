@@ -90,4 +90,13 @@ import Testing
             #expect(try JSONDecoder().decode(TerminalKind.self, from: data) == kind)
         }
     }
+
+    @Test func gitlabCITemplateRendersJobAndPipeline() {
+        let pr = PullRequest.fixture(
+            repository: "grupo/app", ci: .failure(failedChecks: ["test"], total: 2),
+            failedRunID: 987, provider: .gitlab, failedJobID: 555)
+        let result = PromptTemplate.render(ClaudeSettings.defaults.gitlabCiTemplate, values: PromptValues.ci(pr))
+        #expect(result == "A pipeline 987 do MR !812 (grupo/app) falhou no job test. Leia o log com glab ci trace 555 e o estado da pipeline com glab ci get --pipeline-id 987, encontre a causa e corrija.")
+        #expect(PromptValues.ci(.fixture())["jobid"] == "")
+    }
 }
