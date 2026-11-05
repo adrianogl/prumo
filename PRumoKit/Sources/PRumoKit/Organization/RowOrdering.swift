@@ -8,7 +8,7 @@ public enum RowOrdering {
         guard ordering.groupByRepository else {
             return [RowSection(repository: nil, items: applyMarks(sorted, marks))]
         }
-        let grouped = Dictionary(grouping: sorted, by: \.repository)
+        let grouped = Dictionary(grouping: sorted, by: \.repositoryKey)
         return grouped.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }.map { RowSection(repository: $0, items: applyMarks(grouped[$0] ?? [], marks)) }
     }
 
@@ -36,7 +36,7 @@ public enum RowOrdering {
         case .newestFirst:
             if a.createdAt != b.createdAt { return a.createdAt > b.createdAt }
         case .repository:
-            let byName = a.repository.localizedStandardCompare(b.repository)
+            let byName = a.repositoryKey.localizedStandardCompare(b.repositoryKey)
             if byName != .orderedSame { return byName == .orderedAscending }
         case .diffSize:
             let left = a.additions + a.deletions
@@ -44,7 +44,7 @@ public enum RowOrdering {
             if left != right { return left > right }
         }
         if a.number != b.number { return a.number > b.number }
-        let byRepository = a.repository.localizedStandardCompare(b.repository)
+        let byRepository = a.repositoryKey.localizedStandardCompare(b.repositoryKey)
         if byRepository != .orderedSame { return byRepository == .orderedAscending }
         return a.id < b.id
     }

@@ -9,16 +9,19 @@ public enum RepositoryCatalog {
         var counts: [String: Int] = [:]
         var snapshotAccounts: [String: String] = [:]
         for pr in snapshot.mine + snapshot.toReview where seen.insert(pr.id).inserted {
-            counts[pr.repository, default: 0] += 1
-            if !pr.accountID.isEmpty, snapshotAccounts[pr.repository] == nil {
-                snapshotAccounts[pr.repository] = pr.accountID
+            counts[pr.repositoryKey, default: 0] += 1
+            if !pr.accountID.isEmpty, snapshotAccounts[pr.repositoryKey] == nil {
+                snapshotAccounts[pr.repositoryKey] = pr.accountID
             }
         }
         let names = known.union(favorites).union(counts.keys)
         let query = search.trimmingCharacters(in: .whitespaces)
         let entries = names
             .filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) }
-            .map { RepositoryEntry(name: $0, count: counts[$0] ?? 0, isFavorite: favorites.contains($0)) }
+            .map {
+                RepositoryEntry(
+                    name: $0, count: counts[$0] ?? 0, isFavorite: favorites.contains($0), displayName: displayName($0))
+            }
             .filter { !hideEmpty || $0.count > 0 || $0.isFavorite }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 
@@ -50,6 +53,17 @@ public enum RepositoryCatalog {
     }
 
     private static func organization(_ entry: RepositoryEntry) -> String {
-        entry.name.split(separator: "/", maxSplits: 1).first.map(String.init) ?? entry.name
+        let parts = entry.name.split(separator: "/").map(String.init)
+        let path = hasHost(entry.name) ? Array(parts.dropFirst()) : parts
+        return path.first ?? entry.name
+    }
+
+    private static func hasHost(_ key: String) -> Bool {
+        key.split(separator: "/", maxSplits: 1).first?.contains(".") ?? false
+    }
+
+    private static func displayName(_ key: String) -> String {
+        guard hasHost(key), let slash = key.firstIndex(of: "/") else { return key }
+        return String(key[key.index(after: slash)...])
     }
 }

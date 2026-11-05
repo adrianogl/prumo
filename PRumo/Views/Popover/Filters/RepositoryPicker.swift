@@ -68,7 +68,7 @@ struct RepositoryPicker: View {
             } label: {
                 HStack(spacing: FiltersMetrics.rowSpacing) {
                     checkbox(selected)
-                    Text(entry.name)
+                    Text(entry.displayName)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer(minLength: FiltersMetrics.rowSpacerMinLength)

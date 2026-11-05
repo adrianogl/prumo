@@ -122,4 +122,29 @@ import Testing
         #expect(groups[2].section == accountB.displayName)
         #expect(groups[2].entries.map(\.name) == ["globex/portal"])
     }
+
+    @Test func catalogGroupsGitLabByFirstPathSegment() {
+        let gitlab = Snapshot.fixture(mine: [
+            .fixture(
+                id: "G", url: URL(string: "https://gitlab.empresa.com/vendas/api/-/merge_requests/7")!,
+                repository: "vendas/api", provider: .gitlab)
+        ])
+        let groups = RepositoryCatalog.groups(snapshot: gitlab, known: [], favorites: [], hideEmpty: false, search: "")
+        #expect(groups.map(\.title) == ["VENDAS"])
+        #expect(groups[0].entries.map(\.name) == ["gitlab.empresa.com/vendas/api"])
+        #expect(groups[0].entries.map(\.count) == [1])
+    }
+
+    @Test func displayNameDropsHost() {
+        let gitlab = Snapshot.fixture(mine: [
+            .fixture(
+                id: "G", url: URL(string: "https://gitlab.empresa.com/vendas/api/-/merge_requests/7")!,
+                repository: "vendas/api", provider: .gitlab)
+        ])
+        let groups = RepositoryCatalog.groups(snapshot: gitlab, known: ["globex/web"], favorites: [], hideEmpty: false, search: "")
+        let entries = groups.flatMap(\.entries)
+        #expect(entries.first { $0.name == "gitlab.empresa.com/vendas/api" }?.displayName == "vendas/api")
+        #expect(entries.first { $0.name == "globex/web" }?.displayName == "globex/web")
+        #expect(RepositoryEntry(name: "a/b", count: 0, isFavorite: false).displayName == "a/b")
+    }
 }

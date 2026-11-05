@@ -100,4 +100,21 @@ import Testing
         let prs = [PullRequest.fixture(id: "A", author: "Ana"), .fixture(id: "B", author: "bia")]
         #expect(ids(prs, RowFilter(authors: ["ana"])) == ["A"])
     }
+
+    static let gitlabURL = URL(string: "https://gitlab.empresa.com/vendas/api/-/merge_requests/7")!
+
+    @Test func filterMatchesGitLabByKey() {
+        let prs = [
+            PullRequest.fixture(id: "G", url: Self.gitlabURL, repository: "vendas/api", provider: .gitlab),
+            .fixture(id: "H", repository: "globex/vendas")
+        ]
+        #expect(ids(prs, RowFilter(repositories: ["gitlab.empresa.com/vendas/api"])) == ["G"])
+        #expect(ids(prs, RowFilter(repositories: ["vendas/api"])).isEmpty)
+    }
+
+    @Test func githubKeysUnchanged() {
+        let pr = PullRequest.fixture(id: "A", repository: "acme/loja")
+        #expect(pr.repositoryKey == "acme/loja")
+        #expect(ids([pr], RowFilter(repositories: ["acme/loja"])) == ["A"])
+    }
 }

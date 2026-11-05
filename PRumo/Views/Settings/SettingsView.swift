@@ -27,7 +27,7 @@ struct SettingsView: View {
 
     private var pullRequestRepositories: Set<String> {
         guard let snapshot = model.snapshot else { return [] }
-        return Set((snapshot.mine + snapshot.toReview).map(\.repository))
+        return Set((snapshot.mine + snapshot.toReview).map(\.repositoryKey))
     }
 
     var body: some View {

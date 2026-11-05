@@ -19,7 +19,7 @@ public enum RowFiltering {
     }
 
     private static func matchesRepository(_ pr: PullRequest, _ filter: RowFilter) -> Bool {
-        filter.repositories.isEmpty || filter.repositories.contains(pr.repository)
+        filter.repositories.isEmpty || filter.repositories.contains(pr.repositoryKey)
     }
 
     private static func matchesCI(_ pr: PullRequest, _ filter: RowFilter) -> Bool {

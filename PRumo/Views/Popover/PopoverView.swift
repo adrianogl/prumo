@@ -264,7 +264,7 @@ struct PopoverView: View {
     private func mergedToday(now: Date) -> [MergedPullRequest] {
         let repositories = organization.settings.filter.repositories
         return MergedToday.items(model.snapshot?.mergedToday ?? [], now: now, calendar: .current)
-            .filter { repositories.isEmpty || repositories.contains($0.repository) }
+            .filter { repositories.isEmpty || repositories.contains($0.repositoryKey) }
             .filter { trimmedQuery.isEmpty || SearchMatcher.matches($0, query: trimmedQuery) }
     }
 

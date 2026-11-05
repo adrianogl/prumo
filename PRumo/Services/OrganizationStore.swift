@@ -68,10 +68,10 @@ final class OrganizationStore {
 
     func learnRepositories(from snapshot: Snapshot) {
         let pullRequests = snapshot.mine + snapshot.toReview
-        let found = Set(pullRequests.map(\.repository))
+        let found = Set(pullRequests.map(\.repositoryKey))
         var accountByRepository: [String: String] = [:]
-        for pr in pullRequests where !pr.accountID.isEmpty && accountByRepository[pr.repository] == nil {
-            accountByRepository[pr.repository] = pr.accountID
+        for pr in pullRequests where !pr.accountID.isEmpty && accountByRepository[pr.repositoryKey] == nil {
+            accountByRepository[pr.repositoryKey] = pr.accountID
         }
         let newAccounts = accountByRepository.filter { settings.repositoryAccounts[$0.key] != $0.value }
         guard !found.isSubset(of: settings.knownRepositories) || !newAccounts.isEmpty else { return }

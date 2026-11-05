@@ -147,4 +147,19 @@ import Testing
         )
         #expect(plain[0].items.map(\.id) == ["B", "A"])
     }
+
+    @Test func sameProjectPathOnTwoHostsAreDistinct() {
+        let prs = [
+            PullRequest.fixture(
+                id: "A", url: URL(string: "https://gitlab.um.com/vendas/api/-/merge_requests/1")!,
+                repository: "vendas/api", provider: .gitlab),
+            .fixture(
+                id: "B", url: URL(string: "https://gitlab.dois.com/vendas/api/-/merge_requests/1")!,
+                repository: "vendas/api", provider: .gitlab)
+        ]
+        let sections = RowOrdering.sections(
+            prs, tab: .mine, ordering: TabOrdering(order: .recentActivity, groupByRepository: true),
+            marks: RowMarks(), viewer: { _ in "adriano" })
+        #expect(sections.map(\.repository) == ["gitlab.dois.com/vendas/api", "gitlab.um.com/vendas/api"])
+    }
 }
