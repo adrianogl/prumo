@@ -1,6 +1,20 @@
-# PRumo
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
+    <img src="docs/assets/logo-light.svg" width="112" alt="Ícone do PRumo">
+  </picture>
+</p>
 
-App de barra de menu para macOS que acompanha os PRs que você abriu e os reviews pedidos a você no GitHub. Avisa quando a CI termina, quando aprovam, quando pedem alterações e quando chega comentário. Para CI quebrada, conflito, comentários e revisão, abre o Claude Code no terminal já na branch do PR.
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/wordmark-dark.svg">
+    <img src="docs/assets/wordmark-light.svg" width="200" alt="PRumo">
+  </picture>
+</h1>
+
+<p align="center">Seus PRs e reviews na barra de menu do macOS.</p>
+
+O PRumo acompanha os PRs que você abriu e os reviews pedidos a você no GitHub. Avisa quando a CI termina, quando aprovam, quando pedem alterações e quando chega comentário. Para CI quebrada, conflito, comentários e revisão, abre o Claude Code no terminal já na branch do PR.
 
 ## O que ele faz
 
@@ -79,6 +93,12 @@ cd PRumoKit && swift test
 ```
 
 Spec em `docs/superpowers/specs/2026-11-05-prumo-design.md`. Os mockups em `docs/mockups/` abrem direto no navegador.
+
+## Identidade visual
+
+<p align="center"><img src="docs/assets/palette.svg" width="480" alt="Paleta do PRumo: areia, carvão e caramelo"></p>
+
+O nome junta "PR" com prumo, o fio com peso que mostra a vertical certa. O logotipo é "PRumo" em SF Pro Bold com "PR" em caramelo. O ícone usa o símbolo `pull-request` com a main em carvão e o lado do PR em caramelo, sobre areia no tema claro e sobre carvão no escuro. Na interface, as cores de status (verde, amarelo, vermelho, laranja) são as do sistema e ficam separadas da paleta da marca. Os arquivos estão em `docs/assets/`.
 
 ## Créditos
 
