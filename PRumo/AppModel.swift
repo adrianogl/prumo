@@ -361,6 +361,7 @@ final class AppModel {
             }
             sessions[id] = makeSession(current, token: token)
             resumePolling()
+            await refreshScopes(account: current, token: token)
         }
     }
 
@@ -373,6 +374,17 @@ final class AppModel {
         sessions[id] = makeSession(account, token: token)
         updateConnection()
         resumePolling()
+        await refreshScopes(account: account, token: token)
+    }
+
+    private func refreshScopes(account: Account, token: String) async {
+        guard account.provider == .gitlab else { return }
+        let host = account.host
+        let scopes = await Task.detached { await GitLabClient(host: host, token: token).tokenScopes() }.value
+        guard accounts.list.account(id: account.id) != nil else { return }
+        accounts.list.updateScopes(id: account.id, scopes: scopes)
+        accounts.save()
+        refreshSessionAccount(id: account.id)
     }
 
     private func waitForStartup() async {
@@ -604,7 +616,10 @@ final class AppModel {
             if result.state == .ok { status.lastSuccess = now }
             accounts.statuses[id] = status
             if let part = result.snapshot { lastSnapshots[id] = part.stamped(accountID: id) }
-            perAccount.append((accountID: id, events: result.events))
+            let rerunBlocked = accounts.list.account(id: id).flatMap {
+                RerunAvailability.disabledReason(provider: $0.provider, scopes: $0.scopes)
+            } != nil
+            perAccount.append((accountID: id, events: rerunBlocked ? result.events.map { $0.withoutRerun() } : result.events))
             guard result.state == .ok, let fresh = result.snapshot else { continue }
             refreshed = true
             updateLogin(accountID: id, viewer: fresh.viewer)
@@ -679,7 +694,7 @@ final class AppModel {
             NSWorkspace.shared.open(pr.url)
         case .openJira(_, let url):
             NSWorkspace.shared.open(url)
-        case .rerunFailedJobs(_, let runID):
+        case .rerunFailedJobs(_, let runID, _):
             rerunFailedJobs(pr: pr, runID: runID)
         case .copyLink:
             copyToPasteboard(pr.url.absoluteString)
@@ -694,6 +709,12 @@ final class AppModel {
         }
     }
 
+    func rerunDisabledReason(for pr: PullRequest) -> String? {
+        accounts.list.account(id: pr.accountID).flatMap {
+            RerunAvailability.disabledReason(provider: $0.provider, scopes: $0.scopes)
+        }
+    }
+
     func isRerunning(_ pr: PullRequest) -> Bool {
         rerunning.contains(pr.id)
     }
@@ -702,6 +723,7 @@ final class AppModel {
         guard !rerunning.contains(pr.id), let client = session(for: pr)?.client else { return }
         rerunning.insert(pr.id)
         let repository = pr.repository
+        let provider = pr.provider
         Task {
             let failure = await Task.detached { () -> ProviderError? in
                 do throws(ProviderError) {
@@ -714,7 +736,7 @@ final class AppModel {
             rerunning.remove(pr.id)
             if let failure {
                 showAlert(
-                    RowMenuText.rerunFailure(failure, repository: repository, runID: runID),
+                    RowMenuText.rerunFailure(failure, provider: provider, repository: repository, runID: runID),
                     title: RowMenuText.rerunAlertTitle)
             } else {
                 refreshNow()

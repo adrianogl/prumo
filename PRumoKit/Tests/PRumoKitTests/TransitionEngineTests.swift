@@ -534,4 +534,15 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         let events = TransitionEngine.events(from: old, to: new)
         #expect(events.first?.url.absoluteString == "https://gitlab.empresa.com/vendas/api/-/merge_requests/341/pipelines")
     }
+
+    @Test func ciFailedEventLosesRerunWithoutApi() {
+        let event = NotificationEvent(
+            kind: .ciFailed, pullRequestID: "p", title: "t", body: "b",
+            url: URL(string: "https://x.test")!, failedRunID: 555, accountID: "a1")
+        let stripped = event.withoutRerun()
+        #expect(stripped.failedRunID == nil)
+        #expect(stripped.pullRequestID == "p")
+        #expect(stripped.accountID == "a1")
+        #expect(stripped.kind == .ciFailed)
+    }
 }

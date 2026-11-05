@@ -110,4 +110,10 @@ import Testing
     @Test func labelHidesGitlabCom() {
         #expect(AccountLabel.make(account("a1", login: "adriano", host: "gitlab.com", provider: .gitlab)).text == "adriano")
     }
+
+    @Test func updateScopesReplacesScopes() {
+        var list = AccountList(accounts: [Account(id: "a1", provider: .gitlab, host: "gitlab.com", login: "adriano", origin: .pasted)])
+        list.updateScopes(id: "a1", scopes: ["api"])
+        #expect(list.accounts[0].scopes == ["api"])
+    }
 }

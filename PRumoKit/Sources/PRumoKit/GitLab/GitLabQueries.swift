@@ -3,6 +3,10 @@ import Foundation
 enum GitLabQueries {
     static let currentUser = "query { currentUser { username } }"
 
+    static func pipelineRetry(runID: Int) -> String {
+        "mutation { pipelineRetry(input: {id: \"gid://gitlab/Ci::Pipeline/\(runID)\"}) { errors } }"
+    }
+
     static func snapshot(_ capabilities: GitLabCapabilities) -> String {
         let mergeStatus = capabilities.hasDetailedMergeStatus ? " detailedMergeStatus" : ""
         let reviewer = capabilities.hasReviewState ? "username mergeRequestInteraction { reviewState }" : "username"

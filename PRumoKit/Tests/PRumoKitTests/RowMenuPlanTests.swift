@@ -17,7 +17,7 @@ import Testing
             .separator,
             .openInBrowser,
             .openJira(key: "ON-1234", url: jiraURL),
-            .rerunFailedJobs(jobName: "unit-tests", runID: 555),
+            .rerunFailedJobs(jobName: "unit-tests", runID: 555, disabledReason: nil),
             .copyLink,
             .copyCheckout(command: "gh pr checkout 812", warning: nil),
             .separator,
@@ -67,5 +67,17 @@ import Testing
     @Test func planCarriesWarning() {
         let entries = RowMenuPlan.entries(pr: .fixture(), claudePurposes: [], jira: nil, checkoutWarning: "aviso")
         #expect(entries.contains(.copyCheckout(command: "gh pr checkout 812", warning: "aviso")))
+    }
+
+    @Test func planCarriesDisabledReason() {
+        let pr = PullRequest.fixture(ci: failing, failedRunID: 555, failedRunName: "unit-tests")
+        let entries = RowMenuPlan.entries(pr: pr, claudePurposes: [], jira: nil, rerunDisabledReason: "sem escopo")
+        #expect(entries.contains(.rerunFailedJobs(jobName: "unit-tests", runID: 555, disabledReason: "sem escopo")))
+    }
+
+    @Test func gitlabPipelineWithoutNameFallsBackToPipeline() {
+        let pr = PullRequest.fixture(ci: failing, failedRunID: 9, provider: .gitlab)
+        let entries = RowMenuPlan.entries(pr: pr, claudePurposes: [], jira: nil)
+        #expect(entries.contains(.rerunFailedJobs(jobName: "pipeline", runID: 9, disabledReason: nil)))
     }
 }

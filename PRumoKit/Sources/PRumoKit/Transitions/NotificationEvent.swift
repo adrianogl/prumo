@@ -28,4 +28,10 @@ public struct NotificationEvent: Equatable, Sendable {
         self.failedRunID = failedRunID
         self.accountID = accountID
     }
+
+    public func withoutRerun() -> NotificationEvent {
+        NotificationEvent(
+            kind: kind, pullRequestID: pullRequestID, title: title, body: body, url: url,
+            failedRunID: nil, accountID: accountID)
+    }
 }

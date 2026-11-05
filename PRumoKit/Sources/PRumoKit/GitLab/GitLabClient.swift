@@ -99,7 +99,16 @@ public struct GitLabClient: AccountClient {
     }
 
     public func rerunFailedJobs(pr: PullRequest) async throws(ProviderError) {
-        throw .unexpectedResponse
+        guard let runID = pr.failedRunID else { throw .unexpectedResponse }
+        let data = try await post(query: GitLabQueries.pipelineRetry(runID: runID), variables: [:])
+        let decoded: PipelineRetryResponse
+        do {
+            decoded = try JSONDecoder().decode(PipelineRetryResponse.self, from: data)
+        } catch {
+            throw .unexpectedResponse
+        }
+        let errors = decoded.data.pipelineRetry.errors
+        guard errors.isEmpty else { throw .graphQL(messages: errors) }
     }
 
     private static func dropping(_ messages: [String], from capabilities: GitLabCapabilities) -> GitLabCapabilities {
@@ -206,6 +215,18 @@ private struct CurrentUserResponse: Decodable {
 
     struct User: Decodable {
         let username: String
+    }
+}
+
+private struct PipelineRetryResponse: Decodable {
+    let data: DataNode
+
+    struct DataNode: Decodable {
+        let pipelineRetry: Retry
+    }
+
+    struct Retry: Decodable {
+        let errors: [String]
     }
 }
 

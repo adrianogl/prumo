@@ -313,4 +313,38 @@ private func client(_ transport: FakeTransport) -> GitLabClient {
         #expect(await client(oauthFails).tokenScopes() == nil)
         #expect(oauthFails.requests.count == 2)
     }
+
+    private func retryResponse(_ errors: [String]) -> Data {
+        json(["data": ["pipelineRetry": ["errors": errors]]])
+    }
+
+    @Test func retryMutationSendsPipelineGID() async throws {
+        let transport = FakeTransport { _ in (retryResponse([]), gitLabResponse(200)) }
+        try await client(transport).rerunFailedJobs(pr: .fixture(failedRunID: 987))
+        let query = graphQLQuery(transport.requests[0])
+        #expect(query.contains("pipelineRetry"))
+        #expect(query.contains("gid://gitlab/Ci::Pipeline/987"))
+    }
+
+    @Test func retry403MapsToServer403() async {
+        let transport = FakeTransport { _ in (Data(), gitLabResponse(403)) }
+        await #expect(throws: ProviderError.server(status: 403)) {
+            try await client(transport).rerunFailedJobs(pr: .fixture(failedRunID: 987))
+        }
+    }
+
+    @Test func retryErrorsMapToGraphQL() async {
+        let transport = FakeTransport { _ in (retryResponse(["Pipeline not retryable"]), gitLabResponse(200)) }
+        await #expect(throws: ProviderError.graphQL(messages: ["Pipeline not retryable"])) {
+            try await client(transport).rerunFailedJobs(pr: .fixture(failedRunID: 987))
+        }
+    }
+
+    @Test func retryWithoutRunIDIsUnexpected() async {
+        let transport = FakeTransport { _ in (retryResponse([]), gitLabResponse(200)) }
+        await #expect(throws: ProviderError.unexpectedResponse) {
+            try await client(transport).rerunFailedJobs(pr: .fixture(failedRunID: nil))
+        }
+        #expect(transport.requests.isEmpty)
+    }
 }

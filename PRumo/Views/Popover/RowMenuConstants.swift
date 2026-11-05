@@ -27,8 +27,12 @@ enum RowMenuText {
         "Copiar \(command)"
     }
 
-    static func rerunFailure(_ error: ProviderError, repository: String, runID: Int) -> String {
+    static let gitlabMissingApiScope = "O token desta conta não tem o escopo api."
+
+    static func rerunFailure(_ error: ProviderError, provider: ProviderKind, repository: String, runID: Int) -> String {
         switch error {
+        case .server(status: 403) where provider == .gitlab:
+            gitlabMissingApiScope
         case .server(status: 403):
             "O GitHub recusou: sem permissão para re-rodar jobs em \(repository) ou o run ainda está rodando."
         case .server(status: 404):

@@ -8,7 +8,7 @@ extension RowMenuEntry {
         case .claude(let purpose, _): purpose.menuTitle
         case .openInBrowser: RowMenuText.openInBrowser
         case .openJira(let key, _): RowMenuText.openJira(key)
-        case .rerunFailedJobs(let jobName, _): RowMenuText.rerunFailedJobs(jobName)
+        case .rerunFailedJobs(let jobName, _, _): RowMenuText.rerunFailedJobs(jobName)
         case .copyLink: RowMenuText.copyLink
         case .copyCheckout(let command, _): RowMenuText.copyCheckout(command)
         case .separator: ""
@@ -18,8 +18,11 @@ extension RowMenuEntry {
     }
 
     var help: String? {
-        if case .copyCheckout(_, let warning) = self { return warning }
-        return nil
+        switch self {
+        case .copyCheckout(_, let warning): warning
+        case .rerunFailedJobs(_, _, let disabledReason): disabledReason
+        default: nil
+        }
     }
 
     var keyboardShortcut: KeyboardShortcut? {

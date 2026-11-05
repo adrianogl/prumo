@@ -27,9 +27,10 @@ struct RowMenuItems: View {
                 }
             }
             .keyboardShortcut(entry.keyboardShortcut)
-        case .rerunFailedJobs:
+        case .rerunFailedJobs(_, _, let disabledReason):
             Button(entry.title) { actions.perform(entry) }
-                .disabled(isRerunning)
+                .disabled(isRerunning || disabledReason != nil)
+                .help(entry.help ?? "")
         default:
             Button(entry.title) { actions.perform(entry) }
                 .keyboardShortcut(entry.keyboardShortcut)

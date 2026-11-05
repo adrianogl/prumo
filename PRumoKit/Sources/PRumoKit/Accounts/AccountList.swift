@@ -49,6 +49,11 @@ public struct AccountList: Codable, Equatable, Sendable {
         accounts[index].login = login
     }
 
+    public mutating func updateScopes(id: String, scopes: [String]?) {
+        guard let index = accounts.firstIndex(where: { $0.id == id }) else { return }
+        accounts[index].scopes = scopes
+    }
+
     public func account(id: String) -> Account? {
         accounts.first { $0.id == id }
     }

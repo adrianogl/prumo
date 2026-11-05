@@ -1,12 +1,15 @@
 import Foundation
 
 public enum RowMenuPlan {
+    private static let pipelineLabel = "pipeline"
+
     public static func entries(
         pr: PullRequest, claudePurposes: [SessionPurpose],
         jira: JiraLink?,
         isPinned: Bool = false,
         isMuted: Bool = false,
-        checkoutWarning: String? = nil
+        checkoutWarning: String? = nil,
+        rerunDisabledReason: String? = nil
     ) -> [RowMenuEntry] {
         var entries: [RowMenuEntry] = []
         for (index, purpose) in claudePurposes.enumerated() {
@@ -16,7 +19,7 @@ public enum RowMenuPlan {
         entries.append(.openInBrowser)
         if let jira, let url = jira.url { entries.append(.openJira(key: jira.key, url: url)) }
         if let runID = pr.failedRunID, case .failure = pr.ci {
-            entries.append(.rerunFailedJobs(jobName: pr.failedRunName ?? "", runID: runID))
+            entries.append(.rerunFailedJobs(jobName: pr.failedRunName ?? (pr.provider == .gitlab ? Self.pipelineLabel : ""), runID: runID, disabledReason: rerunDisabledReason))
         }
         entries.append(.copyLink)
         entries.append(.copyCheckout(command: "gh pr checkout \(pr.number)", warning: checkoutWarning))
