@@ -64,6 +64,24 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
         #expect(conflict.commands == ci.commands)
     }
 
+    @Test func gitlabFetchUsesMergeRequestRef() async throws {
+        let runner = RecordingRunner()
+        let pr = PullRequest.fixture(
+            number: 341, url: URL(string: "https://gitlab.empresa.com/vendas/loja/-/merge_requests/341")!,
+            repository: "vendas/loja", isCrossRepository: true, provider: .gitlab)
+        _ = try await manager(runner).prepare(pr: pr, clone: clone, purpose: .review)
+        #expect(runner.commands.contains(
+            "/usr/bin/git -C /code/loja fetch origin +refs/merge-requests/341/head:refs/prumo/pull/341"))
+        #expect(runner.commands.contains(
+            "/usr/bin/git -C /code/loja worktree add --detach -- /wt/loja-341 refs/prumo/pull/341"))
+    }
+
+    @Test func githubFetchUnchanged() async throws {
+        let runner = RecordingRunner()
+        _ = try await manager(runner).prepare(pr: .fixture(), clone: clone, purpose: .review)
+        #expect(runner.commands.contains("/usr/bin/git -C /code/loja fetch origin +pull/812/head:refs/prumo/pull/812"))
+    }
+
     @Test func resolveConflictOnForkIsDetached() async throws {
         let runner = RecordingRunner()
         let pr = PullRequest.fixture(isCrossRepository: true)

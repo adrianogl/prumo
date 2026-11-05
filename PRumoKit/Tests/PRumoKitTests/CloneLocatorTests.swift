@@ -43,6 +43,46 @@ private struct RemoteRunner: ProcessRunner {
         #expect(RemoteURL.repository(from: "nonsense") == nil)
     }
 
+    @Test func remoteKeyForGitLabSSH() {
+        let hosts: Set<String> = ["gitlab.empresa.com"]
+        #expect(RemoteURL.repositoryKey(from: "git@GitLab.Empresa.com:Vendas/Core/Api.git", gitlabHosts: hosts) == "gitlab.empresa.com/vendas/core/api")
+        #expect(RemoteURL.repositoryKey(from: "ssh://git@gitlab.empresa.com/vendas/api.git", gitlabHosts: hosts) == "gitlab.empresa.com/vendas/api")
+    }
+
+    @Test func remoteKeyForNestedGroupHTTPS() {
+        let hosts: Set<String> = ["gitlab.empresa.com"]
+        #expect(RemoteURL.repositoryKey(from: "https://gitlab.empresa.com/vendas/core/api.git", gitlabHosts: hosts) == "gitlab.empresa.com/vendas/core/api")
+        #expect(RemoteURL.repositoryKey(from: "https://gitlab.empresa.com/vendas/api", gitlabHosts: hosts) == "gitlab.empresa.com/vendas/api")
+    }
+
+    @Test func remoteKeyWithPort() {
+        let hosts: Set<String> = ["gitlab.local:8443"]
+        #expect(RemoteURL.repositoryKey(from: "https://gitlab.local:8443/g/r.git", gitlabHosts: hosts) == "gitlab.local/g/r")
+        #expect(RemoteURL.repositoryKey(from: "https://gitlab.local/g/r.git", gitlabHosts: hosts) == nil)
+        #expect(RemoteURL.repositoryKey(from: "https://gitlab.local:9000/g/r.git", gitlabHosts: hosts) == nil)
+    }
+
+    @Test func remoteKeySSHPortMatchesHostWithoutPort() {
+        #expect(RemoteURL.repositoryKey(from: "ssh://git@gitlab.empresa.com:2222/vendas/api.git", gitlabHosts: ["gitlab.empresa.com"]) == "gitlab.empresa.com/vendas/api")
+        #expect(RemoteURL.repositoryKey(from: "ssh://git@gitlab.local:2222/g/r.git", gitlabHosts: ["gitlab.local:8443"]) == "gitlab.local/g/r")
+        #expect(RemoteURL.repositoryKey(from: "git@gitlab.local:g/r.git", gitlabHosts: ["gitlab.local:8443"]) == "gitlab.local/g/r")
+    }
+
+    @Test func remoteKeyIgnoresUnconfiguredHost() {
+        #expect(RemoteURL.repositoryKey(from: "git@gitlab.empresa.com:vendas/api.git", gitlabHosts: []) == nil)
+        #expect(RemoteURL.repositoryKey(from: "https://gitlab.outra.com/vendas/api.git", gitlabHosts: ["gitlab.empresa.com"]) == nil)
+        #expect(RemoteURL.repositoryKey(from: "git@github.com:Org/Repo.git", gitlabHosts: ["gitlab.empresa.com"]) == "org/repo")
+    }
+
+    @Test func scanFindsGitLabClone() async {
+        let fs = FakeFileSystem(tree: ["/code": ["api"]], gitMarkers: ["/code/api/.git"])
+        let runner = RemoteRunner(remotes: ["/code/api": "git@gitlab.empresa.com:vendas/core/api.git"])
+        let withHost = await CloneLocator(root: root, fileSystem: fs, runner: runner, gitlabHosts: ["gitlab.empresa.com"]).scan()
+        #expect(withHost["gitlab.empresa.com/vendas/core/api"] == [URL(fileURLWithPath: "/code/api")])
+        let without = await CloneLocator(root: root, fileSystem: fs, runner: runner).scan()
+        #expect(without.isEmpty)
+    }
+
     @Test func scanFindsReposUpToDepth3AndSkipsExcluded() async {
         let fs = FakeFileSystem(
             tree: [

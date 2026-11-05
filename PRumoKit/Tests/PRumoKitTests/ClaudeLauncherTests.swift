@@ -161,6 +161,20 @@ private func launcher(
         #expect(sink.written.isEmpty)
     }
 
+    @Test func launcherLooksUpCloneByKey() async throws {
+        let runner = FakeRunner()
+        let pr = PullRequest.fixture(
+            number: 341, url: URL(string: "https://gitlab.empresa.com/vendas/api/-/merge_requests/341")!,
+            repository: "vendas/api", provider: .gitlab)
+        let found = try await launcher(
+            runner, scanned: ["gitlab.empresa.com/vendas/api": [clone]]
+        ).launch(pr: pr, purpose: .review)
+        #expect(found.clone == clone)
+        await #expect(throws: ClaudeLaunchError.cloneNotFound(repository: "gitlab.empresa.com/vendas/api")) {
+            try await launcher(FakeRunner(), scanned: ["vendas/api": [clone]]).launch(pr: pr, purpose: .review)
+        }
+    }
+
     @Test func overrideWithTildeIsExpandedAgainstHome() async throws {
         let runner = FakeRunner()
         var settings = ClaudeSettings.defaults

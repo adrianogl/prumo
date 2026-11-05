@@ -35,6 +35,7 @@ final class AppModel {
     @ObservationIgnored private var pruningMarks = false
     @ObservationIgnored private var lastMarksPrune = Date.distantPast
     @ObservationIgnored private var lastGhActiveLoginRead = Date.distantPast
+    @ObservationIgnored private var scannedGitLabHosts: Set<String> = []
     @ObservationIgnored private let ghDiscovery = GhAccountDiscovery.system()
     @ObservationIgnored private var lastSnapshots: [String: Snapshot] = [:]
     @ObservationIgnored private var activityBaselines: [String: Snapshot] = [:]
@@ -133,9 +134,21 @@ final class AppModel {
             account: list.first { $0.id == pr.accountID }, activeLogin: ghActiveLogin, accountCount: list.count)
     }
 
+    var gitlabHosts: Set<String> {
+        Set(accounts.list.accounts.filter { $0.provider == .gitlab }.map { $0.host.lowercased() })
+    }
+
+    private func rescanClonesIfHostsChanged() {
+        let hosts = gitlabHosts
+        guard hosts != scannedGitLabHosts else { return }
+        scannedGitLabHosts = hosts
+        Task { await claude.rescan(gitlabHosts: hosts) }
+    }
+
     func start() {
         refreshGhActiveLogin(force: true)
-        Task { await claude.rescan() }
+        scannedGitLabHosts = gitlabHosts
+        Task { await claude.rescan(gitlabHosts: gitlabHosts) }
         startupTask?.cancel()
         startupTask = Task {
             var known: [String: String] = [:]
@@ -306,6 +319,7 @@ final class AppModel {
         sessions.removeValue(forKey: account.id)?.gate.stop()
         accounts.statuses[account.id] = AccountStatus(lastSuccess: accounts.statuses[account.id]?.lastSuccess)
         accounts.save()
+        rescanClonesIfHostsChanged()
         sessions[account.id] = makeSession(account, token: token)
         defaults.set(true, forKey: AppConstants.onboardingDoneKey)
         needsOnboarding = false
@@ -324,6 +338,7 @@ final class AppModel {
         accounts.list.add(account)
         accounts.statuses[account.id] = AccountStatus()
         accounts.save()
+        rescanClonesIfHostsChanged()
         sessions[account.id] = makeSession(account, token: token)
         defaults.set(true, forKey: AppConstants.onboardingDoneKey)
         needsOnboarding = false
@@ -479,6 +494,7 @@ final class AppModel {
         gitLabClients.removeValue(forKey: id)
         try? tokenStore(id).delete()
         accounts.list.remove(id: id)
+        rescanClonesIfHostsChanged()
         accounts.statuses.removeValue(forKey: id)
         lastSnapshots.removeValue(forKey: id)
         activityBaselines.removeValue(forKey: id)
@@ -797,7 +813,7 @@ final class AppModel {
                 return
             }
             guard rescanned else {
-                await claude.rescan()
+                await claude.rescan(gitlabHosts: gitlabHosts)
                 await runLaunch(pr: pr, purpose: purpose, mayAskForClone: true, rescanned: true)
                 return
             }
@@ -805,7 +821,8 @@ final class AppModel {
             guard let folder = FolderPicker.choose(
                 prompt: ClaudeText.chooseClonePrompt, message: ClaudeText.cloneQuestion(repository))
             else { return }
-            guard await CloneValidator.isClone(of: repository, directory: folder, runner: SystemProcessRunner()) else {
+            guard await CloneValidator.isClone(
+                of: repository, directory: folder, runner: SystemProcessRunner(), gitlabHosts: gitlabHosts) else {
                 showAlert(ClaudeText.wrongClone(repository))
                 return
             }

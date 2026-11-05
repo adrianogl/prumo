@@ -52,8 +52,8 @@ public struct ClaudeLauncher: Sendable {
         let overrides = settings.cloneOverrides.reduce(into: [String: URL]()) {
             $0[$1.key.lowercased()] = expand($1.value)
         }
-        guard let clone = CloneResolver.pick(repository: pr.repository, scanned: scanned, overrides: overrides) else {
-            throw .cloneNotFound(repository: pr.repository)
+        guard let clone = CloneResolver.pick(repository: pr.repositoryKey, scanned: scanned, overrides: overrides) else {
+            throw .cloneNotFound(repository: pr.repositoryKey)
         }
 
         let scriptURL = sessionsDir.appendingPathComponent("\(uuid()).zsh")

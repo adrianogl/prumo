@@ -35,13 +35,15 @@ final class ClaudeSettingsStore {
             .count
     }
 
-    func rescan() async {
+    func rescan(gitlabHosts: Set<String> = []) async {
         scanGeneration += 1
         let generation = scanGeneration
         isScanning = true
         let root = URL(fileURLWithPath: expand(settings.clonesRoot))
         let result = await Task.detached {
-            await CloneLocator(root: root, fileSystem: LocalFileSystem(), runner: SystemProcessRunner()).scan()
+            await CloneLocator(
+                root: root, fileSystem: LocalFileSystem(), runner: SystemProcessRunner(), gitlabHosts: gitlabHosts
+            ).scan()
         }.value
         guard generation == scanGeneration else { return }
         scanned = result

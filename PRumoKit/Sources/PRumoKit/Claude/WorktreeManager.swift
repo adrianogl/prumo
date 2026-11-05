@@ -28,7 +28,7 @@ public struct WorktreeManager: Sendable {
 
         if exists(target) {
             if !ownBranch {
-                try await fetchPullRef(pr.number, clone: clone)
+                try await fetchPullRef(pr, clone: clone)
                 let status = try await git(["-C", target.path, "status", "--porcelain"])
                 if status.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     try await git(["-C", target.path, "checkout", "--detach", ref])
@@ -72,7 +72,7 @@ public struct WorktreeManager: Sendable {
             }
             try await git(["-C", target.path, "branch", "--set-upstream-to=\(remote)"])
         } else {
-            try await fetchPullRef(pr.number, clone: clone)
+            try await fetchPullRef(pr, clone: clone)
             try await addWorktree(["--detach", "--", target.path, ref], target: target, clone: clone)
         }
         return target
@@ -131,8 +131,12 @@ public struct WorktreeManager: Sendable {
         }
     }
 
-    private func fetchPullRef(_ number: Int, clone: URL) async throws(WorktreeError) {
-        try await git(["-C", clone.path, "fetch", "origin", "+pull/\(number)/head:\(Self.pullRef(number))"])
+    private func fetchPullRef(_ pr: PullRequest, clone: URL) async throws(WorktreeError) {
+        let source = switch pr.provider {
+        case .github: "pull/\(pr.number)/head"
+        case .gitlab: "refs/merge-requests/\(pr.number)/head"
+        }
+        try await git(["-C", clone.path, "fetch", "origin", "+\(source):\(Self.pullRef(pr.number))"])
     }
 
     private func isRemovable(path: URL, clone: URL) async -> Bool {

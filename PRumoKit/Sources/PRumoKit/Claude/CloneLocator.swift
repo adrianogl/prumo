@@ -7,11 +7,13 @@ public struct CloneLocator: Sendable {
     private let root: URL
     private let fileSystem: FileSystem
     private let runner: ProcessRunner
+    private let gitlabHosts: Set<String>
 
-    public init(root: URL, fileSystem: FileSystem, runner: ProcessRunner) {
+    public init(root: URL, fileSystem: FileSystem, runner: ProcessRunner, gitlabHosts: Set<String> = []) {
         self.root = root
         self.fileSystem = fileSystem
         self.runner = runner
+        self.gitlabHosts = gitlabHosts
     }
 
     public func scan() async -> [String: [URL]] {
@@ -21,7 +23,7 @@ public struct CloneLocator: Sendable {
                 "/usr/bin/git",
                 ["-C", directory.path, "remote", "get-url", "origin"]
             ), result.status == 0,
-                let repository = RemoteURL.repository(from: result.stdout)
+                let repository = RemoteURL.repositoryKey(from: result.stdout, gitlabHosts: gitlabHosts)
             else { continue }
             found[repository, default: []].append(directory)
         }

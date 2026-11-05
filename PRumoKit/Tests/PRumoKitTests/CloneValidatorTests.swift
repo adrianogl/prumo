@@ -37,4 +37,11 @@ private let command = "/usr/bin/git -C /Users/ana/Code/loja remote get-url origi
         let runner = StubRunner(expected: command, result: (0, "", ""), fails: true)
         #expect(await !CloneValidator.isClone(of: "acme/loja", directory: folder, runner: runner))
     }
+
+    @Test func validatorAcceptsGitLabClone() async {
+        let runner = StubRunner(expected: command, result: (0, "git@gitlab.empresa.com:vendas/api.git\n", ""))
+        #expect(await CloneValidator.isClone(
+            of: "gitlab.empresa.com/vendas/api", directory: folder, runner: runner, gitlabHosts: ["gitlab.empresa.com"]))
+        #expect(await !CloneValidator.isClone(of: "gitlab.empresa.com/vendas/api", directory: folder, runner: runner))
+    }
 }
