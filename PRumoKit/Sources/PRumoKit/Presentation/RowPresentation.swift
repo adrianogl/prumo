@@ -29,7 +29,7 @@ public struct RowPresentation: Equatable, Sendable {
 }
 
 public enum RowPresenter {
-    public static func mine(_ pr: PullRequest, viewer: String, now: Date) -> RowPresentation {
+    public static func mine(_ pr: PullRequest, viewer: String, now: Date, jiraKey: String? = nil) -> RowPresentation {
         let verdicts = latestVerdicts(pr.reviews, excluding: viewer)
         let approvals = verdicts.filter { $0 == .approved }.count
         let hasChangesRequested = verdicts.contains(.changesRequested)
@@ -60,6 +60,7 @@ public enum RowPresenter {
             commentsIndex = badges.count
             badges.append(Badge(String(commentTotal), .neutral, .comments))
         }
+        if let jiraKey { badges.append(Badge(jiraKey, .neutral)) }
 
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: hasChangesRequested),
@@ -72,10 +73,11 @@ public enum RowPresenter {
         )
     }
 
-    public static func review(_ pr: PullRequest, now: Date) -> RowPresentation {
+    public static func review(_ pr: PullRequest, now: Date, jiraKey: String? = nil) -> RowPresentation {
         var badges = [Badge(pr.author, .neutral)]
         if let ci = ciBadge(pr.ci) { badges.append(ci) }
         badges.append(Badge("+\(pr.additions) \(PresentationText.minus)\(pr.deletions)", .neutral))
+        if let jiraKey { badges.append(Badge(jiraKey, .neutral)) }
 
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: false),

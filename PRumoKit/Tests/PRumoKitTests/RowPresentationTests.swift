@@ -180,4 +180,18 @@ import Testing
         let pr = PullRequest.fixture(reviews: [review("ana", .changesRequested, 1)], commentCount: 3)
         #expect(RowPresenter.review(pr, now: .fixed).commentsBadgeIndex == nil)
     }
+
+    @Test func jiraBadgeIsLastOnMineAndReview() {
+        let mine = RowPresenter.mine(.fixture(ci: .success(total: 3), commentCount: 2), viewer: "adriano", now: .fixed, jiraKey: "ON-1234")
+        #expect(mine.badges.last == Badge("ON-1234", .neutral))
+        let review = RowPresenter.review(.fixture(), now: .fixed, jiraKey: "ON-1234")
+        #expect(review.badges.last == Badge("ON-1234", .neutral))
+    }
+
+    @Test func noJiraBadgeWithoutKey() {
+        let withKey = RowPresenter.mine(.fixture(), viewer: "adriano", now: .fixed, jiraKey: "ON-1")
+        let without = RowPresenter.mine(.fixture(), viewer: "adriano", now: .fixed)
+        #expect(without.badges.count == withKey.badges.count - 1)
+        #expect(!RowPresenter.review(.fixture(), now: .fixed).badges.contains(Badge("ON-1", .neutral)))
+    }
 }
