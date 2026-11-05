@@ -137,9 +137,10 @@ struct PopoverView: View {
     }
 
     private func presentation(for pr: PullRequest, now: Date) -> RowPresentation {
-        switch tab {
-        case .mine: RowPresenter.mine(pr, viewer: model.snapshot?.viewer ?? "", now: now)
-        case .review: RowPresenter.review(pr, now: now)
+        let jiraKey = model.integrations.link(for: pr)?.key
+        return switch tab {
+        case .mine: RowPresenter.mine(pr, viewer: model.snapshot?.viewer ?? "", now: now, jiraKey: jiraKey)
+        case .review: RowPresenter.review(pr, now: now, jiraKey: jiraKey)
         }
     }
 

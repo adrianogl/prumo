@@ -1,35 +1,38 @@
 import SwiftUI
-import AppKit
 import PRumoKit
 
 struct RowMenuItems: View {
-    let pr: PullRequest
     let actions: RowActions
-
-    private static let shortcut = KeyboardShortcut(KeyEquivalent(Character(ClaudeText.shortcutKey)), modifiers: .command)
+    let isRerunning: Bool
 
     var body: some View {
-        if !actions.claudePurposes.isEmpty {
-            ForEach(Array(actions.claudePurposes.enumerated()), id: \.offset) { index, purpose in
-                Button {
-                    actions.launch(purpose)
-                } label: {
-                    Label {
-                        Text(purpose.menuTitle)
-                    } icon: {
-                        Image(nsImage: ClaudeMarkImage.menuIcon)
-                    }
-                }
-                .keyboardShortcut(index == 0 ? Self.shortcut : nil)
-            }
+        ForEach(Array(actions.entries.enumerated()), id: \.offset) { _, entry in
+            item(entry)
+        }
+    }
+
+    @ViewBuilder
+    private func item(_ entry: RowMenuEntry) -> some View {
+        switch entry {
+        case .separator:
             Divider()
-        }
-        Button(ClaudeText.openInBrowser) {
-            NSWorkspace.shared.open(pr.url)
-        }
-        Button(ClaudeText.copyLink) {
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(pr.url.absoluteString, forType: .string)
+        case .claude:
+            Button {
+                actions.perform(entry)
+            } label: {
+                Label {
+                    Text(entry.title)
+                } icon: {
+                    Image(nsImage: ClaudeMarkImage.menuIcon)
+                }
+            }
+            .keyboardShortcut(entry.keyboardShortcut)
+        case .rerunFailedJobs:
+            Button(entry.title) { actions.perform(entry) }
+                .disabled(isRerunning)
+        default:
+            Button(entry.title) { actions.perform(entry) }
+                .keyboardShortcut(entry.keyboardShortcut)
         }
     }
 }

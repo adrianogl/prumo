@@ -2,9 +2,9 @@ import SwiftUI
 import PRumoKit
 
 struct RowMenuButton: View {
-    let pr: PullRequest
     let actions: RowActions
     let isLaunching: Bool
+    let isRerunning: Bool
     @Binding var menuOpen: Bool
 
     var body: some View {
@@ -15,7 +15,7 @@ struct RowMenuButton: View {
                 .frame(width: ClaudeMetrics.menuButtonSize, height: ClaudeMetrics.menuButtonSize)
         } else {
             Menu {
-                RowMenuItems(pr: pr, actions: actions)
+                RowMenuItems(actions: actions, isRerunning: isRerunning)
                     .onAppear { menuOpen = true }
                     .onDisappear { menuOpen = false }
             } label: {

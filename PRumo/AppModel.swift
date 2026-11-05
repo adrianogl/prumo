@@ -15,6 +15,7 @@ final class AppModel {
     let claude: ClaudeSettingsStore
     let integrations: IntegrationSettingsStore
     private(set) var launching: Set<String> = []
+    private(set) var rerunning: Set<String> = []
 
     @ObservationIgnored private let notifications: NotificationService
     @ObservationIgnored private let tokenStore: TokenStore
@@ -203,6 +204,58 @@ final class AppModel {
         return result.state != .unauthorized
     }
 
+    func perform(_ entry: RowMenuEntry, on pr: PullRequest) {
+        switch entry {
+        case .claude(let purpose, _):
+            launchClaude(pr: pr, purpose: purpose)
+        case .openInBrowser:
+            NSWorkspace.shared.open(pr.url)
+        case .openJira(_, let url):
+            NSWorkspace.shared.open(url)
+        case .rerunFailedJobs(_, let runID):
+            rerunFailedJobs(pr: pr, runID: runID)
+        case .copyLink:
+            copyToPasteboard(pr.url.absoluteString)
+        case .copyCheckout(let command):
+            copyToPasteboard(command)
+        case .separator:
+            break
+        }
+    }
+
+    func isRerunning(_ pr: PullRequest) -> Bool {
+        rerunning.contains(pr.id)
+    }
+
+    func rerunFailedJobs(pr: PullRequest, runID: Int) {
+        guard !rerunning.contains(pr.id), let client = githubClient else { return }
+        rerunning.insert(pr.id)
+        let repository = pr.repository
+        Task {
+            let failure = await Task.detached { () -> GitHubError? in
+                do throws(GitHubError) {
+                    try await client.rerunFailedJobs(repository: repository, runID: runID)
+                    return nil
+                } catch {
+                    return error
+                }
+            }.value
+            rerunning.remove(pr.id)
+            if let failure {
+                showAlert(
+                    RowMenuText.rerunFailure(failure, repository: repository, runID: runID),
+                    title: RowMenuText.rerunAlertTitle)
+            } else {
+                refreshNow()
+            }
+        }
+    }
+
+    private func copyToPasteboard(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+
     func isLaunching(_ pr: PullRequest) -> Bool {
         launching.contains(pr.id)
     }
@@ -316,10 +369,10 @@ final class AppModel {
         URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
     }
 
-    private func showAlert(_ message: String) {
+    private func showAlert(_ message: String, title: String = ClaudeText.alertTitle) {
         NSApp.activate()
         let alert = NSAlert()
-        alert.messageText = ClaudeText.alertTitle
+        alert.messageText = title
         alert.informativeText = message
         alert.addButton(withTitle: ClaudeText.alertOK)
         alert.runModal()

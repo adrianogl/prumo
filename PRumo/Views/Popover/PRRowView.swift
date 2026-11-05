@@ -11,7 +11,9 @@ struct PRRowView: View {
     @State private var menuOpen = false
 
     private var actions: RowActions {
-        RowActions(claudePurposes: pr.claudePurposes(in: tab, offersComments: presentation.commentsBadgeIndex != nil)) { model.launchClaude(pr: pr, purpose: $0) }
+        let purposes = pr.claudePurposes(in: tab, offersComments: presentation.commentsBadgeIndex != nil)
+        let entries = RowMenuPlan.entries(pr: pr, claudePurposes: purposes, jira: model.integrations.link(for: pr))
+        return RowActions(entries: entries) { model.perform($0, on: pr) }
     }
 
     private func purpose(forBadgeAt index: Int) -> SessionPurpose? {
@@ -40,14 +42,16 @@ struct PRRowView: View {
             content
 
             if hovering || menuOpen || model.isLaunching(pr) {
-                RowMenuButton(pr: pr, actions: actions, isLaunching: model.isLaunching(pr), menuOpen: $menuOpen)
+                RowMenuButton(
+                    actions: actions, isLaunching: model.isLaunching(pr), isRerunning: model.isRerunning(pr),
+                    menuOpen: $menuOpen)
                     .padding(.top, 6)
                     .padding(.trailing, 8)
             }
         }
         .background(hovering ? Color.primary.opacity(0.04) : Color.clear)
         .onHover { hovering = $0 }
-        .contextMenu { RowMenuItems(pr: pr, actions: actions) }
+        .contextMenu { RowMenuItems(actions: actions, isRerunning: model.isRerunning(pr)) }
     }
 
     private var content: some View {

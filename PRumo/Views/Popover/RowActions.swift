@@ -1,6 +1,6 @@
 import PRumoKit
 
 struct RowActions {
-    let claudePurposes: [SessionPurpose]
-    let launch: (SessionPurpose) -> Void
+    let entries: [RowMenuEntry]
+    let perform: (RowMenuEntry) -> Void
 }
