@@ -124,17 +124,12 @@ enum MergeRequestMapper {
             .filter { $0.mergeRequestInteraction?.reviewState == requestedChangesState }
             .map { reviewer in
                 let noteDate = ReviewRequestNote.changesRequestedAt(notes: notes, username: reviewer.username)
-                return review(prefix: changesPrefix, author: reviewer.username, state: .changesRequested, noteDate: noteDate, fallback: node.updatedAt)
+                return Review(
+                    id: "\(changesPrefix):\(reviewer.username)", author: reviewer.username, state: .changesRequested,
+                    submittedAt: noteDate ?? node.updatedAt
+                )
             }
         return approvals + changes
-    }
-
-    private static func review(prefix: String, author: String, state: ReviewState, noteDate: Date?, fallback: Date) -> Review {
-        guard let noteDate else {
-            return Review(id: "\(prefix):\(author)", author: author, state: state, submittedAt: fallback)
-        }
-        let stamp = ISO8601DateFormatter().string(from: noteDate)
-        return Review(id: "\(prefix):\(author)@\(stamp)", author: author, state: state, submittedAt: noteDate)
     }
 
     private static func mergeReady(_ status: String?, capabilities: GitLabCapabilities) -> Bool? {
