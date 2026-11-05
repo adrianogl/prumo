@@ -43,12 +43,13 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, Sen
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
-    func post(_ events: [NotificationEvent], grouped: Bool) {
+    func post(_ events: [NotificationEvent], grouped: Bool, subtitles: [String: String]) {
         let center = UNUserNotificationCenter.current()
         for event in events {
             let content = UNMutableNotificationContent()
             content.title = event.title
             content.body = event.body
+            content.subtitle = subtitles[event.accountID] ?? ""
             content.threadIdentifier = grouped ? event.threadID : ""
             content.userInfo = [
                 AppConstants.notificationURLKey: event.url.absoluteString,

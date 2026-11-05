@@ -617,7 +617,9 @@ final class AppModel {
             reminders: current, now: now, calendar: .current)
         reminders = outcome.reminders
         try? await reminderStore.save(outcome.reminders)
-        notifications.post(outcome.deliver, grouped: preferences.preferences.groupByPullRequest)
+        notifications.post(
+            outcome.deliver, grouped: preferences.preferences.groupByPullRequest,
+            subtitles: NotificationSubtitles.make(accounts: accounts.list.accounts))
     }
 
     private func trackActivity(accountID: String, fresh: Snapshot, events: [NotificationEvent]) {
