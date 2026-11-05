@@ -1,0 +1,57 @@
+import Foundation
+
+public enum RowOrdering {
+    public static func sections(
+        _ prs: [PullRequest], tab: ListTab, ordering: TabOrdering, marks: RowMarks, viewer: String
+    ) -> [RowSection] {
+        let sorted = prs.sorted { precedes($0, $1, tab: tab, order: ordering.order, viewer: viewer) }
+        guard ordering.groupByRepository else {
+            return [RowSection(repository: nil, items: applyMarks(sorted, marks))]
+        }
+        let grouped = Dictionary(grouping: sorted, by: \.repository)
+        return grouped.keys.sorted().map { RowSection(repository: $0, items: applyMarks(grouped[$0] ?? [], marks)) }
+    }
+
+    private static func applyMarks(_ prs: [PullRequest], _ marks: RowMarks) -> [PullRequest] {
+        func rank(_ pr: PullRequest) -> Int {
+            if marks.isMuted(pr.id) { return 2 }
+            return marks.isPinned(pr.id) ? 0 : 1
+        }
+        return [0, 1, 2].flatMap { level in prs.filter { rank($0) == level } }
+    }
+
+    private static func precedes(
+        _ a: PullRequest, _ b: PullRequest, tab: ListTab, order: SortOrder, viewer: String
+    ) -> Bool {
+        switch order {
+        case .recentActivity:
+            if a.updatedAt != b.updatedAt { return a.updatedAt > b.updatedAt }
+        case .needsActionFirst:
+            let left = needsAction(a, tab: tab, viewer: viewer)
+            let right = needsAction(b, tab: tab, viewer: viewer)
+            if left != right { return left }
+            if a.updatedAt != b.updatedAt { return a.updatedAt > b.updatedAt }
+        case .oldestFirst:
+            if a.createdAt != b.createdAt { return a.createdAt < b.createdAt }
+        case .newestFirst:
+            if a.createdAt != b.createdAt { return a.createdAt > b.createdAt }
+        case .repository:
+            if a.repository != b.repository { return a.repository < b.repository }
+        case .diffSize:
+            let left = a.additions + a.deletions
+            let right = b.additions + b.deletions
+            if left != right { return left > right }
+        }
+        return a.number > b.number
+    }
+
+    private static func needsAction(_ pr: PullRequest, tab: ListTab, viewer: String) -> Bool {
+        switch tab {
+        case .review:
+            return pr.reviewTarget == .you
+        case .mine, .merge:
+            if case .failure = pr.ci { return true }
+            return ReviewSummary(pr, viewer: viewer).hasChangesRequested || pr.mergeable == .conflicting
+        }
+    }
+}
