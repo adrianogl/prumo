@@ -113,3 +113,29 @@ Cada etapa termina com o app usável.
 - Como ler o token do `glab` (comando ou arquivo de configuração), e como listar várias contas do `gh` por host.
 - Intervalo de refresh por conta e tratamento de rate limit do GitLab.
 - Formato exato do id dos MRs, desde que seja estável e único entre instâncias.
+
+## Spike do GitLab (2026-11-05)
+
+Medido no gitlab.com (versão 19.6.0-pre), conta `adrianogl`, projeto privado de teste com um MR, um job que passa e um que falha. A instância própria do usuário não foi testada. Os pontos que dependem de versão estão marcados.
+
+**Autenticação.** `Authorization: Bearer` funciona em REST e GraphQL. O `glab` logado pelo navegador guarda um token OAuth que expira em cerca de 2 h (`is_oauth2: "true"` e `oauth2_expiry_date` no config), e o `glab` renova esse token quando roda algum comando. Token OAuth não funciona com `PRIVATE-TOKEN`. Token pessoal com `Bearer` não foi medido; a documentação do GitLab diz que funciona.
+
+**Introspecção.** O gitlab.com responde a qualquer query de introspecção com o `__schema` inteiro (8,6 MB), sem respeitar `__type` nem aliases. No schema: `detailedMergeStatus` existe; o estado do reviewer fica em `reviewers.nodes.mergeRequestInteraction.reviewState`, do tipo `UserMergeRequestInteraction`; `MergeRequestReviewState` tem `UNREVIEWED`, `REVIEWED`, `REQUESTED_CHANGES`, `APPROVED`, `UNAPPROVED` e `REVIEW_STARTED`.
+
+**Query principal.** A query do plano volta sem `errors` em 0,7 s, numa requisição. `iid` vem como string; `project.id`, `headPipeline.id` e `jobs.id` vêm como gid (`gid://gitlab/Project/88571921`, `gid://gitlab/Ci::Pipeline/…`, `gid://gitlab/Ci::Build/…`). O MR seu em que você também é reviewer aparece nas duas listas. `detailedMergeStatus` dá `MERGEABLE` com a pipeline falhando quando o projeto não exige pipeline verde.
+
+**Estado do reviewer e notas.** Pedido: `UNREVIEWED`, nota de sistema `requested review from @adrianogl`. Depois de aprovar: `APPROVED`, nota `approved this merge request`. Depois de desaprovar e pedir de novo: `UNREVIEWED`, notas `unapproved this merge request` e um novo `requested review from @adrianogl`. Comentário comum: `system: false`. "Alterações pedidas" só sai pela review enviada na interface e não foi medido.
+
+**Escopos.** `GET /api/v4/personal_access_tokens/self` com token OAuth responde 400 (`requires token type to be a personal access token`). `GET /oauth/token/info` devolve `scope`; o OAuth do `glab` tem `api`. `pipelineRetry` com esse token: 200, `errors: []`, pipeline volta a `RUNNING`.
+
+**glab 1.128.** O config fica em `~/Library/Application Support/glab-cli/config.yml` quando não há `GLAB_CONFIG_DIR`/`XDG_CONFIG_HOME`. O arquivo tem comentários e valores aspados, com `user:` por host e o token no keyring (`use_keyring: "true"`). `glab config get token --host gitlab.com` devolve o token do keyring. Funcionam no clone: `glab ci get --pipeline-id`, `glab ci trace <job-id>`, `glab mr diff`, `glab mr view --comments` e `glab mr checkout`. O fetch de `+refs/merge-requests/1/head:refs/prumo/pull/1` funciona. No ambiente, o `glab` usa `GITLAB_TOKEN` como token pessoal (`PRIVATE-TOKEN`), e o token OAuth só funciona em `OAUTH_TOKEN`; com valor inválido em qualquer um dos dois, dá 401 em vez de cair no login.
+
+### Decisões que mudam o plano da etapa 9
+
+- **Capacidades sem introspecção.** O cliente não usa introspecção. Ele roda a query completa; se vier erro de campo inexistente (`detailedMergeStatus` ou `mergeRequestInteraction`), tira o campo, guarda a capacidade no cache do cliente e repete uma vez. `hasRequestedChanges` deixa de existir: `REQUESTED_CHANGES` vira alteração pedida sempre que aparece.
+- **Ids.** O mapper converte `iid` de string e tira o número dos gids.
+- **Pronto para merge no GitLab.** `detailedMergeStatus == "MERGEABLE"`, sem draft e com CI que não está falhando nem rodando. Sem isso, a linha diria "pronto" com a pipeline vermelha.
+- **Token do glab.** O config passa a ler `is_oauth2` e `oauth2_expiry_date`. Token OAuth com menos de 5 min de validade → rodar `glab api user --hostname <host>` antes de `glab config get token`, para o `glab` renovar. O token é lido de novo a cada refresh.
+- **Escopos.** `tokenScopes()` tenta `personal_access_tokens/self` e, se der 400, `/oauth/token/info`.
+- **Sessão do Claude.** Token pessoal vai em `GITLAB_TOKEN` e token OAuth do `glab` vai em `OAUTH_TOKEN`, sempre com `GITLAB_HOST`. Numa sessão com mais de 2 h, o token OAuth pode expirar.
+- **Nota do pedido.** O texto anotado confere com o do plano. "Alterações pedidas" fica só pelo `reviewState`, sem data da nota (usa `updatedAt`).
