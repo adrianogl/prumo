@@ -16,7 +16,7 @@ struct SettingsView: View {
         TabView(selection: $selection) {
             Tab(SettingsText.account, systemImage: SettingsSymbol.account, value: SettingsTab.account) { account }
             Tab(SettingsText.general, systemImage: SettingsSymbol.general, value: SettingsTab.general) { general }
-            Tab(ClaudeSettingsText.tab, image: ClaudeSymbol.tab, value: SettingsTab.claude) {
+            Tab(ClaudeSettingsText.tab, systemImage: ClaudeSymbol.tab, value: SettingsTab.claude) {
                 ClaudeSettingsView(store: model.claude)
             }
             Tab(SettingsText.about, systemImage: SettingsSymbol.about, value: SettingsTab.about) { about }
