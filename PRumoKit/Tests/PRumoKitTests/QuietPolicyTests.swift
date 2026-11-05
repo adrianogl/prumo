@@ -88,4 +88,21 @@ struct QuietPolicyTests {
         let broken = try JSONDecoder().decode(DoNotDisturb.self, from: Data(#"{"kind":"until"}"#.utf8))
         #expect(broken == .off)
     }
+
+    @Test func startIsInclusive() {
+        #expect(enabledHours.contains(date(2026, 11, 9, 9), calendar: calendar))
+        #expect(!enabledHours.contains(date(2026, 11, 9, 8, 59), calendar: calendar))
+    }
+
+    @Test func weekdayRuleIgnoresFirstWeekday() {
+        var mondayFirst = calendar
+        mondayFirst.firstWeekday = 2
+        #expect(enabledHours.contains(date(2026, 11, 9, 10), calendar: mondayFirst))
+        #expect(!enabledHours.contains(date(2026, 11, 8, 10), calendar: mondayFirst))
+    }
+
+    @Test func nonObjectJSONDecodesDoNotDisturbAsOff() throws {
+        #expect(try JSONDecoder().decode(DoNotDisturb.self, from: Data(#""x""#.utf8)) == .off)
+        #expect(try JSONDecoder().decode(DoNotDisturb.self, from: Data("42".utf8)) == .off)
+    }
 }
