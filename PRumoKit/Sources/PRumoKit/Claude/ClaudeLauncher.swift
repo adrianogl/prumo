@@ -68,10 +68,13 @@ public struct ClaudeLauncher: Sendable {
             throw .launchFailed("Não encontrei o comando claude no PATH do seu shell.")
         }
 
-        let worktrees = WorktreeManager(runner: runner, worktreesRoot: expand(settings.worktreesRoot), exists: exists)
-        let repoName = pr.repository.split(separator: "/").last.map(String.init) ?? pr.repository
-        let expectedTarget = expand(settings.worktreesRoot).appendingPathComponent("\(repoName)-\(pr.number)")
-        let preexisting = exists(expectedTarget)
+        let worktreesRoot = expand(settings.worktreesRoot)
+        let worktrees = WorktreeManager(runner: runner, worktreesRoot: worktreesRoot, exists: exists)
+        let candidates = [
+            WorktreeManager.targetName(repository: pr.repository, number: pr.number),
+            WorktreeManager.ownerTargetName(repository: pr.repository, number: pr.number),
+        ].map { worktreesRoot.appendingPathComponent($0).standardizedFileURL.path }
+        let preexisting = Set(candidates.filter { exists(URL(fileURLWithPath: $0)) })
         let directory: URL
         do {
             directory = try await worktrees.prepare(pr: pr, clone: clone, purpose: purpose)
@@ -80,7 +83,8 @@ public struct ClaudeLauncher: Sendable {
             case .gitFailed(let message): throw .worktree(message)
             }
         }
-        let created = !preexisting && directory.standardizedFileURL.path == expectedTarget.standardizedFileURL.path
+        let directoryPath = directory.standardizedFileURL.path
+        let created = candidates.contains(directoryPath) && !preexisting.contains(directoryPath)
 
         var prompt: String
         switch purpose {
@@ -102,21 +106,16 @@ public struct ClaudeLauncher: Sendable {
         }
 
         let command = TerminalCommand.build(kind: settings.terminal, directory: directory, scriptPath: scriptURL)
-        let failure: String?
+        let result: (status: Int32, stdout: String, stderr: String)
         do {
-            let result = try await runner.run(command.executable, command.arguments)
-            if result.status == 0 {
-                failure = nil
-            } else {
-                let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
-                failure = stderr.isEmpty ? "O terminal não abriu (código \(result.status))." : stderr
-            }
+            result = try await runner.run(command.executable, command.arguments)
         } catch {
-            failure = Self.message(for: error)
+            throw .launchFailed(Self.message(for: error))
         }
-        if let failure {
+        if result.status != 0 {
             await discard(created: created, worktrees: worktrees, directory: directory, clone: clone, number: pr.number)
-            throw .launchFailed(failure)
+            let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+            throw .launchFailed(stderr.isEmpty ? "O terminal não abriu (código \(result.status))." : stderr)
         }
         return LaunchResult(directory: directory, clone: clone)
     }

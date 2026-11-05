@@ -6,8 +6,13 @@ private final class FakeRunner: ProcessRunner, @unchecked Sendable {
     private let lock = NSLock()
     private var recorded: [String] = []
     private let respond: @Sendable (String) -> (status: Int32, stdout: String, stderr: String)
+    private let throwsFor: @Sendable (String) -> Bool
 
-    init(respond: @escaping @Sendable (String) -> (status: Int32, stdout: String, stderr: String) = { _ in (0, "", "") }) {
+    init(
+        respond: @escaping @Sendable (String) -> (status: Int32, stdout: String, stderr: String) = { _ in (0, "", "") },
+        throwsFor: @escaping @Sendable (String) -> Bool = { _ in false }
+    ) {
+        self.throwsFor = throwsFor
         self.respond = respond
     }
 
@@ -16,6 +21,7 @@ private final class FakeRunner: ProcessRunner, @unchecked Sendable {
     func run(_ executable: String, _ args: [String]) async throws -> (status: Int32, stdout: String, stderr: String) {
         let line = ([executable] + args).joined(separator: " ")
         lock.withLock { recorded.append(line) }
+        if throwsFor(line) { throw ProcessRunnerError.timedOut }
         return respond(line)
     }
 }
@@ -37,6 +43,7 @@ private let clone = URL(fileURLWithPath: "/h/Code/acme/loja")
 private let sessions = URL(fileURLWithPath: "/h/Library/Caches/PRumo/sessions")
 private let fixedNow = Date(timeIntervalSince1970: 1_800_000_000)
 private let worktree = "/h/Code/.prumo-worktrees/loja-812"
+private let ownerWorktree = "/h/Code/.prumo-worktrees/loja-812-acme"
 
 private func launcher(
     _ runner: FakeRunner,
@@ -73,7 +80,7 @@ private func launcher(
         #expect(sink.written[0].contents.contains("cd '\(worktree)' || exit 1\n"))
         #expect(sink.written[0].contents.contains("'claude' -- '/code-review 812'\n"))
         #expect(runner.commands.last == "/usr/bin/open -na Ghostty --args --working-directory=\(worktree) -e /bin/zsh -il /h/Library/Caches/PRumo/sessions/u1.zsh")
-        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add --detach \(worktree) refs/prumo/pull/812"))
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add --detach -- \(worktree) refs/prumo/pull/812"))
     }
 
     @Test func fixCIUsesCITemplateWithJobAndRun() async throws {
@@ -205,5 +212,31 @@ private func launcher(
         #expect(try await ClaudeExecutableLocator.isAvailable(runner: ok))
         #expect(try await !ClaudeExecutableLocator.isAvailable(runner: FakeRunner { _ in (1, "", "") }))
         #expect(try await !ClaudeExecutableLocator.isAvailable(runner: FakeRunner { _ in (0, "\n", "") }))
+    }
+
+    @Test func launchTimeoutKeepsCreatedWorktree() async {
+        let runner = FakeRunner(throwsFor: { $0.hasPrefix("/usr/bin/open") })
+        await #expect(throws: ClaudeLaunchError.launchFailed("O comando demorou demais para responder.")) {
+            try await launcher(runner).launch(pr: .fixture(), purpose: .review)
+        }
+        #expect(!runner.commands.contains { $0.contains("worktree remove") })
+    }
+
+    @Test func writeFailureRemovesOwnerSuffixedWorktree() async {
+        let runner = FakeRunner { line in
+            line == "/usr/bin/git -C \(worktree) rev-parse --path-format=absolute --git-common-dir"
+                ? (0, "/h/Code/outra/loja/.git\n", "") : (0, "", "")
+        }
+        let failing = ClaudeLauncher(
+            settings: .defaults, scanned: ["acme/loja": [clone]], runner: runner, home: home,
+            sessionsDir: sessions, writeScript: { _, _ in throw CocoaError(.fileWriteNoPermission) },
+            cleanupOldScripts: { _, _ in }, uuid: { "u1" }, now: { fixedNow },
+            exists: { $0.path == worktree }, claudeLocator: { true })
+        await #expect(throws: ClaudeLaunchError.self) {
+            try await failing.launch(pr: .fixture(), purpose: .review)
+        }
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add --detach -- \(ownerWorktree) refs/prumo/pull/812"))
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree remove \(ownerWorktree)"))
+        #expect(!runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree remove \(worktree)"))
     }
 }

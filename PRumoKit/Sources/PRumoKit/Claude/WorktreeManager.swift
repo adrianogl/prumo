@@ -18,8 +18,11 @@ public struct WorktreeManager: Sendable {
     }
 
     public func prepare(pr: PullRequest, clone: URL, purpose: SessionPurpose) async throws(WorktreeError) -> URL {
-        let repoName = pr.repository.split(separator: "/").last.map(String.init) ?? pr.repository
-        let target = worktreesRoot.appendingPathComponent("\(repoName)-\(pr.number)")
+        let branch = pr.headRefName
+        guard !branch.hasPrefix("-") else {
+            throw .gitFailed(ClaudeMessages.invalidBranch(branch))
+        }
+        let target = try await resolveTarget(pr: pr, clone: clone)
         let ownBranch = purpose == .fixCI && !pr.isCrossRepository
         let ref = Self.pullRef(pr.number)
 
@@ -34,7 +37,7 @@ public struct WorktreeManager: Sendable {
             }
             let onBranch = try await run(["-C", target.path, "symbolic-ref", "-q", "HEAD"]).status == 0
             if onBranch {
-                try await git(["-C", target.path, "fetch", "origin", pr.headRefName])
+                try await git(["-C", target.path, "fetch", "origin", Self.branchRefspec(branch)])
                 return target
             }
             if await isRemovable(path: target, clone: clone) {
@@ -44,32 +47,45 @@ public struct WorktreeManager: Sendable {
             }
         }
 
+        try await git(["-C", clone.path, "worktree", "prune"])
+
         if !pr.isCrossRepository {
             let listing = try await git(["-C", clone.path, "worktree", "list", "--porcelain"])
-            if let existing = Self.path(ofWorktreeWithBranch: pr.headRefName, in: listing) {
+            if let existing = Self.path(ofWorktreeWithBranch: branch, in: listing) {
                 return existing
             }
         }
 
         if ownBranch {
-            let branch = pr.headRefName
-            try await git(["-C", clone.path, "fetch", "origin", branch])
-            let present = try await run(["-C", clone.path, "rev-parse", "--verify", "--quiet", "refs/heads/\(branch)"]).status == 0
+            let local = "refs/heads/\(branch)"
+            let remote = "refs/remotes/origin/\(branch)"
+            try await git(["-C", clone.path, "fetch", "origin", Self.branchRefspec(branch)])
+            let present = try await run(["-C", clone.path, "rev-parse", "--verify", "--quiet", local]).status == 0
             var reset = true
             if present {
-                reset = try await run(["-C", clone.path, "merge-base", "--is-ancestor", branch, "origin/\(branch)"]).status == 0
+                reset = try await run(["-C", clone.path, "merge-base", "--is-ancestor", local, remote]).status == 0
             }
             if reset {
-                try await git(["-C", clone.path, "worktree", "add", target.path, "-B", branch, "origin/\(branch)"])
+                try await addWorktree(["-B", branch, "--", target.path, remote], target: target, clone: clone)
             } else {
-                try await git(["-C", clone.path, "worktree", "add", target.path, branch])
+                try await addWorktree(["--", target.path, branch], target: target, clone: clone)
             }
-            try await git(["-C", target.path, "branch", "--set-upstream-to=origin/\(branch)"])
+            try await git(["-C", target.path, "branch", "--set-upstream-to=\(remote)"])
         } else {
             try await fetchPullRef(pr.number, clone: clone)
-            try await git(["-C", clone.path, "worktree", "add", "--detach", target.path, ref])
+            try await addWorktree(["--detach", "--", target.path, ref], target: target, clone: clone)
         }
         return target
+    }
+
+    public static func targetName(repository: String, number: Int) -> String {
+        let repoName = repository.split(separator: "/").last.map(String.init) ?? repository
+        return "\(repoName)-\(number)"
+    }
+
+    public static func ownerTargetName(repository: String, number: Int) -> String {
+        let owner = repository.split(separator: "/").first.map(String.init) ?? repository
+        return "\(targetName(repository: repository, number: number))-\(owner)"
     }
 
     public func removeIfClean(path: URL, clone: URL, number: Int) async -> Bool {
@@ -85,6 +101,34 @@ public struct WorktreeManager: Sendable {
 
     private static func pullRef(_ number: Int) -> String {
         "refs/prumo/pull/\(number)"
+    }
+
+    private static func branchRefspec(_ branch: String) -> String {
+        "+refs/heads/\(branch):refs/remotes/origin/\(branch)"
+    }
+
+    private func resolveTarget(pr: PullRequest, clone: URL) async throws(WorktreeError) -> URL {
+        let target = worktreesRoot.appendingPathComponent(Self.targetName(repository: pr.repository, number: pr.number))
+        guard exists(target) else { return target }
+        let targetDir = try? await commonDir(of: target)
+        let cloneDir = try await commonDir(of: clone)
+        if let targetDir, targetDir == cloneDir { return target }
+        return worktreesRoot.appendingPathComponent(Self.ownerTargetName(repository: pr.repository, number: pr.number))
+    }
+
+    private func commonDir(of directory: URL) async throws(WorktreeError) -> String {
+        try await git(["-C", directory.path, "rev-parse", "--path-format=absolute", "--git-common-dir"])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func addWorktree(_ args: [String], target: URL, clone: URL) async throws(WorktreeError) {
+        do {
+            try await git(["-C", clone.path, "worktree", "add"] + args)
+        } catch {
+            _ = try? await runner.run(Self.git, ["-C", clone.path, "worktree", "remove", "--force", target.path])
+            _ = try? await runner.run(Self.git, ["-C", clone.path, "worktree", "prune"])
+            throw error
+        }
     }
 
     private func fetchPullRef(_ number: Int, clone: URL) async throws(WorktreeError) {
@@ -107,6 +151,8 @@ public struct WorktreeManager: Sendable {
     private func run(_ args: [String]) async throws(WorktreeError) -> (status: Int32, stdout: String, stderr: String) {
         do {
             return try await runner.run(Self.git, args)
+        } catch ProcessRunnerError.timedOut {
+            throw .gitFailed(ClaudeMessages.gitTimedOut)
         } catch {
             throw .gitFailed(String(describing: error))
         }
