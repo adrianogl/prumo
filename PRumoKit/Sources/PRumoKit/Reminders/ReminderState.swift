@@ -3,20 +3,23 @@ import Foundation
 public struct ReminderState: Codable, Equatable, Sendable {
     public var initialized = false
     public var reminded: [String] = []
+    public var viewer: String?
 
-    public init(initialized: Bool = false, reminded: [String] = []) {
+    public init(initialized: Bool = false, reminded: [String] = [], viewer: String? = nil) {
         self.initialized = initialized
         self.reminded = reminded
+        self.viewer = viewer
     }
 
     private enum CodingKeys: String, CodingKey {
-        case initialized, reminded
+        case initialized, reminded, viewer
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         initialized = container.decodeLossy(Bool.self, forKey: .initialized, default: false)
         reminded = container.decodeLossy([String].self, forKey: .reminded, default: [])
+        viewer = try? container.decodeIfPresent(String.self, forKey: .viewer)
     }
 
     public mutating func insert(_ keys: [String]) {

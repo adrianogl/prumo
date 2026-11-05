@@ -160,7 +160,7 @@ Eventos (por PR que já existia em `old.mine`, depois dos de comentário):
   public struct PipelineResult: Equatable, Sendable { public let deliver: [NotificationEvent]; public let reminders: ReminderState }
   public enum NotificationPipeline {
       public static func run(events: [NotificationEvent], snapshot: Snapshot, preferences: NotificationPreferences,
-                             muted: Set<String>, ignoreDrafts: Bool, reminders: ReminderState,
+                             muted: Set<String>, ignoreDrafts: Bool, includeTeam: Bool, reminders: ReminderState,
                              now: Date, calendar: Calendar) -> PipelineResult
   }
   ```
@@ -169,7 +169,7 @@ Eventos (por PR que já existia em `old.mine`, depois dos de comentário):
 Regras do `run`, em ordem:
 1. `quiet = QuietPolicy.isQuiet(...)`. Quieto → nenhum evento de transição entra em `deliver`.
 2. Fora do silêncio, entram os eventos com tipo ligado e PR fora de `muted`.
-3. `reminders.initialized == false` → todas as chaves de `StaleReviewTracker.due` vão para `reminded`, nada é entregue e `initialized` vira `true` (Review Focus 3).
+3. `reminders.initialized == false` ou `reminders.viewer != snapshot.viewer` → recomeça com `ReminderState(viewer: snapshot.viewer)`; todas as chaves de `StaleReviewTracker.due` vão para `reminded`, nada é entregue e `initialized` vira `true` (Review Focus 3).
 4. Quieto → lembretes não são calculados nem marcados (adiados; Review Focus 2).
 5. Fora do silêncio → todos os `due` são marcados; só entram em `deliver` se `.staleReview` estiver ligado (Review Focus 5).
 
@@ -195,6 +195,8 @@ Regras do `run`, em ordem:
   - `NotificationService.post(_ events: [NotificationEvent], grouped: Bool)`: `grouped == false` → `threadIdentifier` vazio.
 
 `runRefresh`, depois de um resultado `.ok`: atividade nova com os eventos brutos (como na etapa 4), `NotificationPipeline.run(...)` com `muted` de `organization.settings.marks`, grava o `ReminderState` devolvido e posta `deliver`. Resultado de erro não chama o pipeline.
+
+Lembretes: o `ReminderState` fica em memória no `AppModel` (carregado do `ReminderStore` uma vez, gravado a cada refresh). O `signOut` zera o estado em memória e grava um `ReminderState()` vazio no arquivo. `ReminderState.viewer` guarda a conta dona da base: trocar de conta sem passar pelo `signOut` (reconectar no onboarding, `gh auth switch` seguido de reinício) refaz a base sem entregar nada, e estado antigo sem `viewer` também é refeito na primeira passada.
 
 Categorias: `conflict` com `abrir` "Abrir" e `silenciar` "Silenciar" para `.conflict`; `.readyToMerge` e `.staleReview` usam a categoria `pr` (só "Abrir").
 

@@ -19,7 +19,8 @@ public enum NotificationPipeline {
             )
         }
 
-        if !state.initialized {
+        if !state.initialized || state.viewer != snapshot.viewer {
+            state = ReminderState(viewer: snapshot.viewer)
             state.insert(due().map(\.key))
             state.initialized = true
         } else if !quiet {

@@ -27,12 +27,13 @@ import Testing
         ])
     }
 
-    private var initialized: ReminderState { ReminderState(initialized: true) }
+    private var initialized: ReminderState { ReminderState(initialized: true, viewer: viewer) }
+    private let viewer = "adriano"
 
     private func run(
         _ events: [NotificationEvent] = [], snapshot: Snapshot = .fixture(),
         preferences: NotificationPreferences = NotificationPreferences(), muted: Set<String> = [],
-        includeTeam: Bool = true, reminders: ReminderState = ReminderState(initialized: true),
+        includeTeam: Bool = true, reminders: ReminderState = ReminderState(initialized: true, viewer: "adriano"),
         now: Date = .fixed
     ) -> PipelineResult {
         NotificationPipeline.run(
@@ -111,6 +112,26 @@ import Testing
         let result = run(snapshot: staleSnapshot(), preferences: preferences, reminders: ReminderState())
         #expect(result.deliver.isEmpty)
         #expect(result.reminders.initialized)
+        #expect(result.reminders.reminded.count == 1)
+    }
+
+    @Test func viewerChangeResetsBaselineWithoutDelivering() {
+        let snapshot = Snapshot.fixture(viewer: "bob", toReview: staleSnapshot().toReview)
+        let previous = ReminderState(initialized: true, reminded: ["velho"], viewer: "alice")
+        let result = run(snapshot: snapshot, reminders: previous)
+        #expect(result.deliver.isEmpty)
+        #expect(result.reminders.viewer == "bob")
+        #expect(result.reminders.initialized)
+        #expect(result.reminders.reminded == [StaleReviewTracker.key(for: snapshot.toReview[0])])
+        #expect(run(snapshot: snapshot, reminders: result.reminders).deliver.isEmpty)
+    }
+
+    @Test func legacyStateWithoutViewerIsRebasedWithoutBurst() {
+        let snapshot = staleSnapshot()
+        let legacy = ReminderState(initialized: true, reminded: [], viewer: nil)
+        let result = run(snapshot: snapshot, reminders: legacy)
+        #expect(result.deliver.isEmpty)
+        #expect(result.reminders.viewer == snapshot.viewer)
         #expect(result.reminders.reminded.count == 1)
     }
 

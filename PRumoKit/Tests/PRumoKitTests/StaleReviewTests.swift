@@ -96,6 +96,15 @@ import Testing
         #expect(bad == ReminderState())
     }
 
+    @Test func stateWithoutViewerDecodesNil() throws {
+        let state = try JSONDecoder().decode(ReminderState.self, from: Data(#"{"initialized":true,"reminded":["a"]}"#.utf8))
+        #expect(state.viewer == nil && state.initialized)
+        let withViewer = try JSONDecoder().decode(ReminderState.self, from: Data(#"{"viewer":"bob"}"#.utf8))
+        #expect(withViewer.viewer == "bob")
+        let data = try JSONEncoder().encode(ReminderState(initialized: true, viewer: "bob"))
+        #expect(try JSONDecoder().decode(ReminderState.self, from: data).viewer == "bob")
+    }
+
     @Test func storeRoundTripAndMissingFile() async throws {
         let dir = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
