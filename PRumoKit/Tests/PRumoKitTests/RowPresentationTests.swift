@@ -85,4 +85,35 @@ import Testing
         #expect(RelativeAge.string(from: now.addingTimeInterval(-5 * 3600), now: now) == "5h")
         #expect(RelativeAge.string(from: now.addingTimeInterval(-3 * 86400), now: now) == "3d")
     }
+
+    @Test func reviewSubtitleUsesReviewRequestedAt() {
+        let pr = PullRequest.fixture(
+            createdAt: Date.fixed.addingTimeInterval(-3 * 86400),
+            reviewRequestedAt: Date.fixed.addingTimeInterval(-40 * 60)
+        )
+        #expect(RowPresenter.review(pr, now: .fixed).subtitle == "acme/loja #812 · 40min")
+    }
+
+    @Test func reviewSubtitleFallsBackToCreatedAt() {
+        let pr = PullRequest.fixture(createdAt: Date.fixed.addingTimeInterval(-3 * 86400), reviewRequestedAt: nil)
+        #expect(RowPresenter.review(pr, now: .fixed).subtitle == "acme/loja #812 · 3d")
+    }
+
+    @Test func mineSubtitleUsesCreatedAt() {
+        let pr = PullRequest.fixture(
+            createdAt: Date.fixed.addingTimeInterval(-3 * 86400),
+            reviewRequestedAt: Date.fixed.addingTimeInterval(-40 * 60)
+        )
+        #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).subtitle == "acme/loja #812 · 3d")
+    }
+
+    @Test func failureBadgeFallsBackWhenNoCheckNames() {
+        let pr = PullRequest.fixture(ci: .failure(failedChecks: [], total: 7))
+        #expect(RowPresenter.mine(pr, viewer: "adriano", now: .fixed).badges == [Badge("✗ CI 7", .negative)])
+    }
+
+    @Test func noCommentsBadgeWhenCommentCountIsZero() {
+        let row = RowPresenter.mine(.fixture(commentCount: 0), viewer: "adriano", now: .fixed)
+        #expect(row.badges.contains { $0.icon == .comments } == false)
+    }
 }

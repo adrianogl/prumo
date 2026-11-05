@@ -27,7 +27,7 @@ public enum RowPresenter {
         var badges: [Badge] = []
         if let ci = ciBadge(pr.ci) { badges.append(ci) }
         if approvals > 0 {
-            badges.append(Badge("✓ \(approvals) \(approvals == 1 ? "aprovação" : "aprovações")", .positive))
+            badges.append(Badge("\(PresentationText.approvalMark) \(approvals) \(approvals == 1 ? PresentationText.approvalSingular : PresentationText.approvalPlural)", .positive))
         }
         if hasChangesRequested { badges.append(Badge(PresentationText.changesRequested, .negative)) }
         if pr.isDraft { badges.append(Badge(PresentationText.draft, .neutral)) }
@@ -37,7 +37,7 @@ public enum RowPresenter {
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: hasChangesRequested),
             title: pr.title,
-            subtitle: subtitle(pr, now: now),
+            subtitle: subtitle(pr, from: pr.createdAt, now: now),
             badges: badges
         )
     }
@@ -50,13 +50,13 @@ public enum RowPresenter {
         return RowPresentation(
             dot: dot(ci: pr.ci, hasChangesRequested: false),
             title: pr.title,
-            subtitle: subtitle(pr, now: now),
+            subtitle: subtitle(pr, from: pr.reviewRequestedAt ?? pr.createdAt, now: now),
             badges: badges
         )
     }
 
-    private static func subtitle(_ pr: PullRequest, now: Date) -> String {
-        "\(pr.repository) #\(pr.number) · \(RelativeAge.string(from: pr.createdAt, now: now))"
+    private static func subtitle(_ pr: PullRequest, from: Date, now: Date) -> String {
+        "\(pr.repository) #\(pr.number) · \(RelativeAge.string(from: from, now: now))"
     }
 
     private static func dot(ci: CIStatus, hasChangesRequested: Bool) -> StatusDot {
@@ -69,9 +69,9 @@ public enum RowPresenter {
     private static func ciBadge(_ ci: CIStatus) -> Badge? {
         switch ci {
         case .none: nil
-        case let .success(total): Badge("✓ CI \(total)/\(total)", .positive)
-        case let .pending(done, total): Badge("● CI \(done)/\(total)", .pending)
-        case let .failure(failed, total): Badge("✗ \(failed.first ?? "CI \(total)")", .negative)
+        case let .success(total): Badge("\(PresentationText.ciSuccessMark) \(total)/\(total)", .positive)
+        case let .pending(done, total): Badge("\(PresentationText.ciPendingMark) \(done)/\(total)", .pending)
+        case let .failure(failed, total): Badge("\(PresentationText.ciFailureMark) \(failed.first ?? "CI \(total)")", .negative)
         }
     }
 
