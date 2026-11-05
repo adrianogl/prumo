@@ -93,6 +93,31 @@
                   "__typename": "User",
                   "login": "beto"
                 }
+              },
+              {
+                "__typename": "ReviewRequestedEvent",
+                "createdAt": "2026-11-05T11:30:00Z",
+                "requestedReviewer": {
+                  "__typename": "Team",
+                  "name": "backend"
+                }
+              }
+            ]
+          },
+          "reviewDecision": "APPROVED",
+          "reviewRequests": {
+            "nodes": [
+              {
+                "requestedReviewer": {
+                  "__typename": "Team",
+                  "name": "backend"
+                }
+              },
+              {
+                "requestedReviewer": {
+                  "__typename": "User",
+                  "login": "adriano"
+                }
               }
             ]
           }
@@ -136,9 +161,37 @@
             "nodes": [
               {
                 "__typename": "ReviewRequestedEvent",
+                "createdAt": "2026-11-04T08:00:00Z",
+                "requestedReviewer": {
+                  "__typename": "Team",
+                  "name": "backend"
+                }
+              },
+              {
+                "__typename": "ReviewRequestedEvent",
                 "createdAt": "2026-11-05T10:00:00Z",
                 "requestedReviewer": {
-                  "__typename": "Team"
+                  "__typename": "Team",
+                  "name": "backend"
+                }
+              },
+              {
+                "__typename": "ReviewRequestedEvent",
+                "createdAt": "2026-11-05T12:00:00Z",
+                "requestedReviewer": {
+                  "__typename": "Team",
+                  "name": "frontend"
+                }
+              }
+            ]
+          },
+          "reviewDecision": null,
+          "reviewRequests": {
+            "nodes": [
+              {
+                "requestedReviewer": {
+                  "__typename": "Team",
+                  "name": "backend"
                 }
               }
             ]

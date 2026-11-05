@@ -25,7 +25,9 @@ extension PullRequest {
         baseRefName: String = "main",
         isCrossRepository: Bool = false,
         failedRunID: Int? = nil,
-        failedRunName: String? = nil
+        failedRunName: String? = nil,
+        reviewTarget: ReviewRequestTarget = .you,
+        reviewDecision: ReviewDecision? = nil
     ) -> PullRequest {
         PullRequest(
             id: id, number: number, title: title, url: url, repository: repository, author: author,
@@ -33,7 +35,8 @@ extension PullRequest {
             reviews: reviews, comments: comments, commentCount: commentCount, additions: additions,
             deletions: deletions, mergeable: mergeable, reviewRequestedAt: reviewRequestedAt,
             headRefName: headRefName, baseRefName: baseRefName, isCrossRepository: isCrossRepository,
-            failedRunID: failedRunID, failedRunName: failedRunName
+            failedRunID: failedRunID, failedRunName: failedRunName,
+            reviewTarget: reviewTarget, reviewDecision: reviewDecision
         )
     }
 }

@@ -7,6 +7,18 @@ struct PullRequestMapperTests {
         try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: fixture("search-review"), now: .fixed)
     }
 
+    private func reviewJSON(replacingRequests requests: [[String: Any]], at index: Int) throws -> Data {
+        var object = try JSONSerialization.jsonObject(with: fixture("search-review")) as! [String: Any]
+        var data = object["data"] as! [String: Any]
+        var search = data["search"] as! [String: Any]
+        var nodes = search["nodes"] as! [[String: Any]]
+        nodes[index]["reviewRequests"] = ["nodes": requests]
+        search["nodes"] = nodes
+        data["search"] = search
+        object["data"] = data
+        return try JSONSerialization.data(withJSONObject: object)
+    }
+
     @Test func mapsCIStatuses() throws {
         let s = try snapshot()
         #expect(s.mine.map(\.ci) == [.success(total: 12), .failure(failedChecks: ["unit-tests"], total: 12), .pending(done: 4, total: 9), .none])
@@ -34,8 +46,43 @@ struct PullRequestMapperTests {
     @Test func reviewRequestedAtComesFromViewerEvent() throws {
         let s = try snapshot()
         #expect(s.toReview[0].reviewRequestedAt == ISO8601DateFormatter().date(from: "2026-11-05T09:30:00Z"))
-        #expect(s.toReview[1].reviewRequestedAt == nil)
+        #expect(s.toReview[1].reviewRequestedAt == ISO8601DateFormatter().date(from: "2026-11-05T10:00:00Z"))
         #expect(s.mine[0].reviewRequestedAt == nil)
+    }
+
+    @Test func reviewRequestToViewerIsYou() throws {
+        let review = try reviewJSON(replacingRequests: [["requestedReviewer": ["__typename": "User", "login": "adriano"]]], at: 0)
+        let s = try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: review, now: .fixed)
+        #expect(s.toReview[0].reviewTarget == .you)
+    }
+
+    @Test func reviewRequestOnlyToTeamIsTeamWithName() throws {
+        #expect(try snapshot().toReview[1].reviewTarget == .team(name: "backend"))
+    }
+
+    @Test func viewerAndTeamBothRequestedIsYou() throws {
+        let s = try snapshot()
+        #expect(s.toReview[0].reviewTarget == .you)
+        #expect(s.toReview[0].reviewRequestedAt == ISO8601DateFormatter().date(from: "2026-11-05T09:30:00Z"))
+    }
+
+    @Test func reviewWithoutPendingRequestIsDropped() throws {
+        let review = try reviewJSON(replacingRequests: [], at: 1)
+        let s = try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: review, now: .fixed)
+        #expect(s.toReview.map(\.id) == ["PR_201"])
+    }
+
+    @Test func teamRequestedAtComesFromTeamEvent() throws {
+        let pr = try snapshot().toReview[1]
+        #expect(pr.reviewRequestedAt == ISO8601DateFormatter().date(from: "2026-11-05T10:00:00Z"))
+    }
+
+    @Test func mapsReviewDecision() throws {
+        let s = try snapshot()
+        #expect(s.toReview[0].reviewDecision == .approved)
+        #expect(s.toReview[1].reviewDecision == nil)
+        #expect(s.mine[0].reviewDecision == nil)
+        #expect(s.mine[0].reviewTarget == .you)
     }
 
     @Test func viewerLoginIsRead() throws {
@@ -135,5 +182,9 @@ struct PullRequestMapperTests {
         #expect(!CIStatus.pending(done: 1, total: 2).isTerminal)
         #expect(CIStatus.success(total: 2).isTerminal)
         #expect(CIStatus.failure(failedChecks: ["a"], total: 2).isTerminal)
+    }
+
+    @Test func reviewSearchUsesReviewRequested() {
+        #expect(Queries.review == "is:pr is:open review-requested:@me archived:false")
     }
 }

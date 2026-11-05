@@ -1,6 +1,6 @@
 public enum Queries {
     public static let mine = "is:pr is:open author:@me archived:false"
-    public static let review = "is:pr is:open user-review-requested:@me archived:false"
+    public static let review = "is:pr is:open review-requested:@me archived:false"
 
     public static let states = "query($ids:[ID!]!){ nodes(ids:$ids){ ... on PullRequest { id state } } }"
 
@@ -20,6 +20,7 @@ public enum Queries {
             additions
             deletions
             mergeable
+            reviewDecision
             headRefName
             baseRefName
             isCrossRepository
@@ -50,12 +51,21 @@ public enum Queries {
               totalCount
               nodes { id url body createdAt author { __typename login } }
             }
+            reviewRequests(first: 20) {
+              nodes {
+                requestedReviewer {
+                  __typename
+                  ... on User { login }
+                  ... on Team { name }
+                }
+              }
+            }
             timelineItems(itemTypes: [REVIEW_REQUESTED_EVENT], last: 10) {
               nodes {
                 __typename
                 ... on ReviewRequestedEvent {
                   createdAt
-                  requestedReviewer { ... on User { login } }
+                  requestedReviewer { ... on User { login } ... on Team { name } }
                 }
               }
             }

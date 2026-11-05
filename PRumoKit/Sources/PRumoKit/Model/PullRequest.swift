@@ -30,6 +30,8 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
     public let isCrossRepository: Bool
     public let failedRunID: Int?
     public let failedRunName: String?
+    public let reviewTarget: ReviewRequestTarget
+    public let reviewDecision: ReviewDecision?
 
     public init(
         id: String, number: Int, title: String, url: URL, repository: String, author: String,
@@ -37,7 +39,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         reviews: [Review], comments: [Comment], commentCount: Int, additions: Int, deletions: Int,
         mergeable: Mergeable, reviewRequestedAt: Date?,
         headRefName: String = "", baseRefName: String = "", isCrossRepository: Bool = false, failedRunID: Int? = nil,
-        failedRunName: String? = nil
+        failedRunName: String? = nil, reviewTarget: ReviewRequestTarget = .you, reviewDecision: ReviewDecision? = nil
     ) {
         self.id = id
         self.number = number
@@ -62,12 +64,15 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         self.isCrossRepository = isCrossRepository
         self.failedRunID = failedRunID
         self.failedRunName = failedRunName
+        self.reviewTarget = reviewTarget
+        self.reviewDecision = reviewDecision
     }
 
     enum CodingKeys: String, CodingKey {
         case id, number, title, url, repository, author, isDraft, createdAt, updatedAt, headSHA, ci
         case reviews, comments, commentCount, additions, deletions, mergeable, reviewRequestedAt
         case headRefName, baseRefName, isCrossRepository, failedRunID, failedRunName
+        case reviewTarget, reviewDecision
     }
 
     public init(from decoder: Decoder) throws {
@@ -95,5 +100,7 @@ public struct PullRequest: Identifiable, Sendable, Codable, Equatable {
         isCrossRepository = try container.decodeIfPresent(Bool.self, forKey: .isCrossRepository) ?? false
         failedRunID = try container.decodeIfPresent(Int.self, forKey: .failedRunID)
         failedRunName = try container.decodeIfPresent(String.self, forKey: .failedRunName)
+        reviewTarget = try container.decodeIfPresent(ReviewRequestTarget.self, forKey: .reviewTarget) ?? .you
+        reviewDecision = try container.decodeIfPresent(ReviewDecision.self, forKey: .reviewDecision)
     }
 }

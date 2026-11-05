@@ -47,6 +47,7 @@ struct GraphQLResponse: Decodable {
         let additions: Int
         let deletions: Int
         let mergeable: String
+        let reviewDecision: String?
         let headRefName: String?
         let baseRefName: String?
         let isCrossRepository: Bool?
@@ -55,6 +56,7 @@ struct GraphQLResponse: Decodable {
         let commits: Nodes<CommitNode>
         let reviews: Nodes<ReviewNode>
         let comments: CommentConnection
+        let reviewRequests: Nodes<LossyNode<ReviewRequestNode>>?
         let timelineItems: Nodes<TimelineEvent>
     }
 
@@ -125,7 +127,18 @@ struct GraphQLResponse: Decodable {
         }
     }
 
+    struct ReviewRequestNode: Decodable {
+        let requestedReviewer: Reviewer?
+    }
+
     struct Reviewer: Decodable {
+        let typename: String?
         let login: String?
+        let name: String?
+
+        enum CodingKeys: String, CodingKey {
+            case typename = "__typename"
+            case login, name
+        }
     }
 }

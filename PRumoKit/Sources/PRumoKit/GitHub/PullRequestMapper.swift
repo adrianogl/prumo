@@ -6,6 +6,8 @@ public enum PullRequestMapper {
     private static let waitingStates: Set<String> = ["PENDING", "EXPECTED"]
     private static let ghost = "ghost"
     private static let botTypename = "Bot"
+    private static let userTypename = "User"
+    private static let teamTypename = "Team"
 
     public static func snapshot(mineJSON: Data, reviewJSON: Data, now: Date) throws -> Snapshot {
         let mine = try decode(mineJSON)
@@ -14,7 +16,9 @@ public enum PullRequestMapper {
         return Snapshot(
             viewer: viewer,
             mine: mine.data.search.pullRequests.map { map($0, viewer: viewer) },
-            toReview: review.data.search.pullRequests.map { map($0, viewer: viewer) },
+            toReview: review.data.search.pullRequests.compactMap { node in
+                reviewTarget(node, viewer: viewer).map { map(node, viewer: viewer, target: $0) }
+            },
             fetchedAt: now
         )
     }
@@ -25,7 +29,28 @@ public enum PullRequestMapper {
         return try decoder.decode(GraphQLResponse.self, from: data)
     }
 
-    private static func map(_ node: GraphQLResponse.PullRequestNode, viewer: String) -> PullRequest {
+    private static func reviewTarget(_ node: GraphQLResponse.PullRequestNode, viewer: String) -> ReviewRequestTarget? {
+        let reviewers = (node.reviewRequests?.nodes ?? []).compactMap { $0.value?.requestedReviewer }
+        if reviewers.contains(where: { $0.typename == userTypename && $0.login == viewer }) { return .you }
+        return reviewers.first(where: { $0.typename == teamTypename }).flatMap(\.name).map { .team(name: $0) }
+    }
+
+    private static func requestedAt(_ node: GraphQLResponse.PullRequestNode, viewer: String, target: ReviewRequestTarget) -> Date? {
+        node.timelineItems.nodes
+            .filter { event in
+                guard event.typename == "ReviewRequestedEvent" else { return false }
+                switch target {
+                case .you: return event.requestedReviewer?.login == viewer
+                case .team(let name): return event.requestedReviewer?.name == name
+                }
+            }
+            .compactMap(\.createdAt)
+            .max()
+    }
+
+    private static func map(
+        _ node: GraphQLResponse.PullRequestNode, viewer: String, target: ReviewRequestTarget = .you
+    ) -> PullRequest {
         let commit = node.commits.nodes.first?.commit
         let failedRun = failedRun(commit?.statusCheckRollup)
         return PullRequest(
@@ -46,15 +71,14 @@ public enum PullRequestMapper {
             additions: node.additions,
             deletions: node.deletions,
             mergeable: Mergeable(rawValue: node.mergeable) ?? .unknown,
-            reviewRequestedAt: node.timelineItems.nodes
-                .filter { $0.typename == "ReviewRequestedEvent" && $0.requestedReviewer?.login == viewer }
-                .compactMap(\.createdAt)
-                .max(),
+            reviewRequestedAt: requestedAt(node, viewer: viewer, target: target),
             headRefName: node.headRefName ?? "",
             baseRefName: node.baseRefName ?? "",
             isCrossRepository: node.isCrossRepository ?? false,
             failedRunID: failedRun?.id,
-            failedRunName: failedRun?.name
+            failedRunName: failedRun?.name,
+            reviewTarget: target,
+            reviewDecision: node.reviewDecision.flatMap(ReviewDecision.init(rawValue:))
         )
     }
 
