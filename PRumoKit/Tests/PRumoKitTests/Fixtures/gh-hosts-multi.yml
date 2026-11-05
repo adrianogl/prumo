@@ -1,0 +1,11 @@
+github.com:
+    users:
+        adrianogl:
+            git_protocol: ssh
+        adriano-globex:
+    git_protocol: ssh
+    user: adrianogl
+github.acme.com:
+    users:
+        adriano-acme:
+    user: adriano-acme
