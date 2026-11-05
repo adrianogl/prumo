@@ -98,8 +98,9 @@ struct PRRowView: View {
                         .frame(width: ClaudeMetrics.markSize, height: ClaudeMetrics.markSize)
                 } else {
                     Image(ClaudeSymbol.mark)
-                        .renderingMode(.original)
+                        .renderingMode(.template)
                         .resizable()
+                        .foregroundStyle(Color.claudeMark)
                         .frame(width: ClaudeMetrics.markSize, height: ClaudeMetrics.markSize)
                 }
                 Text(purpose.badgeTitle)

@@ -6,10 +6,6 @@ enum ClaudeSettingsMetrics {
     static let templateLines = 2...4
 }
 
-enum ClaudeSettingsSymbol {
-    static let tab = "sparkles"
-}
-
 enum ClaudeSettingsText {
     static let tab = "Claude"
     static let reviewTemplate = "Revisar PR"
