@@ -12,9 +12,10 @@ public enum TerminalCommand {
             .joined(separator: " ")
         return [
             "cd \(ShellQuote.single(directory.path)) || exit 1",
+            "claude_name=\(ShellQuote.single(claudeExecutable))",
             claude,
             "rc=$?",
-            "if [ $rc -ne 0 ]; then read -k1 \"?claude saiu com erro $rc. Pressione uma tecla.\"; fi",
+            "if [ $rc -ne 0 ]; then read -k1 \"?${claude_name} saiu com erro $rc. Pressione uma tecla.\"; fi",
             "exit $rc",
             "",
         ].joined(separator: "\n")

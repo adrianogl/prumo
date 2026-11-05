@@ -290,6 +290,16 @@ private func launcher(
         }
     }
 
+    @Test func tildeInCommandExpandsToHome() async throws {
+        let asked = AskedCommands()
+        let sink = ScriptSink()
+        let settings = ClaudeSettings(command: "~/bin/claude-ems")
+        _ = try await launcher(FakeRunner(), sink: sink, settings: settings, claude: { asked.record($0); return true })
+            .launch(pr: .fixture(), purpose: .review)
+        #expect(asked.values == ["/h/bin/claude-ems"])
+        #expect(sink.written[0].contents.contains("'/h/bin/claude-ems' -- "))
+    }
+
     @Test func launchTimeoutKeepsCreatedWorktree() async {
         let runner = FakeRunner(throwsFor: { $0.hasPrefix("/usr/bin/open") })
         await #expect(throws: ClaudeLaunchError.launchFailed("O comando demorou demais para responder.")) {

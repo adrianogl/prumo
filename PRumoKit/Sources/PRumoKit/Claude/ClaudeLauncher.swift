@@ -55,7 +55,8 @@ public struct ClaudeLauncher: Sendable {
         guard !scriptURL.path.isEmpty, scriptURL.path.allSatisfy(Self.safePathCharacters.contains) else {
             throw .launchFailed(ClaudeMessages.unsafeCachePath(scriptURL.path))
         }
-        let claudeCommand = settings.resolvedCommand
+        let configuredCommand = settings.resolvedCommand
+        let claudeCommand = configuredCommand.hasPrefix("~/") ? expand(configuredCommand).path : configuredCommand
         let claudeFound: Bool
         do {
             claudeFound = try await claudeLocator(claudeCommand)
@@ -65,7 +66,7 @@ public struct ClaudeLauncher: Sendable {
             throw .launchFailed(Self.message(for: error))
         }
         guard claudeFound else {
-            throw .launchFailed(ClaudeMessages.claudeNotFound(claudeCommand))
+            throw .launchFailed(ClaudeMessages.claudeNotFound(configuredCommand))
         }
 
         let worktreesRoot = expand(settings.worktreesRoot)

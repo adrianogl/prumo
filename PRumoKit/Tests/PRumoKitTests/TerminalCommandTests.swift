@@ -5,25 +5,37 @@ import Testing
 @Suite struct TerminalCommandTests {
     let directory = URL(fileURLWithPath: "/Users/ana/Code/loja")
     let scriptPath = URL(fileURLWithPath: "/Users/ana/Library/Caches/PRumo/sessions/abc.zsh")
-    static let tail = "rc=$?\nif [ $rc -ne 0 ]; then read -k1 \"?claude saiu com erro $rc. Pressione uma tecla.\"; fi\nexit $rc\n"
+    static func tail() -> String {
+        "rc=$?\nif [ $rc -ne 0 ]; then read -k1 \"?${claude_name} saiu com erro $rc. Pressione uma tecla.\"; fi\nexit $rc\n"
+    }
+    static func head(_ name: String = "claude") -> String {
+        "cd '/Users/ana/Code/loja' || exit 1\nclaude_name='\(name)'\n"
+    }
     let hostile = "Fix \"it\" $(rm -rf ~) `x` it's PWNED"
 
     @Test func scriptQuotesHostilePrompt() {
         let prompt = hostile + "\u{15}\u{3}\u{1b}\r"
         let script = TerminalCommand.scriptContents(directory: directory, prompt: prompt, extraFlags: " --model opus ")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' --model opus -- 'Fix \"it\" $(rm -rf ~) `x` it'\\''s PWNED\n'\n" + Self.tail)
+        #expect(script == Self.head() + "'claude' --model opus -- 'Fix \"it\" $(rm -rf ~) `x` it'\\''s PWNED\n'\n" + Self.tail())
     }
 
     @Test func scriptUsesGivenClaudeExecutable() {
         let script = TerminalCommand.scriptContents(
             directory: directory, prompt: "oi", extraFlags: "", claudeExecutable: "/Users/ana/.local/bin/claude")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'/Users/ana/.local/bin/claude' -- 'oi'\n" + Self.tail)
+        #expect(script == Self.head("/Users/ana/.local/bin/claude") + "'/Users/ana/.local/bin/claude' -- 'oi'\n" + Self.tail())
     }
 
     @Test func scriptUsesConfiguredCommand() {
         let script = TerminalCommand.scriptContents(
             directory: directory, prompt: "oi", extraFlags: "", claudeExecutable: "claude-ems")
         #expect(script.contains("'claude-ems' -- "))
+        #expect(script.contains("claude_name='claude-ems'\n"))
+    }
+
+    @Test func errorMessageQuotesHostileCommandName() {
+        let script = TerminalCommand.scriptContents(
+            directory: directory, prompt: "oi", extraFlags: "", claudeExecutable: "a'b$(x)")
+        #expect(script.contains("claude_name='a'\\''b$(x)'\n"))
     }
 
     @Test(arguments: [(0, Int32(0)), (3, Int32(3))])
@@ -56,7 +68,7 @@ import Testing
     @Test func scriptSanitizesControls() {
         let script = TerminalCommand.scriptContents(
             directory: directory, prompt: "a\r\nb\rc\td\u{0}\u{7f}\u{85}e", extraFlags: "")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' -- 'a\nb\nc\tde'\n" + Self.tail)
+        #expect(script == Self.head() + "'claude' -- 'a\nb\nc\tde'\n" + Self.tail())
     }
 
     @Test func scriptRoundTripsThroughZsh() throws {
@@ -130,7 +142,7 @@ import Testing
 
     @Test func emptyFlagsNoDoubleSpace() {
         let script = TerminalCommand.scriptContents(directory: directory, prompt: "oi", extraFlags: " \n ")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' -- 'oi'\n" + Self.tail)
+        #expect(script == Self.head() + "'claude' -- 'oi'\n" + Self.tail())
     }
 
     @Test func shellQuoteHelpers() {
