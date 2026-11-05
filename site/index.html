@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PRumo</title>
-<meta name="description" content="App de barra de menu para macOS que acompanha seus PRs, reviews e CI do GitHub e abre o Claude Code na branch certa.">
+<meta name="description" content="App de barra de menu para macOS que acompanha seus PRs, MRs, reviews e CI do GitHub e do GitLab e abre o Claude Code na branch certa.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
 :root{
@@ -237,14 +237,14 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
 <div class="wrap">
   <nav>
     <a class="brand" href="#"><span class="appicon" style="width:30px;height:30px"><svg><use href="#pr"/></svg></span><span class="wm"><b>PR</b>umo</span></a>
-    <div class="links"><a href="#avisos">Avisos</a><a href="#lista">Lista</a><a href="#organizacao">Filtros</a><a href="#claude">Claude Code</a><a href="#teclado">Teclado</a><a href="#widget">Widget</a><a href="#instalar">Instalar</a><a href="https://github.com/adrianogl/prumo">GitHub</a></div>
+    <div class="links"><a href="#avisos">Avisos</a><a href="#lista">Lista</a><a href="#contas">Contas</a><a href="#organizacao">Filtros</a><a href="#claude">Claude Code</a><a href="#teclado">Teclado</a><a href="#widget">Widget</a><a href="#instalar">Instalar</a><a href="https://github.com/adrianogl/prumo">GitHub</a></div>
   </nav>
 
   <div class="hero">
     <div>
       <div class="eyebrow">App de barra de menu para macOS</div>
-      <h1>Seus PRs no <em>prumo</em>, sem abrir o GitHub.</h1>
-      <p class="lede">O PRumo fica no canto da tela e acompanha os PRs que você abriu e os reviews pedidos a você e ao seu time. Avisa quando a CI termina, quando aprovam, quando chega comentário e quando o PR fica pronto para merge. Para CI quebrada, conflito e comentários, abre o Claude Code já na branch do PR.</p>
+      <h1>Seus PRs no <em>prumo</em>, sem abrir o GitHub nem o GitLab.</h1>
+      <p class="lede">O PRumo fica no canto da tela e acompanha os PRs que você abriu e os reviews pedidos a você e ao seu time, de várias contas do GitHub e do GitLab numa lista só. Avisa quando a CI termina, quando aprovam, quando chega comentário e quando o PR fica pronto para merge. Para CI quebrada, conflito e comentários, abre o Claude Code já na branch do PR.</p>
       <div class="cta">
         <a class="btn download" href="PRumo.dmg" download>Baixar para macOS</a>
         <a class="btn ghost" href="#instalar">Como instalar</a>
@@ -252,7 +252,7 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
         <a class="btn ghost" href="https://github.com/adrianogl/prumo">Código no GitHub</a>
       </div>
       <div class="dl-meta">Versão 0.1.0 · macOS 26 ou mais novo · <a href="#instalar">leia o aviso sobre a primeira abertura</a></div>
-      <div class="req">macOS 26 ou mais novo · usa o seu gh · sem servidor</div>
+      <div class="req">macOS 26 ou mais novo · usa o seu gh e o seu glab · sem servidor</div>
     </div>
 
     <div class="stage" aria-label="Exemplo do PRumo aberto na barra de menu">
@@ -319,6 +319,24 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
       <div class="card"><span class="ic">◐</span><div><b>Claro e escuro</b><span>Segue o tema do sistema, com ícone areia no claro e carvão no escuro.</span></div></div>
       <div class="card"><span class="ic"><svg class="ico"><use href="#refresh"/></svg></span><div><b>Atualização a cada 60 s</b><span>Configurável para 30 s, 2 min ou 5 min. O botão de atualizar busca na hora.</span></div></div>
     </div>
+  </div>
+</section>
+
+<section id="contas">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>GitHub e GitLab na mesma lista.</h2>
+      <p>Conta pessoal, conta do trabalho, o GitLab da empresa numa instância própria: tudo entra nas mesmas abas, com as mesmas regras de aviso.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ic">＋</span><div><b>Quantas contas quiser</b><span>Mais de uma do GitHub e mais de uma do GitLab, cada GitLab no seu endereço: gitlab.com ou <code>gitlab.empresa.com</code>.</span></div></div>
+      <div class="card"><span class="ic"><svg class="ico"><use href="#search"/></svg></span><div><b>Acha o que você já usa</b><span>Ajustes › Contas mostra as contas logadas no <code>gh</code> e no <code>glab</code> com um botão Usar. Também aceita token pessoal.</span></div></div>
+      <div class="card"><span class="ic">!</span><div><b>MR com as regras de PR</b><span>CI da pipeline, aprovações, alterações pedidas, comentários, conflito, draft e pronto para merge. Na linha e nos avisos, o MR aparece como <code>!341</code>.</span></div></div>
+      <div class="card"><span class="ic" style="color:var(--caramel)">↺</span><div><b>Re-rodar a pipeline</b><span>Com token de escopo <code>api</code>. Com <code>read_api</code>, o item fica desabilitado e diz o escopo que falta.</span></div></div>
+      <div class="card"><span class="ic"><svg class="ico"><use href="#chat"/></svg></span><div><b>Claude Code no MR</b><span>Revisar, corrigir CI, resolver conflito e comentários com <code>glab</code>, na worktree do MR e com o token da conta dona só naquela sessão.</span></div></div>
+      <div class="card"><span class="ic" style="color:var(--attn)">⊘</span><div><b>Uma conta fora do ar</b><span>VPN desligada ou token vencido avisa só naquela conta. As outras seguem atualizando, e os itens dela ficam esmaecidos com o último dado.</span></div></div>
+    </div>
+    <p class="muted" style="margin:24px 0 0;font-size:14.5px">Com uma conta só, nada muda. Com mais de uma, a linha mostra de qual conta é: <code>adriano · gitlab.empresa.com · vendas/api !341 · 5h</code>.</p>
   </div>
 </section>
 
@@ -406,7 +424,7 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
       <div class="card"><span class="ic"><svg class="ico"><use href="#chat"/></svg></span><div><b>Autores ignorados</b><span>Comentários de quem está na lista, como <code>github-actions</code>, não contam no badge, não notificam e não acendem a bolinha de novo. Comentário seu ou de bot também não.</span></div></div>
       <div class="card"><span class="ic"><svg class="ico"><use href="#pause"/></svg></span><div><b>Silenciar um PR</b><span>Pelo menu da linha ou pela notificação. Reativa pelo mesmo menu ou nos Ajustes.</span></div></div>
     </div>
-    <p class="muted" style="margin:24px 0 0;font-size:14.5px">Na primeira abertura, ao reiniciar ou ao trocar de conta, nada do que já existia vira aviso.</p>
+    <p class="muted" style="margin:24px 0 0;font-size:14.5px">Na primeira abertura, ao reiniciar ou ao adicionar uma conta, nada do que já existia vira aviso.</p>
   </div>
 </section>
 
@@ -465,10 +483,10 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
 
 <section id="privacidade">
   <div class="wrap">
-    <div class="sec-head"><h2>Roda no seu Mac e fala só com o GitHub.</h2></div>
+    <div class="sec-head"><h2>Roda no seu Mac e fala só com o GitHub e o GitLab.</h2></div>
     <div class="cols3">
-      <div><h3>Token no Keychain</h3><p>Usa o <code>gh auth token</code> que você já tem, ou um token com os escopos <code>repo</code> e <code>read:org</code>. Nada vai para arquivo nem para servidor nosso.</p></div>
-      <div><h3>Sem conta, sem backend</h3><p>A API do GitHub é consultada direto do seu Mac. O último estado fica em <code>~/Library/Application Support/PRumo</code>.</p></div>
+      <div><h3>Token no Keychain</h3><p>Usa o login que você já tem no <code>gh</code> e no <code>glab</code>, ou um token pessoal: <code>repo</code> e <code>read:org</code> no GitHub, <code>read_api</code> no GitLab. O token colado fica no Keychain, e nada vai para servidor nosso.</p></div>
+      <div><h3>Sem conta, sem backend</h3><p>As APIs do GitHub e do GitLab são consultadas direto do seu Mac. O último estado fica em <code>~/Library/Application Support/PRumo</code>.</p></div>
       <div><h3>Jira só como link</h3><p>O app acha a chave no título ou na branch e monta o endereço do card com o site que você cadastrou em Ajustes › Integrações. Ele não consulta o Jira.</p></div>
       <div><h3>Funciona com SSO</h3><p>Org com SAML não autorizado não derruba o app: os PRs que dá para ler continuam aparecendo.</p></div>
     </div>
@@ -506,7 +524,7 @@ open ~/Library/Developer/Xcode/DerivedData/PRumo-*/Build/Products/Debug/PRumo.ap
       <div style="display:flex;gap:18px;align-items:center"><span class="appicon" style="width:64px;height:64px"><svg><use href="#pr"/></svg></span><h2>Coloque seus PRs no prumo.</h2></div>
       <a class="btn primary" href="#instalar">Como instalar</a>
     </div>
-    <footer class="site"><span><span class="wm"><b>PR</b>umo</span> · símbolo pull-request do IBM Carbon (Apache 2.0)</span><span><a href="https://github.com/adrianogl/prumo">Código aberto no GitHub</a> · Em breve: GitLab, com várias contas e instâncias.</span><span>Claude Code é marca da Anthropic. O PRumo não é afiliado ao GitHub nem à Anthropic.</span></footer>
+    <footer class="site"><span><span class="wm"><b>PR</b>umo</span> · símbolo pull-request do IBM Carbon (Apache 2.0)</span><span><a href="https://github.com/adrianogl/prumo">Código aberto no GitHub</a></span><span>Claude Code é marca da Anthropic. O PRumo não é afiliado ao GitHub, ao GitLab nem à Anthropic.</span></footer>
   </div>
 </section>
 
