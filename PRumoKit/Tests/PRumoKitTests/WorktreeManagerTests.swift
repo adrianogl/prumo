@@ -44,6 +44,8 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
         #expect(runner.commands == [
             "/usr/bin/git -C /code/loja worktree list --porcelain",
             "/usr/bin/git -C /code/loja fetch origin feat/carrinho",
+            "/usr/bin/git -C /code/loja rev-parse --verify --quiet refs/heads/feat/carrinho",
+            "/usr/bin/git -C /code/loja merge-base --is-ancestor feat/carrinho origin/feat/carrinho",
             "/usr/bin/git -C /code/loja worktree add \(target) -B feat/carrinho origin/feat/carrinho",
             "/usr/bin/git -C \(target) branch --set-upstream-to=origin/feat/carrinho"
         ])
@@ -55,8 +57,8 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
         #expect(path.path == target)
         #expect(runner.commands == [
             "/usr/bin/git -C /code/loja worktree list --porcelain",
-            "/usr/bin/git -C /code/loja fetch origin pull/812/head",
-            "/usr/bin/git -C /code/loja worktree add --detach \(target) FETCH_HEAD"
+            "/usr/bin/git -C /code/loja fetch origin +pull/812/head:refs/prumo/pull/812",
+            "/usr/bin/git -C /code/loja worktree add --detach \(target) refs/prumo/pull/812"
         ])
     }
 
@@ -68,8 +70,8 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
         let pr = PullRequest.fixture(isCrossRepository: true)
         let path = try await manager(runner).prepare(pr: pr, clone: clone, purpose: .fixCI)
         #expect(path.path == target)
-        #expect(runner.commands.contains("/usr/bin/git -C /code/loja fetch origin pull/812/head"))
-        #expect(runner.commands.contains("/usr/bin/git -C /code/loja worktree add --detach \(target) FETCH_HEAD"))
+        #expect(runner.commands.contains("/usr/bin/git -C /code/loja fetch origin +pull/812/head:refs/prumo/pull/812"))
+        #expect(runner.commands.contains("/usr/bin/git -C /code/loja worktree add --detach \(target) refs/prumo/pull/812"))
         #expect(!runner.commands.contains { $0.contains("-B") })
     }
 
@@ -96,12 +98,16 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
         let runner = RecordingRunner()
         let path = try await manager(runner, existing: [target]).prepare(pr: .fixture(), clone: clone, purpose: .review)
         #expect(path.path == target)
-        #expect(runner.commands == ["/usr/bin/git -C \(target) fetch"])
+        #expect(runner.commands == [
+            "/usr/bin/git -C /code/loja fetch origin +pull/812/head:refs/prumo/pull/812",
+            "/usr/bin/git -C \(target) status --porcelain",
+            "/usr/bin/git -C \(target) checkout --detach refs/prumo/pull/812"
+        ])
     }
 
     @Test func gitFailureSurfacesStderr() async {
         let runner = RecordingRunner(results: [
-            "/usr/bin/git -C /code/loja fetch origin pull/812/head": (128, "", "fatal: sem rede\n")
+            "/usr/bin/git -C /code/loja fetch origin +pull/812/head:refs/prumo/pull/812": (128, "", "fatal: sem rede\n")
         ])
         await #expect(throws: WorktreeError.gitFailed("fatal: sem rede")) {
             try await manager(runner).prepare(pr: .fixture(), clone: clone, purpose: .review)
@@ -110,7 +116,7 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
 
     @Test func gitFailureFallsBackToStdoutWhenStderrEmpty() async {
         let runner = RecordingRunner(results: [
-            "/usr/bin/git -C /code/loja fetch origin pull/812/head": (1, "saiu pelo stdout\n", "")
+            "/usr/bin/git -C /code/loja fetch origin +pull/812/head:refs/prumo/pull/812": (1, "saiu pelo stdout\n", "")
         ])
         await #expect(throws: WorktreeError.gitFailed("saiu pelo stdout")) {
             try await manager(runner).prepare(pr: .fixture(), clone: clone, purpose: .review)
@@ -121,18 +127,20 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
         let runner = RecordingRunner(results: [
             "/usr/bin/git -C \(target) status --porcelain": (0, " M a.swift\n", "")
         ])
-        let removed = await manager(runner).removeIfClean(path: URL(fileURLWithPath: target), clone: clone)
+        let removed = await manager(runner).removeIfClean(path: URL(fileURLWithPath: target), clone: clone, number: 812)
         #expect(!removed)
         #expect(runner.commands == ["/usr/bin/git -C \(target) status --porcelain"])
     }
 
     @Test func cleanWorktreeIsRemoved() async {
         let runner = RecordingRunner()
-        let removed = await manager(runner).removeIfClean(path: URL(fileURLWithPath: target), clone: clone)
+        let removed = await manager(runner).removeIfClean(path: URL(fileURLWithPath: target), clone: clone, number: 812)
         #expect(removed)
         #expect(runner.commands == [
             "/usr/bin/git -C \(target) status --porcelain",
-            "/usr/bin/git -C /code/loja worktree remove \(target)"
+            "/usr/bin/git -C \(target) rev-list HEAD --not --remotes --glob=refs/prumo/pull/*",
+            "/usr/bin/git -C /code/loja worktree remove \(target)",
+            "/usr/bin/git -C /code/loja update-ref -d refs/prumo/pull/812"
         ])
     }
 
@@ -140,7 +148,79 @@ private func manager(_ runner: RecordingRunner, existing: Set<String> = []) -> W
         let runner = RecordingRunner(results: [
             "/usr/bin/git -C /code/loja worktree remove \(target)": (1, "", "erro")
         ])
-        let removed = await manager(runner).removeIfClean(path: URL(fileURLWithPath: target), clone: clone)
+        let removed = await manager(runner).removeIfClean(path: URL(fileURLWithPath: target), clone: clone, number: 812)
         #expect(!removed)
+    }
+
+    @Test func fetchUsesNamedRefNotFetchHead() async throws {
+        let runner = RecordingRunner()
+        _ = try await manager(runner).prepare(pr: .fixture(), clone: clone, purpose: .review)
+        #expect(!runner.commands.contains { $0.contains("FETCH_HEAD") })
+    }
+
+    @Test func existingBranchWithLocalCommitsIsNotReset() async throws {
+        let runner = RecordingRunner(results: [
+            "/usr/bin/git -C /code/loja merge-base --is-ancestor feat/carrinho origin/feat/carrinho": (1, "", "")
+        ])
+        _ = try await manager(runner).prepare(pr: .fixture(), clone: clone, purpose: .fixCI)
+        #expect(runner.commands.contains("/usr/bin/git -C /code/loja worktree add \(target) feat/carrinho"))
+        #expect(!runner.commands.contains { $0.contains(" -B ") })
+    }
+
+    @Test func existingBranchBehindOriginIsReset() async throws {
+        let runner = RecordingRunner()
+        _ = try await manager(runner).prepare(pr: .fixture(), clone: clone, purpose: .fixCI)
+        #expect(runner.commands.contains("/usr/bin/git -C /code/loja worktree add \(target) -B feat/carrinho origin/feat/carrinho"))
+    }
+
+    @Test func removeKeepsWorktreeWithUnpushedCommits() async {
+        let runner = RecordingRunner(results: [
+            "/usr/bin/git -C \(target) rev-list HEAD --not --remotes --glob=refs/prumo/pull/*": (0, "abc123\n", "")
+        ])
+        let removed = await manager(runner).removeIfClean(path: URL(fileURLWithPath: target), clone: clone, number: 812)
+        #expect(!removed)
+        #expect(!runner.commands.contains { $0.contains("worktree remove") })
+    }
+
+    @Test func removeRefusesPathOutsideRoot() async {
+        let runner = RecordingRunner()
+        let removed = await manager(runner).removeIfClean(path: URL(fileURLWithPath: "/code/loja"), clone: clone, number: 812)
+        #expect(!removed)
+        #expect(runner.commands.isEmpty)
+    }
+
+    @Test func reusedReviewTargetMovesToNewHeadWhenClean() async throws {
+        let runner = RecordingRunner()
+        _ = try await manager(runner, existing: [target]).prepare(pr: .fixture(), clone: clone, purpose: .review)
+        #expect(runner.commands.last == "/usr/bin/git -C \(target) checkout --detach refs/prumo/pull/812")
+    }
+
+    @Test func fixCIOnReusedDetachedTargetRecreatesWhenClean() async throws {
+        let runner = RecordingRunner(results: [
+            "/usr/bin/git -C \(target) symbolic-ref -q HEAD": (1, "", "")
+        ])
+        let path = try await manager(runner, existing: [target]).prepare(pr: .fixture(), clone: clone, purpose: .fixCI)
+        #expect(path.path == target)
+        #expect(runner.commands.contains("/usr/bin/git -C /code/loja worktree remove \(target)"))
+        #expect(runner.commands.contains("/usr/bin/git -C /code/loja worktree add \(target) -B feat/carrinho origin/feat/carrinho"))
+    }
+
+    @Test func fixCIOnDirtyDetachedTargetThrows() async {
+        let runner = RecordingRunner(results: [
+            "/usr/bin/git -C \(target) symbolic-ref -q HEAD": (1, "", ""),
+            "/usr/bin/git -C \(target) status --porcelain": (0, " M a\n", "")
+        ])
+        await #expect(throws: WorktreeError.gitFailed("A worktree \(target) tem alterações; finalize ou descarte antes de corrigir a CI.")) {
+            try await manager(runner, existing: [target]).prepare(pr: .fixture(), clone: clone, purpose: .fixCI)
+        }
+    }
+
+    @Test func prunableWorktreeIgnored() async throws {
+        let porcelain = "worktree /gone\nHEAD abc\nbranch refs/heads/feat/carrinho\nprunable gitdir file points to non-existent location\n"
+        let runner = RecordingRunner(results: [
+            "/usr/bin/git -C /code/loja worktree list --porcelain": (0, porcelain, "")
+        ])
+        let path = try await manager(runner).prepare(pr: .fixture(), clone: clone, purpose: .fixCI)
+        #expect(path.path == target)
     }
 }
