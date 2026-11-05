@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRumo · contas</title>
+<style>
+:root{--bg:#efe5d3;--pop:#fbf8f2;--ink:#2a2622;--mut:#857a6d;--line:#e8dfcf;--chip:#efe6d6;--car:#a5713a;--blue:#0a84ff;--gray:#8e8e93;--red:#ff453a;--green:#30d158;--gh:#24292f;--gl:#e24329}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1b1a;--pop:#252322;--ink:#ece6dc;--mut:#9a9187;--line:#3a3633;--chip:#34302d;--gh:#e6edf3}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:13px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;padding:28px 16px}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:34px 0 4px}p.s{color:var(--mut);margin:0 0 14px;max-width:760px}
+.grid{display:flex;flex-wrap:wrap;gap:18px}
+.opt{background:#0000;border-radius:14px}
+.opt h3{font-size:13px;margin:0 0 8px}.opt .note{color:var(--mut);font-size:12px;margin:8px 2px 0;max-width:360px}
+.pop{width:360px;background:var(--pop);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px #0002;overflow:hidden}
+.row{display:flex;gap:10px;padding:9px 12px;border-top:1px solid var(--line);align-items:flex-start}
+.row:first-child{border-top:0}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
+.t{font-weight:500;font-size:13px;line-height:1.3}.m{color:var(--mut);font-size:11px;margin-top:2px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.bs{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.b{font-size:10.5px;padding:1px 6px;border-radius:5px;background:var(--chip);color:var(--mut)}
+.ico{width:12px;height:12px;display:inline-block;vertical-align:-2px}
+.acct{font-size:10.5px;padding:1px 6px;border-radius:5px;display:inline-flex;gap:4px;align-items:center}
+.av{width:16px;height:16px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:9px;font-weight:700;color:#fff;margin-top:1px}
+.set{width:560px;max-width:100%;background:var(--pop);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px #0002;overflow:hidden}
+.tb{display:flex;gap:14px;justify-content:center;padding:10px;border-bottom:1px solid var(--line);color:var(--mut);font-size:11px}
+.tb span.on{color:var(--car);font-weight:600}
+.sec{padding:14px 18px}.sec h4{margin:0 0 8px;font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.card{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ac{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}.ac:first-child{border-top:0}
+.ac .n{flex:1}.ac .n b{display:block;font-size:13px}.ac .n span{color:var(--mut);font-size:11px}
+.st{font-size:11px;display:flex;gap:5px;align-items:center}.st i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.btn{border:1px solid var(--line);background:var(--chip);border-radius:6px;padding:3px 9px;font-size:12px;color:var(--ink)}
+.btn.p{background:var(--car);border-color:var(--car);color:#fff}
+.sheet{width:420px;background:var(--pop);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px #0003;padding:16px 18px}
+.seg{display:flex;background:var(--chip);border-radius:7px;padding:2px;margin:6px 0 12px}.seg span{flex:1;text-align:center;padding:4px;border-radius:5px;font-size:12px;color:var(--mut)}.seg span.on{background:var(--pop);color:var(--ink);box-shadow:0 1px 2px #0002}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.f label{font-size:11px;color:var(--mut)}.f div{border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--bg);font-size:12px}
+.detect{border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-bottom:12px;display:flex;gap:9px;align-items:center}
+.detect .n{flex:1;font-size:12px}.detect .n span{display:block;color:var(--mut);font-size:11px}
+.hint{color:var(--mut);font-size:11px;margin:-4px 0 12px}
+.ban{background:#ff9f0a1f;color:#c56a00;font-size:11.5px;padding:7px 12px;border-bottom:1px solid var(--line)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+<symbol id="gh" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.23 1.88.87 2.34.67.07-.52.28-.87.51-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.83-2.15-.08-.2-.36-1.02.08-2.13 0 0 .67-.21 2.2.82A7.6 7.6 0 0 1 8 3.87c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.11.16 1.93.08 2.13.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8"/></symbol>
+<symbol id="gl" viewBox="0 0 16 16"><path fill="#e24329" d="m15.7 6.3-.02-.06L13.5.57a.57.57 0 0 0-1.08.04L11 5H5L3.58.61A.57.57 0 0 0 2.5.57L.32 6.24l-.02.06a4 4 0 0 0 1.33 4.62l2.8 2.1 1.35 1.02.83.63a.57.57 0 0 0 .69 0l.83-.63 1.35-1.02 2.82-2.11a4 4 0 0 0 1.33-4.61"/></symbol>
+</svg>
+
+<h1>Várias contas: GitHub e GitLab misturados</h1>
+<p class="s">A conta só aparece na linha quando houver mais de uma configurada. Três jeitos de mostrar; os mesmos 3 PRs/MRs em cada. Contas de exemplo: <b>@adrianogl</b> (GitHub pessoal), <b>@adriano-globex</b> (GitHub do trabalho) e <b>@adriano</b> em <b>gitlab.empresa.com</b>.</p>
+
+<h2>1. Como a conta aparece na linha</h2>
+<div class="grid">
+
+<div class="opt"><h3>A. No subtítulo, com ícone</h3>
+<div class="pop">
+ <div class="row"><i class="dot" style="background:var(--red)"></i><div><div class="t">fix(checkout): calcula frete com CEP vazio</div><div class="m"><svg class="ico" style="color:var(--gh)"><use href="#gh"/></svg>adrianogl · loja/web-app #812 · 2h</div><div class="bs"><span class="b" style="color:var(--red)">✗ unit-tests</span><span class="b">2 comentários</span></div></div></div>
+ <div class="row"><i class="dot" style="background:var(--blue)"></i><div><div class="t">Ajusta limite de crédito no pedido</div><div class="m"><svg class="ico"><use href="#gl"/></svg>adriano · gitlab.empresa.com · vendas/api !341 · 5h</div><div class="bs"><span class="b" style="color:var(--blue)">alterações pedidas</span></div></div></div>
+ <div class="row"><i class="dot" style="background:var(--gray)"></i><div><div class="t">feat: exporta relatório em CSV</div><div class="m"><svg class="ico" style="color:var(--gh)"><use href="#gh"/></svg>adriano-globex · globex/portal #57 · 1d</div><div class="bs"><span class="b">● CI 3/7</span></div></div></div>
+</div>
+<p class="note">Mais discreto. A conta divide espaço com o repositório no subtítulo; a linha não cresce.</p></div>
+
+<div class="opt"><h3>B. Chip colorido por conta</h3>
+<div class="pop">
+ <div class="row"><i class="dot" style="background:var(--red)"></i><div><div class="t">fix(checkout): calcula frete com CEP vazio</div><div class="m">loja/web-app #812 · 2h</div><div class="bs"><span class="acct" style="background:#0a84ff22;color:#0a84ff"><svg class="ico"><use href="#gh"/></svg>pessoal</span><span class="b" style="color:var(--red)">✗ unit-tests</span><span class="b">2 comentários</span></div></div></div>
+ <div class="row"><i class="dot" style="background:var(--blue)"></i><div><div class="t">Ajusta limite de crédito no pedido</div><div class="m">vendas/api !341 · 5h</div><div class="bs"><span class="acct" style="background:#e2432922;color:#e24329"><svg class="ico"><use href="#gl"/></svg>empresa</span><span class="b" style="color:var(--blue)">alterações pedidas</span></div></div></div>
+ <div class="row"><i class="dot" style="background:var(--gray)"></i><div><div class="t">feat: exporta relatório em CSV</div><div class="m">globex/portal #57 · 1d</div><div class="bs"><span class="acct" style="background:#bf5af222;color:#bf5af2"><svg class="ico"><use href="#gh"/></svg>trabalho</span><span class="b">● CI 3/7</span></div></div></div>
+</div>
+<p class="note">Cada conta ganha um apelido curto ("pessoal", "empresa") e uma cor que você escolhe na aba Contas. Mais fácil de bater o olho.</p></div>
+
+<div class="opt"><h3>C. Avatar da conta à esquerda</h3>
+<div class="pop">
+ <div class="row"><i class="dot" style="background:var(--red)"></i><span class="av" style="background:#24292f">P</span><div><div class="t">fix(checkout): calcula frete com CEP vazio</div><div class="m">loja/web-app #812 · 2h</div><div class="bs"><span class="b" style="color:var(--red)">✗ unit-tests</span><span class="b">2 comentários</span></div></div></div>
+ <div class="row"><i class="dot" style="background:var(--blue)"></i><span class="av" style="background:#e24329">E</span><div><div class="t">Ajusta limite de crédito no pedido</div><div class="m">vendas/api !341 · 5h</div><div class="bs"><span class="b" style="color:var(--blue)">alterações pedidas</span></div></div></div>
+ <div class="row"><i class="dot" style="background:var(--gray)"></i><span class="av" style="background:#6e40c9">T</span><div><div class="t">feat: exporta relatório em CSV</div><div class="m">globex/portal #57 · 1d</div><div class="bs"><span class="b">● CI 3/7</span></div></div></div>
+</div>
+<p class="note">Um círculo com a inicial do apelido (ou a foto da conta). Compacto, mas exige lembrar qual cor/letra é qual.</p></div>
+</div>
+
+<h2>2. Ajustes › Contas</h2>
+<p class="s">Uma aba nova no lugar de "Conta". Cada conta mostra tipo, endereço, usuário, de onde vem o token e o estado. Uma conta com problema não derruba as outras.</p>
+<div class="grid">
+<div class="set">
+ <div class="tb"><span class="on">Contas</span><span>Geral</span><span>Notificações</span><span>Comentários</span><span>Filtros</span><span>IA</span><span>Integrações</span><span>Sobre</span></div>
+ <div class="sec"><h4>Contas</h4>
+  <div class="card">
+   <div class="ac"><svg width="20" height="20" style="color:var(--gh)"><use href="#gh"/></svg><div class="n"><b>pessoal · @adrianogl</b><span>github.com · token do GitHub CLI</span></div><span class="st"><i style="background:var(--green)"></i>conectada</span><span class="btn">⋯</span></div>
+   <div class="ac"><svg width="20" height="20" style="color:var(--gh)"><use href="#gh"/></svg><div class="n"><b>trabalho · @adriano-globex</b><span>github.com · token pessoal no Keychain</span></div><span class="st"><i style="background:var(--green)"></i>conectada</span><span class="btn">⋯</span></div>
+   <div class="ac"><svg width="20" height="20"><use href="#gl"/></svg><div class="n"><b>empresa · @adriano</b><span>gitlab.empresa.com · token do glab</span></div><span class="st" style="color:#c56a00"><i style="background:#ff9f0a"></i>sem acesso (VPN?)</span><span class="btn">Tentar de novo</span></div>
+  </div>
+  <div style="margin-top:10px;display:flex;gap:8px"><span class="btn p">Adicionar conta…</span></div>
+ </div>
+</div>
+
+<div class="sheet">
+ <b style="font-size:14px">Adicionar conta</b>
+ <div class="seg"><span class="on">GitHub</span><span>GitLab</span></div>
+ <div class="detect"><svg width="18" height="18"><use href="#gl"/></svg><div class="n">Encontrei no <b>glab</b>: @adriano em gitlab.empresa.com<span>Usar o token que o glab já guarda</span></div><span class="btn p">Usar</span></div>
+ <div class="hint">ou com um token pessoal:</div>
+ <div class="f"><label>Endereço</label><div>gitlab.empresa.com</div></div>
+ <div class="f"><label>Token pessoal (escopo read_api)</label><div>••••••••••••••••</div></div>
+ <div class="f"><label>Apelido</label><div>empresa</div></div>
+ <div style="display:flex;justify-content:flex-end;gap:8px"><span class="btn">Cancelar</span><span class="btn p">Conectar</span></div>
+</div>
+</div>
+
+<h2>3. Uma conta com problema no popover</h2>
+<div class="grid"><div class="pop">
+ <div class="ban">empresa (gitlab.empresa.com) sem acesso há 12 min. Os outros PRs continuam atualizando. <u>Ajustes</u></div>
+ <div class="row"><i class="dot" style="background:var(--red)"></i><div><div class="t">fix(checkout): calcula frete com CEP vazio</div><div class="m"><svg class="ico" style="color:var(--gh)"><use href="#gh"/></svg>adrianogl · loja/web-app #812 · 2h</div></div></div>
+ <div class="row" style="opacity:.55"><i class="dot" style="background:var(--blue)"></i><div><div class="t">Ajusta limite de crédito no pedido</div><div class="m"><svg class="ico"><use href="#gl"/></svg>adriano · gitlab.empresa.com · vendas/api !341 · último dado 12 min atrás</div></div></div>
+</div></div>
+</body>
+</html>
