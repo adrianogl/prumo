@@ -26,6 +26,12 @@ private func record(_ id: String, number: Int = 1, path: String? = nil) -> Workt
         #expect(WorktreeCleanup.stale(records: [record("PR_3", number: 3)], snapshot: snapshot).isEmpty)
     }
 
+    @Test func confirmedClosedKeepsOnlyClosedOrMerged() {
+        let records = [record("OPEN1", number: 1), record("GONE", number: 2), record("MRG", number: 3), record("CLS", number: 4)]
+        let states: [String: PRState] = ["OPEN1": .open, "MRG": .merged, "CLS": .closed]
+        #expect(WorktreeCleanup.confirmedClosed(candidates: records, states: states).map(\.pullRequestID) == ["MRG", "CLS"])
+    }
+
     @Test func registryRoundTrip() async {
         let url = tempURL()
         let registry = WorktreeRegistry(fileURL: url)

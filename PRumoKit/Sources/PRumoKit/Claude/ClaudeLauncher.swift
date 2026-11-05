@@ -44,7 +44,7 @@ public struct ClaudeLauncher: Sendable {
         }
     }
 
-    public func launch(pr: PullRequest, purpose: SessionPurpose) async throws(ClaudeLaunchError) -> URL {
+    public func launch(pr: PullRequest, purpose: SessionPurpose) async throws(ClaudeLaunchError) -> LaunchResult {
         let overrides = settings.cloneOverrides.reduce(into: [String: URL]()) {
             $0[$1.key.lowercased()] = expand($1.value)
         }
@@ -118,7 +118,7 @@ public struct ClaudeLauncher: Sendable {
             await discard(created: created, worktrees: worktrees, directory: directory, clone: clone, number: pr.number)
             throw .launchFailed(failure)
         }
-        return directory
+        return LaunchResult(directory: directory, clone: clone)
     }
 
     private func discard(created: Bool, worktrees: WorktreeManager, directory: URL, clone: URL, number: Int) async {

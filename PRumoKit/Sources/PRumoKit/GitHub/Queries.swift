@@ -2,6 +2,8 @@ public enum Queries {
     public static let mine = "is:pr is:open author:@me archived:false"
     public static let review = "is:pr is:open user-review-requested:@me archived:false"
 
+    public static let states = "query($ids:[ID!]!){ nodes(ids:$ids){ ... on PullRequest { id state } } }"
+
     public static let searchQuery = """
     query($q: String!) {
       viewer { login }

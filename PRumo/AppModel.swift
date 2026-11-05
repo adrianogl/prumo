@@ -21,6 +21,7 @@ final class AppModel {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let worktreeRegistry: WorktreeRegistry
     @ObservationIgnored private var cleaningWorktrees = false
+    @ObservationIgnored private var githubClient: GitHubClient?
     @ObservationIgnored private var coordinator: RefreshCoordinator?
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var sleepTask: Task<Void, Never>?
@@ -111,6 +112,7 @@ final class AppModel {
 
     private func begin(token: String) async {
         let client = GitHubClient(token: token)
+        githubClient = client
         coordinator = RefreshCoordinator(
             fetch: { () async throws(GitHubError) -> Snapshot in try await client.fetchSnapshot() },
             store: snapshotStore
@@ -142,6 +144,7 @@ final class AppModel {
             await store.delete()
         }
         coordinator = nil
+        githubClient = nil
         snapshot = nil
         lastRefresh = nil
         connection = .ok
@@ -218,7 +221,7 @@ final class AppModel {
     private func runLaunch(pr: PullRequest, purpose: SessionPurpose, mayAskForClone: Bool) async {
         let launcher = ClaudeLauncher(
             settings: claude.settings, scanned: claude.scanned, runner: SystemProcessRunner())
-        let result = await Task.detached { () -> Result<URL, ClaudeLaunchError> in
+        let result = await Task.detached { () -> Result<LaunchResult, ClaudeLaunchError> in
             do throws(ClaudeLaunchError) {
                 return .success(try await launcher.launch(pr: pr, purpose: purpose))
             } catch {
@@ -227,8 +230,8 @@ final class AppModel {
         }.value
         let error: ClaudeLaunchError
         switch result {
-        case .success(let directory):
-            await register(directory: directory, pr: pr)
+        case .success(let launched):
+            await register(launched, pr: pr)
             return
         case .failure(let failure):
             error = failure
@@ -253,34 +256,39 @@ final class AppModel {
         }
     }
 
-    private func register(directory: URL, pr: PullRequest) async {
-        let settings = claude.settings
-        let worktreesRoot = Self.expandedURL(settings.worktreesRoot)
-        let overrides = settings.cloneOverrides.reduce(into: [String: URL]()) {
-            $0[$1.key.lowercased()] = Self.expandedURL($1.value)
-        }
-        guard let clone = CloneResolver.pick(repository: pr.repository, scanned: claude.scanned, overrides: overrides),
-              let record = WorktreeRecord.registrable(
-                pr: pr, directory: directory, clone: clone, worktreesRoot: worktreesRoot)
+    private func register(_ launched: LaunchResult, pr: PullRequest) async {
+        let worktreesRoot = Self.expandedURL(claude.settings.worktreesRoot)
+        guard let record = WorktreeRecord.registrable(
+            pr: pr, directory: launched.directory, clone: launched.clone, worktreesRoot: worktreesRoot)
         else { return }
         await worktreeRegistry.add(record)
     }
 
     private func cleanUpWorktrees(snapshot: Snapshot) {
         let settings = claude.settings
-        guard settings.removeWorktreeOnClose, !cleaningWorktrees else { return }
+        guard settings.removeWorktreeOnClose, !cleaningWorktrees, let client = githubClient else { return }
         cleaningWorktrees = true
         let registry = worktreeRegistry
         let worktreesRoot = Self.expandedURL(settings.worktreesRoot)
         Task.detached { [weak self] in
             let manager = WorktreeManager(runner: SystemProcessRunner(), worktreesRoot: worktreesRoot)
-            let stale = WorktreeCleanup.stale(records: await registry.records(), snapshot: snapshot)
-            for record in stale {
-                let removed = await manager.removeIfClean(
-                    path: URL(fileURLWithPath: record.path),
-                    clone: URL(fileURLWithPath: record.clone),
-                    number: record.number)
-                if removed { await registry.remove(path: record.path) }
+            let candidates = WorktreeCleanup.stale(records: await registry.records(), snapshot: snapshot)
+            var present: [WorktreeRecord] = []
+            for record in candidates {
+                if FileManager.default.fileExists(atPath: record.path) {
+                    present.append(record)
+                } else {
+                    await registry.remove(path: record.path)
+                }
+            }
+            if !present.isEmpty, let states = try? await client.pullRequestStates(ids: present.map(\.pullRequestID)) {
+                for record in WorktreeCleanup.confirmedClosed(candidates: present, states: states) {
+                    let removed = await manager.removeIfClean(
+                        path: URL(fileURLWithPath: record.path),
+                        clone: URL(fileURLWithPath: record.clone),
+                        number: record.number)
+                    if removed { await registry.remove(path: record.path) }
+                }
             }
             await self?.finishWorktreeCleanup()
         }

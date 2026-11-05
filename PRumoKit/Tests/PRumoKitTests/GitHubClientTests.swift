@@ -133,4 +133,27 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
         #expect(snapshot.viewer == "adriano")
         #expect(!snapshot.mine.isEmpty)
     }
+
+    @Test func pullRequestStatesRequestShapeAndMapping() async throws {
+        let body = #"{"data":{"nodes":[{"id":"A","state":"MERGED"},null,{"id":"B","state":"OPEN"},{"id":"C","state":"WEIRD"},{}]}}"#
+        let transport = FakeTransport { _ in (Data(body.utf8), httpResponse(200)) }
+        let states = try await client(transport).pullRequestStates(ids: ["A", "B", "C", "D"])
+        #expect(states == ["A": .merged, "B": .open])
+        #expect(transport.requests.count == 1)
+        let sent = try JSONSerialization.jsonObject(with: transport.requests[0].httpBody ?? Data()) as? [String: Any]
+        #expect(sent?["query"] as? String == Queries.states)
+        #expect((sent?["variables"] as? [String: Any])?["ids"] as? [String] == ["A", "B", "C", "D"])
+        #expect(transport.requests[0].value(forHTTPHeaderField: "Authorization") == "bearer t0k")
+    }
+
+    @Test func pullRequestStatesEmptyIDsSendsNothing() async throws {
+        let transport = FakeTransport { _ in (Data(), httpResponse(200)) }
+        #expect(try await client(transport).pullRequestStates(ids: []).isEmpty)
+        #expect(transport.requests.isEmpty)
+    }
+
+    @Test func pullRequestStatesMaps401ToUnauthorized() async {
+        let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
+        await #expect(throws: GitHubError.unauthorized) { try await client(transport).pullRequestStates(ids: ["A"]) }
+    }
 }

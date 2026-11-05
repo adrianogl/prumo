@@ -38,6 +38,12 @@ public enum WorktreeCleanup {
     }
 }
 
+extension WorktreeCleanup {
+    public static func confirmedClosed(candidates: [WorktreeRecord], states: [String: PRState]) -> [WorktreeRecord] {
+        candidates.filter { states[$0.pullRequestID] == .closed || states[$0.pullRequestID] == .merged }
+    }
+}
+
 public actor WorktreeRegistry {
     private let fileURL: URL
 

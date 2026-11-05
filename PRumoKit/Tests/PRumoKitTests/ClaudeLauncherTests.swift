@@ -65,8 +65,9 @@ private func launcher(
     @Test func reviewLaunchesWithReviewTemplateInWorktree() async throws {
         let runner = FakeRunner()
         let sink = ScriptSink()
-        let directory = try await launcher(runner, sink: sink).launch(pr: .fixture(), purpose: .review)
-        #expect(directory.path == worktree)
+        let launched = try await launcher(runner, sink: sink).launch(pr: .fixture(), purpose: .review)
+        #expect(launched.directory.path == worktree)
+        #expect(launched.clone.path == "/h/Code/acme/loja")
         #expect(sink.written.count == 1)
         #expect(sink.written[0].url.path == "/h/Library/Caches/PRumo/sessions/u1.zsh")
         #expect(sink.written[0].contents.contains("cd '\(worktree)' || exit 1\n"))
