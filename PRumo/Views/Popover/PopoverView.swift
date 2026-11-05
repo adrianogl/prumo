@@ -279,7 +279,10 @@ struct PopoverView: View {
                 }
             }
         } else {
-            StatusBanner(connection: model.connection, nextRefresh: model.nextRefresh, onReconnect: showOnboarding)
+            StatusBanner(
+                connection: model.connection, nextRefresh: model.nextRefresh,
+                providerName: AccountsSettingsText.providerName(model.accounts.list.accounts.first?.provider ?? .github),
+                onReconnect: reconnectOnlyAccount)
         }
     }
 
@@ -293,6 +296,15 @@ struct PopoverView: View {
     private func showOnboarding() {
         openWindow(id: PopoverText.onboardingWindowID)
         NSApp.activate()
+    }
+
+    private func reconnectOnlyAccount() {
+        guard let account = model.accounts.list.accounts.first else { return showOnboarding() }
+        switch OnboardingPolicy.recovery(for: account) {
+        case .onboarding: showOnboarding()
+        case .reconnect: model.reconnect(id: account.id)
+        case .settings: showSettings()
+        }
     }
 
     private func showSettings() {

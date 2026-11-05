@@ -4,6 +4,7 @@ import PRumoKit
 struct StatusBanner: View {
     let connection: ConnectionState
     let nextRefresh: Date?
+    let providerName: String
     let onReconnect: () -> Void
 
     private static let clock: DateFormatter = {
@@ -19,7 +20,7 @@ struct StatusBanner: View {
         case let .offline(lastSuccess):
             retryBanner { PopoverText.offline(lastSuccess: lastSuccess.map(Self.clock.string(from:)), retryIn: $0) }
         case let .unexpectedResponse(lastSuccess):
-            retryBanner { PopoverText.unexpectedResponse(lastSuccess: lastSuccess.map(Self.clock.string(from:)), retryIn: $0) }
+            retryBanner { PopoverText.unexpectedResponse(provider: providerName, lastSuccess: lastSuccess.map(Self.clock.string(from:)), retryIn: $0) }
         case .unauthorized:
             banner {
                 HStack(spacing: 4) {
@@ -29,7 +30,7 @@ struct StatusBanner: View {
                 }
             }
         case let .rateLimited(resetAt):
-            banner { Text(PopoverText.rateLimited(resetAt: resetAt.map(Self.clock.string(from:)))) }
+            banner { Text(PopoverText.rateLimited(provider: providerName, resetAt: resetAt.map(Self.clock.string(from:)))) }
         }
     }
 

@@ -190,7 +190,7 @@ final class AppModel {
             }
             let tokens = await resolveTokens(list, known: known)
             guard !Task.isCancelled else { return }
-            if list.count == 1, tokens[first.id] == nil, first.origin == .pasted {
+            if OnboardingPolicy.needsOnboarding(accounts: list, tokens: tokens) {
                 accounts.statuses[first.id] = AccountStatus(state: .unauthorized)
                 needsOnboarding = true
                 return
@@ -316,7 +316,7 @@ final class AppModel {
         } else {
             try store.delete()
         }
-        guard accounts.list.accounts.count <= 1 else {
+        guard OnboardingPolicy.onboardingReplacesAccounts(accounts.list.accounts) else {
             let replacing = existing != nil
             Task {
                 await waitForStartup()
@@ -479,8 +479,15 @@ final class AppModel {
             accountID: account.id,
             fetch: { () async throws(ProviderError) -> Snapshot in
                 try gate.check()
-                if let renewal { await Self.renewToken(account, credential: credential, resolver: renewal) }
-                let fetched = try await credential.client.fetchSnapshot()
+                guard let renewal else {
+                    let fetched = try await credential.client.fetchSnapshot()
+                    try gate.check()
+                    return fetched
+                }
+                await Self.renewToken(account, credential: credential, resolver: renewal)
+                let fetched = try await TokenRenewalRetry.run(
+                    fetch: { () async throws(ProviderError) -> Snapshot in try await credential.client.fetchSnapshot() },
+                    renew: { await Self.renewToken(account, credential: credential, resolver: renewal) })
                 try gate.check()
                 return fetched
             },
@@ -499,13 +506,15 @@ final class AppModel {
         }
     }
 
+    @discardableResult
     nonisolated private static func renewToken(
         _ account: Account, credential: SessionCredential, resolver: AccountTokenResolver
-    ) async {
+    ) async -> Bool {
         guard let token = await resolver.token(for: account), token != credential.token,
               let client = credential.client as? GitLabClient
-        else { return }
+        else { return false }
         credential.replace(token: token, client: client.replacingToken(token))
+        return true
     }
 
     private func stopSessions() {

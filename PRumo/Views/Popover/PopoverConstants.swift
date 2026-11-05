@@ -123,9 +123,9 @@ enum PopoverText {
         return "Sem conexão. \(data)Tentando de novo em \(retryIn)s."
     }
 
-    static func unexpectedResponse(lastSuccess: String?, retryIn: Int) -> String {
+    static func unexpectedResponse(provider: String, lastSuccess: String?, retryIn: Int) -> String {
         let data = lastSuccess.map { "Mostrando dados de \($0). " } ?? ""
-        return "O GitHub mandou uma resposta que o PRumo não entendeu. \(data)Tentando de novo em \(retryIn)s."
+        return "O \(provider) mandou uma resposta que o PRumo não entendeu. \(data)Tentando de novo em \(retryIn)s."
     }
 
     static let accountSettings = "Ajustes"
@@ -152,7 +152,7 @@ enum PopoverText {
 
     static func openJiraLabel(key: String) -> String { "\(openJiraHelp) \(key)" }
 
-    static func rateLimited(resetAt: String?) -> String {
-        resetAt.map { "Limite da API do GitHub. Volta às \($0)" } ?? "Limite da API do GitHub."
+    static func rateLimited(provider: String, resetAt: String?) -> String {
+        resetAt.map { "Limite da API do \(provider). Volta às \($0)" } ?? "Limite da API do \(provider)."
     }
 }

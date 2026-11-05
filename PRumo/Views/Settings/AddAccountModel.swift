@@ -4,7 +4,11 @@ import PRumoKit
 
 @Observable @MainActor
 final class AddAccountModel {
-    var provider: ProviderKind
+    var provider: ProviderKind {
+        didSet {
+            if provider != oldValue { tokenInput = "" }
+        }
+    }
     var address: String
     var detected: [GhAccount] = []
     var detectedGlab: [GlabAccount] = []
