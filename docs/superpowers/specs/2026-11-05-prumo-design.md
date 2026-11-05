@@ -25,7 +25,6 @@ A referência é o pullbar.app. O PRumo não copia nome, visual nem marca dele; 
   - um PR do usuário fica pronto para merge;
   - um PR do usuário entra em conflito.
 - Clicar numa linha ou notificação abre a página certa no navegador padrão.
-- Receber as mesmas notificações no iPhone e no iPad, na hora, sem app iOS próprio e sem conta Apple paga (ver "Notificações no iPhone e iPad").
 
 ## Não objetivos
 
@@ -35,6 +34,7 @@ A referência é o pullbar.app. O PRumo não copia nome, visual nem marca dele; 
 - Distribuição na App Store.
 - App nativo para iPhone ou iPad. Sem Apple Developer Program pago, o app instalado pelo Xcode expira a cada 7 dias e não tem CloudKit nem push. Se um dia houver conta paga, o caminho é extrair o núcleo para um pacote Swift e fazer o app iOS em cima dele.
 - Servidor próprio. O Mac é o único lugar que fala com o GitHub.
+- Notificações no iPhone e no iPad, por enquanto. Sem conta paga, o iOS mostraria o nome e o ícone do app que entrega (ntfy, Bark), e não os do PRumo. Opções avaliadas: ntfy (ícone e nome do ntfy), Bark (ícone do PRumo grande com selo do Bark, aparência ainda não testada) e app próprio com conta paga. Fica para quando houver uma dessas decisões.
 
 ## Anti-objetivos
 
@@ -167,18 +167,6 @@ Cada tipo pode ser ligado e desligado nos Ajustes.
 - Com o popover aberto, digitar abre um campo de busca que filtra as três abas por título, repositório ou número.
 - `↑` `↓` navegam entre as linhas (linha com contorno caramelo), `↵` abre, `⌘1` `⌘2` `⌘3` trocam de aba, `⌘.` abre o menu da linha.
 
-### Notificações no iPhone e iPad
-
-O Mac funciona como servidor. Toda notificação que o PRumo dispara no Mac também pode ser enviada para um tópico do [ntfy](https://ntfy.sh), serviço de push open source. No iPhone e no iPad, o usuário instala o app oficial do ntfy (gratuito) e assina o tópico.
-
-- Ajustes → Integrações → ntfy: liga e desliga o envio, servidor (padrão `https://ntfy.sh`, aceita servidor próprio), nome do tópico e token de acesso opcional para servidor com autenticação.
-- O app gera um nome de tópico aleatório e longo (ex.: `prumo-7f3k9q2xw8...`), porque no servidor público quem sabe o nome do tópico lê as mensagens. Botão "Enviar teste" e um QR code com o link de assinatura para abrir no iPhone.
-- Cada mensagem leva título e corpo iguais aos da notificação do Mac, o link do PR como ação de clique (abre no Safari), tag de ícone por tipo e prioridade alta para CI falhou e conflito.
-- O que vai para o ntfy: título do PR, `org/repo #n`, nome do check, nome de quem comentou ou revisou e o começo do comentário. O token do GitHub não sai do Mac.
-- Valem as mesmas regras de tipo, silenciado, Não perturbe e horário de trabalho.
-- Para não chegar a mesma notificação no Mac e no iPhone ao mesmo tempo, o envio para o ntfy, por padrão, só acontece com a tela do Mac bloqueada ou sem uso há mais de 5 minutos. Ajuste: "sempre", "só quando eu estiver longe do Mac" (padrão) ou "nunca".
-- Limite conhecido: com o Mac desligado ou dormindo, nada é enviado.
-
 ### Widget
 
 Depende de App Group entre o app e a extensão. Com conta gratuita, o macOS pode aceitar App Group com o prefixo do Team ID sem perfil pago, mas isso precisa ser testado. Se não funcionar, o widget sai do escopo.
@@ -203,7 +191,7 @@ Janela com estas seções:
 - **Exibição**: linha detalhada ou compacta; intervalo de atualização (padrão 60 s); abrir ao iniciar o macOS; atalho global.
 - **Notificações**: um toggle por tipo; agrupar notificações de CI; lembrete de review parado após N horas (padrão 24 h); só em horário de trabalho (dias e horário).
 - **Filtros**: ignorar drafts em Revisar; incluir reviews pedidos ao time; visões salvas; PRs silenciados (lista, com reativar).
-- **Integrações**: Jira, com uma lista de prefixo de chave → endereço do site (ex.: `ON` → `empresa.atlassian.net`, `DEV` → site da Contoso); ntfy (ver "Notificações no iPhone e iPad").
+- **Integrações**: Jira, com uma lista de prefixo de chave → endereço do site (ex.: `ON` → `empresa.atlassian.net`, `DEV` → site da Contoso).
 - **Sobre**: versão e aviso de licença do símbolo do IBM Carbon (Apache 2.0).
 
 ### Sem conexão
@@ -256,10 +244,9 @@ Cada etapa termina com o app usável.
 1. **Núcleo**: projeto Xcode, identidade (ícone, logotipo, cores), onboarding e token, leitura pela API, abas Meus PRs e Revisar, linha detalhada, abrir no navegador, notificações de CI, aprovado, alterações pedidas, comentário e review pedido, estado persistido, ajustes básicos, abrir ao iniciar.
 2. **Organização**: aba Merge e mergeados hoje, barra de repositórios, filtros e ordem, visões salvas, linha compacta, silenciar, fixar, ignorar drafts, para você/time, marcador de novo.
 3. **Ruído sob controle**: Não perturbe, horário de trabalho, review parado, notificações de pronto para merge e conflito, toggles por tipo.
-4. **iPhone e iPad pelo ntfy**: envio para o tópico, QR code de assinatura, regra de "só quando eu estiver longe do Mac".
-5. **Ações**: menu `⋯`, re-rodar job, copiar link e checkout, Jira, botões nas notificações.
-6. **Teclado**: atalho global, busca, navegação por teclado.
-7. **Widget**, se o App Group funcionar com conta gratuita.
+4. **Ações**: menu `⋯`, re-rodar job, copiar link e checkout, Jira, botões nas notificações.
+5. **Teclado**: atalho global, busca, navegação por teclado.
+6. **Widget**, se o App Group funcionar com conta gratuita.
 
 ## Distribuição
 
@@ -289,7 +276,6 @@ Build local, assinado com o time pessoal (gratuito) do Xcode, para rodar na máq
 - O lembrete de review parado é adiado para o fim da pausa, em vez de ser descartado.
 - Pronto para merge sem branch protection: uma aprovação basta; PR sem checks conta como CI verde (sugestão aceita).
 - Reviews do time: na lista, sem notificação e fora dos contadores (sugestão aceita).
-- ntfy: tópico aleatório gerado pelo app, servidor público como padrão, envio só quando o usuário está longe do Mac (tela bloqueada ou 5 min sem uso).
 - Ordem escolhida por aba; filtros e repositórios valem para as três abas.
 - Distribuição local, sem App Store.
 
