@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PRumo</title>
+<meta name="description" content="App de barra de menu para macOS que acompanha seus PRs, reviews e CI do GitHub e abre o Claude Code na branch certa.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+/* Layout: hero em duas colunas (texto + barra de menu com popover), seções alternadas, rodapé com instalação */
+:root{
+  --bg:#fbf8f2; --surface:#ffffff; --sand:#f3e6cf; --sand-deep:#d9c3a0;
+  --ink:#2a2622; --muted:#7a7065; --line:#e8dfcf; --caramel:#a5713a; --caramel-ink:#8a5a28;
+  --ok:#2f9e4f; --warn:#b8860b; --bad:#d9443a; --attn:#c26d1a;
+  --badge:#efe6d6; --claude-bg:#fff3ec; --claude-ink:#a4492c; --claude:#d97757;
+  --shadow:0 18px 44px rgba(42,38,34,.14);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro",system-ui,"Segoe UI",Roboto,sans-serif;
+  --display:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1c1a19; --surface:#252322; --sand:#3a2f25; --sand-deep:#2a2622;
+  --ink:#ece6dc; --muted:#a39a90; --line:#3a3633; --caramel:#c98b4d; --caramel-ink:#e0a86c;
+  --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --attn:#ff9f0a;
+  --badge:#34302d; --claude-bg:#3a2a22; --claude-ink:#e8a487;
+  --shadow:0 18px 44px rgba(0,0,0,.45); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1c1a19; --surface:#252322; --sand:#3a2f25; --sand-deep:#2a2622;
+  --ink:#ece6dc; --muted:#a39a90; --line:#3a3633; --caramel:#c98b4d; --caramel-ink:#e0a86c;
+  --ok:#30d158; --warn:#ffd60a; --bad:#ff453a; --attn:#ff9f0a;
+  --badge:#34302d; --claude-bg:#3a2a22; --claude-ink:#e8a487;
+  --shadow:0 18px 44px rgba(0,0,0,.45); color-scheme:dark}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:inherit}
+a:focus-visible,.btn:focus-visible{outline:3px solid var(--caramel);outline-offset:2px;border-radius:8px}
+code,kbd{font-family:var(--mono);font-size:.88em}
+code{background:var(--badge);padding:1px 5px;border-radius:4px}
+.wm{font-family:var(--display);font-weight:700;letter-spacing:-.03em}
+.wm b{color:var(--caramel);font-weight:inherit}
+
+.appicon{border-radius:22%;background:linear-gradient(135deg,#f3e6cf,#d9c3a0);display:grid;place-items:center;flex:none}
+.appicon svg{width:64%;height:64%}
+.appicon .pr-side{fill:#a5713a}.appicon .main-side{fill:#2a2622}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .appicon{background:#2a2622}:root:not([data-theme="light"]) .appicon .main-side{fill:#f3e6cf}}
+:root[data-theme="dark"] .appicon{background:#2a2622}
+:root[data-theme="dark"] .appicon .main-side{fill:#f3e6cf}
+.glyph{width:15px;height:15px;fill:currentColor}
+.cmark{width:12px;height:12px;flex:none}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding-block:22px}
+nav .brand{display:flex;align-items:center;gap:10px;font-size:20px;text-decoration:none}
+nav .links{display:flex;gap:22px;font-size:14px;color:var(--muted)}
+nav .links a{text-decoration:none}
+nav .links a:hover{color:var(--ink)}
+
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center;padding-block:36px 72px}
+.hero>*{min-width:0}
+.eyebrow{font:600 12px/1 var(--font);letter-spacing:.12em;text-transform:uppercase;color:var(--caramel-ink);margin-bottom:18px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(38px,5.4vw,62px);line-height:1.02;letter-spacing:-.035em;margin:0 0 20px;text-wrap:balance}
+h1 em{font-style:normal;color:var(--caramel)}
+.lede{font-size:18px;color:var(--muted);max-width:34em;margin:0 0 30px}
+.cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:9px;border-radius:12px;padding:13px 20px;font:600 15px var(--font);text-decoration:none;border:1px solid transparent}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn.ghost{border-color:var(--line);color:var(--ink);background:var(--surface)}
+.req{font-size:13px;color:var(--muted);margin-top:14px;font-family:var(--mono)}
+
+.stage{position:relative;border-radius:22px;background:linear-gradient(135deg,var(--sand),var(--sand-deep));padding:0 16px 22px;box-shadow:var(--shadow);overflow:hidden}
+.menubar{display:flex;gap:16px;align-items:center;justify-content:flex-end;padding:7px 4px;font:13px var(--font);color:var(--ink)}
+.menubar .item{display:inline-flex;gap:6px;align-items:center;padding:2px 8px;border-radius:6px;background:color-mix(in srgb,var(--ink) 10%,transparent)}
+.menubar .dot{width:5px;height:5px;border-radius:50%;background:var(--bad)}
+.pop{margin-left:auto;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;font-size:13px}
+.pop header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.pop header .t{display:flex;gap:8px;align-items:center;font-size:15px}
+.seg{display:flex;margin:10px 12px 4px;background:var(--badge);border-radius:9px;padding:2px}
+.seg span{flex:1;text-align:center;padding:5px 0;border-radius:7px;font-weight:500;font-size:12px;color:var(--muted)}
+.seg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.cnt{font-style:normal;background:var(--caramel);color:#fff;border-radius:8px;padding:0 6px;font-size:10.5px;margin-left:3px}
+.row{display:flex;gap:10px;padding:10px 12px;border-top:1px solid var(--line);position:relative}
+.row:first-of-type{border-top:none}
+.sd{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none}
+.row .tt{font-weight:500;line-height:1.3}
+.row .mm{font-size:11.5px;color:var(--muted);margin-top:2px}
+.bs{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.b{font-size:11px;padding:1px 7px;border-radius:5px;background:var(--badge);font-weight:500;display:inline-flex;gap:4px;align-items:center;color:var(--muted);white-space:nowrap}
+.b.ok{color:var(--ok)}.b.bad{color:var(--bad)}.b.warn{color:var(--warn)}.b.attn{color:var(--attn)}
+.b.claude{background:var(--claude-bg);color:var(--claude-ink)}
+.more{position:absolute;right:12px;top:10px;color:var(--muted);font-weight:700;letter-spacing:1px}
+.pop footer{display:flex;justify-content:space-between;padding:8px 12px;font-size:11px;color:var(--muted);border-top:1px solid var(--line)}
+.toast{position:absolute;left:16px;bottom:16px;width:min(310px,72%);display:flex;gap:10px;padding:11px 12px;border-radius:16px;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);box-shadow:var(--shadow);font-size:12.5px;border:1px solid var(--line)}
+.toast b{display:block}
+.toast .s{color:var(--muted)}
+.toast .acts{display:flex;gap:6px;margin-top:8px}
+.toast .acts span{flex:1;text-align:center;background:var(--badge);border-radius:7px;padding:3px 0;font-size:11.5px;font-weight:500}
+.toast .acts span.c{background:var(--claude-bg);color:var(--claude-ink)}
+
+section{padding-block:72px;border-top:1px solid var(--line)}
+.sec-head{max-width:680px;margin-bottom:36px}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(28px,3.6vw,40px);letter-spacing:-.03em;line-height:1.08;margin:0 0 12px;text-wrap:balance}
+h3{font-size:16px;margin:0 0 6px}
+.sec-head p{color:var(--muted);margin:0;font-size:17px}
+.muted{color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.card{display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.card>div{min-width:0}
+.card .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none;background:var(--badge);font-weight:700}
+.card b{display:block;font-size:15px}
+.card span{color:var(--muted);font-size:13.5px}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+.split>*{min-width:0}
+.list{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:12px}
+.list li{display:flex;gap:10px;align-items:flex-start}
+.list li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--caramel);margin-top:9px;flex:none}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+th,td{text-align:left;padding:12px 14px;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:none;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td .act{display:inline-flex;gap:5px;align-items:center;background:var(--claude-bg);color:var(--claude-ink);border-radius:6px;padding:1px 8px;font-weight:600;font-size:12.5px;white-space:nowrap}
+
+.term{border-radius:14px;background:#1b1a19;color:#e6e1d9;box-shadow:var(--shadow);overflow:hidden;margin-top:28px}
+.term .bar{display:flex;gap:6px;align-items:center;padding:9px 12px;background:#2a2826;font:12px var(--font);color:#9c958c}
+.term .bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.term pre{margin:0;padding:16px;font:12.5px/1.6 var(--mono);white-space:pre-wrap;overflow-x:auto}
+.term .p{color:#7fd67f}.term .d{color:#8a8a8a}.term .c{color:#e0a86c}
+
+.cols3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:28px}
+.cols3 p{color:var(--muted);margin:0;font-size:14.5px}
+
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:14px;max-width:760px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start}
+.steps li>div{min-width:0}
+.steps li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:14px}
+pre.code{margin:8px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:13px/1.6 var(--mono);overflow-x:auto}
+
+.soon{display:flex;flex-wrap:wrap;gap:8px}
+.soon span{border:1px dashed var(--line);border-radius:999px;padding:6px 12px;font-size:13.5px;color:var(--muted)}
+
+.final{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;padding:32px;border-radius:22px;background:linear-gradient(135deg,var(--sand),var(--sand-deep))}
+.final h2{margin:0}
+footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+
+@media (max-width:860px){
+  .hero,.split{grid-template-columns:1fr;gap:32px}
+  nav .links{display:none}
+  .toast{position:static;width:auto;margin-top:14px}
+}
+@media (prefers-reduced-motion:no-preference){.pop{animation:drop .5s ease-out both .15s}@keyframes drop{from{transform:translateY(-8px)}to{transform:none}}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pr" viewBox="0 0 32 32">
+    <path class="pr-side" d="m25,22.1421v-13.1421c0-2.2056-1.7944-4-4-4h-4.1719l2.5859-2.5859-1.4141-1.4141-5,5,5,5,1.4141-1.4141-2.5859-2.5859h4.1719c1.1028,0,2,.8975,2,2v13.1421c-1.7202.4473-3,1.9995-3,3.8579,0,2.2056,1.7944,4,4,4s4-1.7944,4-4c0-1.8584-1.2798-3.4106-3-3.8579Zm-1,5.8579c-1.1028,0-2-.8975-2-2s.8972-2,2-2,2,.8975,2,2-.8972,2-2,2Z"/>
+    <path class="main-side" d="m4,6c0,1.8584,1.2798,3.4106,3,3.8579v12.2842c-1.7202.447-3,1.9993-3,3.8579,0,2.2061,1.7944,4,4,4s4-1.7939,4-4c0-1.8586-1.2798-3.4109-3-3.8579v-12.2842c1.7202-.4473,3-1.9995,3-3.8579,0-2.2056-1.7944-4-4-4s-4,1.7944-4,4Zm6,20c0,1.1025-.897,2-2,2s-2-.8975-2-2c0-1.1025.897-2,2-2s2,.8975,2,2Zm0-20c0,1.103-.897,2-2,2s-2-.897-2-2c0-1.103.897-2,2-2s2,.897,2,2Z"/>
+  </symbol>
+  <symbol id="spark" viewBox="0 0 24 24"><g fill="none" stroke="#d97757" stroke-linecap="round" stroke-linejoin="round"><path stroke-width="2" d="M13.2 3.8H7A3.2 3.2 0 0 0 3.8 7v10A3.2 3.2 0 0 0 7 20.2h10a3.2 3.2 0 0 0 3.2-3.2v-3.4"/><path stroke-width="1.9" d="M7.3 16.6 9.7 9.4l2.4 7.2M8.15 14.2h3.1M15 9.4v7.2"/></g><path fill="#d97757" d="M17.60,3.10 Q18.28,5.52 20.70,6.20 Q18.28,6.88 17.60,9.30 Q16.92,6.88 14.50,6.20 Q16.92,5.52 17.60,3.10 Z M21.70,0.90 Q22.07,2.23 23.40,2.60 Q22.07,2.97 21.70,4.30 Q21.33,2.97 20.00,2.60 Q21.33,2.23 21.70,0.90 Z M21.20,8.30 Q21.62,9.78 23.10,10.20 Q21.62,10.62 21.20,12.10 Q20.78,10.62 19.30,10.20 Q20.78,9.78 21.20,8.30 Z"/></symbol>
+</svg>
+
+<div class="wrap">
+  <nav>
+    <a class="brand" href="#"><span class="appicon" style="width:30px;height:30px"><svg><use href="#pr"/></svg></span><span class="wm"><b>PR</b>umo</span></a>
+    <div class="links"><a href="#avisos">Avisos</a><a href="#lista">Lista</a><a href="#claude">Claude Code</a><a href="#privacidade">Privacidade</a><a href="#instalar">Instalar</a></div>
+  </nav>
+
+  <div class="hero">
+    <div>
+      <div class="eyebrow">App de barra de menu para macOS</div>
+      <h1>Seus PRs no <em>prumo</em>, sem abrir o GitHub.</h1>
+      <p class="lede">O PRumo fica no canto da tela e acompanha os PRs que você abriu e os reviews pedidos a você. Avisa quando a CI termina, quando aprovam e quando chega comentário. Para CI quebrada, conflito e comentários, abre o Claude Code já na branch do PR.</p>
+      <div class="cta">
+        <a class="btn primary" href="#instalar">Como instalar</a>
+        <a class="btn ghost" href="#claude">Ver o Claude no fluxo</a>
+      </div>
+      <div class="req">macOS 26 ou mais novo · usa o seu gh · sem servidor</div>
+    </div>
+
+    <div class="stage" aria-label="Exemplo do PRumo aberto na barra de menu">
+      <div class="menubar">
+        <span class="item"><svg class="glyph"><use href="#pr"/></svg>3<span class="dot"></span></span>
+        <span>Wi‑Fi</span><span>qui 10:52</span>
+      </div>
+      <div class="pop">
+        <header><div class="t"><span class="appicon" style="width:26px;height:26px"><svg><use href="#pr"/></svg></span><span class="wm"><b>PR</b>umo</span></div><span class="muted">⟳</span></header>
+        <div class="seg"><span class="on">Meus PRs <i class="cnt">4</i></span><span>Revisar <i class="cnt">3</i></span></div>
+        <div class="row"><span class="sd" style="background:var(--bad)"></span><div><div class="tt">feat(pedido): filtro por status na listagem</div><div class="mm">acme/loja #809 · 5h</div><div class="bs"><span class="b bad">✗ unit-tests</span><span class="b claude"><svg class="cmark"><use href="#spark"/></svg>corrigir</span><span class="b warn">aguardando review</span></div></div><span class="more" aria-hidden="true">⋯</span></div>
+        <div class="row"><span class="sd" style="background:var(--attn)"></span><div><div class="tt">refactor(frete): extrai o cálculo para um service</div><div class="mm">acme/api #74 · 3d</div><div class="bs"><span class="b">conflito</span><span class="b claude"><svg class="cmark"><use href="#spark"/></svg>resolver</span><span class="b">5 comentários</span><span class="b claude"><svg class="cmark"><use href="#spark"/></svg>resolver</span></div></div></div>
+        <div class="row"><span class="sd" style="background:var(--ok)"></span><div><div class="tt">fix(carrinho): preço do combo sem imposto</div><div class="mm">acme/loja #812 · 2h</div><div class="bs"><span class="b ok">✓ CI 12/12</span><span class="b ok">✓ 2 aprovações</span></div></div></div>
+        <footer><span>Atualizado há 30s</span><span>Ajustes</span></footer>
+      </div>
+      <div class="toast"><span class="appicon" style="width:32px;height:32px"><svg><use href="#pr"/></svg></span><div><b>CI falhou em #809</b><span class="s">feat(pedido): filtro por status · unit-tests</span><div class="acts"><span>Abrir</span><span class="c">Corrigir com Claude</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<section id="avisos">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Avisa o que pede ação. O resto fica na lista.</h2>
+      <p>Notificações nativas do macOS. O clique abre a página certa do PR no navegador.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ic" style="color:var(--bad)">✗</span><div><b>CI terminou</b><span>Passou ou falhou, com o nome do job. Uma notificação por commit, não uma por check. O clique abre a página de checks.</span></div></div>
+      <div class="card"><span class="ic" style="color:var(--ok)">✓</span><div><b>PR aprovado</b><span>Quem aprovou e em qual PR.</span></div></div>
+      <div class="card"><span class="ic" style="color:var(--attn)">!</span><div><b>Alterações pedidas</b><span>Quem pediu e em qual PR, direto para o review.</span></div></div>
+      <div class="card"><span class="ic">“</span><div><b>Comentário novo</b><span>De issue ou de review. Vários no mesmo PR viram uma notificação só.</span></div></div>
+      <div class="card"><span class="ic" style="color:var(--caramel)">↺</span><div><b>Review pedido</b><span>O PR entra na aba Revisar com o autor e o tamanho do diff.</span></div></div>
+      <div class="card"><span class="ic">∅</span><div><b>Sem ruído</b><span>Comentário seu ou de bot não toca. Na primeira abertura, ao reiniciar ou ao trocar de conta, nada do que já existia vira aviso.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="lista">
+  <div class="wrap split">
+    <div>
+      <h2>Tudo o que importa numa linha.</h2>
+      <p class="muted" style="font-size:17px;margin:0">O ícone na barra mostra quantos reviews esperam por você, com um ponto vermelho quando alguma CI sua está falhando. O popover tem duas abas.</p>
+      <ul class="list">
+        <li><span><b>Meus PRs</b>: os PRs abertos que você criou, em qualquer repositório.</span></li>
+        <li><span><b>Revisar</b>: os PRs em que pediram o seu review, com quem pediu, há quanto tempo e o tamanho do diff.</span></li>
+        <li><span>Bolinha de status e badges de CI (checks que passaram e o nome do que falhou), aprovações, alterações pedidas, draft, conflito e comentários.</span></li>
+        <li><span>Clique na linha abre o PR. O menu <code>⋯</code> ou o botão direito trazem as ações do Claude, abrir no navegador e copiar link.</span></li>
+        <li><span>Sem rede, sem token válido ou com limite da API, a lista continua com os últimos dados e um aviso do que está acontecendo.</span></li>
+      </ul>
+    </div>
+    <div class="cols3" style="grid-template-columns:1fr">
+      <div class="card"><span class="ic">◐</span><div><b>Claro e escuro</b><span>Segue o tema do sistema, com ícone areia no claro e carvão no escuro.</span></div></div>
+      <div class="card"><span class="ic">⏱</span><div><b>Atualização a cada 60 s</b><span>Configurável para 30 s, 2 min ou 5 min. O botão de atualizar busca na hora.</span></div></div>
+      <div class="card"><span class="ic">⇧</span><div><b>Abre com o Mac</b><span>Opção de iniciar junto com o macOS.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="claude">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>CI quebrou? O Claude Code abre na branch certa.</h2>
+      <p>Um clique abre o terminal numa worktree do PR, com o prompt pronto. Seu clone principal não muda de branch.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Quando</th><th>Onde clicar</th><th>O que o Claude faz</th></tr></thead>
+        <tbody>
+          <tr><td>Review pedido a você</td><td><span class="act"><svg class="cmark"><use href="#spark"/></svg>Revisar com Claude</span> no menu <code>⋯</code></td><td>Roda o seu comando de review, <code>/code-review &lt;n&gt;</code> por padrão.</td></tr>
+          <tr><td>CI falhando no seu PR</td><td><span class="act"><svg class="cmark"><use href="#spark"/></svg>corrigir</span> no badge, no menu e na notificação</td><td>Lê o log do job que falhou, encontra a causa e corrige.</td></tr>
+          <tr><td>PR em conflito</td><td><span class="act"><svg class="cmark"><use href="#spark"/></svg>resolver</span> no badge e no menu</td><td>Faz merge da branch base, resolve os conflitos, roda os testes e commita.</td></tr>
+          <tr><td>Comentários ou alterações pedidas</td><td><span class="act"><svg class="cmark"><use href="#spark"/></svg>resolver</span> no badge e no menu</td><td>Lê os comentários, aplica o que fizer sentido e resume o que mudou e o que ficou de fora. Não responde nem resolve conversas no GitHub.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="split" style="margin-top:36px">
+      <ul class="list" style="margin:0">
+        <li><span>Encontra o clone do repositório em <code>~/Code</code> pelo remote. Se não achar, pergunta a pasta uma vez e confere se ela é mesmo daquele repositório.</span></li>
+        <li><span>Cria a worktree em <code>~/Code/.prumo-worktrees/&lt;repo&gt;-&lt;n&gt;</code>. Para corrigir CI, conflito e comentários usa a branch real do PR, sem resetar commits seus; para revisar ou em PR de fork, uma worktree destacada.</span></li>
+        <li><span>Respeita a sua função ou alias <code>claude</code> do <code>.zshrc</code>.</span></li>
+        <li><span>Nenhum texto do PR (título, nome de job, branch) é digitado no terminal ou montado numa linha de shell: o terminal só roda um script do próprio app.</span></li>
+        <li><span>Apaga a worktree quando o GitHub confirma que o PR foi fechado ou mergeado, e só se ela estiver limpa e sem commits por enviar.</span></li>
+        <li><span>Prompts, flags do <code>claude</code>, terminal (Ghostty, Terminal, iTerm ou comando próprio) e pastas ficam em Ajustes › Claude.</span></li>
+      </ul>
+      <div class="term" aria-label="Exemplo de sessão aberta pelo PRumo" style="margin-top:0">
+        <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span style="margin-left:8px">loja-809</span></div>
+<pre><span class="d">~/Code/.prumo-worktrees/loja-809</span> <span class="c">(feat/pedido-filtro)</span>
+<span class="p">$</span> claude -- "A CI do PR #809 (acme/loja) falhou no job unit-tests. Leia o log com gh run view 1234567 --log-failed, encontre a causa e corrija."
+
+<span class="c">●</span> Lendo o log do job que falhou…
+<span class="c">●</span> O teste espera 3 status, mas o enum ganhou "cancelado".</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="privacidade">
+  <div class="wrap">
+    <div class="sec-head"><h2>Roda no seu Mac e fala só com o GitHub.</h2></div>
+    <div class="cols3">
+      <div><h3>Token no Keychain</h3><p>Usa o <code>gh auth token</code> que você já tem, ou um token com os escopos <code>repo</code> e <code>read:org</code>. Nada vai para arquivo nem para servidor nosso.</p></div>
+      <div><h3>Sem conta, sem backend</h3><p>A API do GitHub é consultada direto do seu Mac. O último estado fica em <code>~/Library/Application Support/PRumo</code>.</p></div>
+      <div><h3>Funciona com SSO</h3><p>Org com SAML não autorizado não derruba o app: os PRs que dá para ler continuam aparecendo.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="instalar">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Como instalar</h2>
+      <p>Por enquanto o PRumo é compilado a partir do código e roda assinado localmente, sem passar pela App Store.</p>
+    </div>
+    <ol class="steps">
+      <li><div><b>Tenha o básico</b><p class="muted" style="margin:4px 0 0">macOS 26, Xcode 27, <code>brew install xcodegen gh</code> e o GitHub CLI logado com <code>gh auth login</code>. Para as ações do Claude, o Claude Code disponível no shell como <code>claude</code>.</p></div></li>
+      <li><div><b>Compile</b><pre class="code">xcodegen generate
+xcodebuild -project PRumo.xcodeproj -scheme PRumo -destination 'platform=macOS' build</pre></div></li>
+      <li><div><b>Abra e conecte</b><p class="muted" style="margin:4px 0 0">O app encontra o seu <code>gh</code>, pede permissão de notificação e oferece abrir junto com o macOS. Na primeira leitura nada vira aviso.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<section id="em-breve">
+  <div class="wrap">
+    <div class="sec-head"><h2>Em breve</h2><p>Próximas etapas, já desenhadas na spec.</p></div>
+    <div class="soon">
+      <span>Aba Merge com os PRs prontos</span><span>Filtros por repositório e ordem</span><span>Silenciar e fixar PR</span><span>Não perturbe e horário de trabalho</span><span>Lembrete de review parado</span><span>Aviso de pronto para merge e de conflito</span><span>Busca e atalho global</span><span>Link para o card do Jira</span><span>Widget</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="final">
+      <div style="display:flex;gap:18px;align-items:center"><span class="appicon" style="width:64px;height:64px"><svg><use href="#pr"/></svg></span><h2>Coloque seus PRs no prumo.</h2></div>
+      <a class="btn primary" href="#instalar">Como instalar</a>
+    </div>
+    <footer class="site"><span><span class="wm"><b>PR</b>umo</span> · símbolo pull-request do IBM Carbon (Apache 2.0)</span><span>Claude Code é marca da Anthropic. O PRumo não é afiliado ao GitHub nem à Anthropic.</span></footer>
+  </div>
+</section>
+
+</body>
+</html>
