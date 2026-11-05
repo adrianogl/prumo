@@ -223,7 +223,10 @@ struct PopoverView: View {
             tab: tab,
             isHighlighted: highlighted.contains(pr.id),
             model: model)
-            .onAppear { organization.markSeen([pr.id]) }
+            .onAppear {
+                guard isOpen else { return }
+                organization.markSeen([pr.id])
+            }
     }
 
     private func mergedSection(_ merged: [MergedPullRequest]) -> some View {
