@@ -237,7 +237,7 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
 <div class="wrap">
   <nav>
     <a class="brand" href="#"><span class="appicon" style="width:30px;height:30px"><svg><use href="#pr"/></svg></span><span class="wm"><b>PR</b>umo</span></a>
-    <div class="links"><a href="#avisos">Avisos</a><a href="#lista">Lista</a><a href="#organizacao">Filtros</a><a href="#claude">Claude Code</a><a href="#teclado">Teclado</a><a href="#widget">Widget</a><a href="#instalar">Instalar</a></div>
+    <div class="links"><a href="#avisos">Avisos</a><a href="#lista">Lista</a><a href="#organizacao">Filtros</a><a href="#claude">Claude Code</a><a href="#teclado">Teclado</a><a href="#widget">Widget</a><a href="#instalar">Instalar</a><a href="https://github.com/adrianogl/prumo">GitHub</a></div>
   </nav>
 
   <div class="hero">
@@ -249,6 +249,7 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
         <a class="btn download" href="PRumo.dmg" download>Baixar para macOS</a>
         <a class="btn ghost" href="#instalar">Como instalar</a>
         <a class="btn ghost" href="#claude">Ver o Claude no fluxo</a>
+        <a class="btn ghost" href="https://github.com/adrianogl/prumo">Código no GitHub</a>
       </div>
       <div class="dl-meta">Versão 0.1.0 · macOS 26 ou mais novo · <a href="#instalar">leia o aviso sobre a primeira abertura</a></div>
       <div class="req">macOS 26 ou mais novo · usa o seu gh · sem servidor</div>
@@ -487,7 +488,7 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
       <pre class="code">xattr -dr com.apple.quarantine /Applications/PRumo.app</pre>
       <p>O widget pode não aparecer em outros Macs, porque o app não tem assinatura de desenvolvedor.</p>
     </div>
-    <p class="muted" style="margin:28px 0 0">Prefere compilar? Siga os passos abaixo.</p>
+    <p class="muted" style="margin:28px 0 0">Prefere compilar? O código está em <a href="https://github.com/adrianogl/prumo">github.com/adrianogl/prumo</a>. Siga os passos abaixo.</p>
     <ol class="steps">
       <li><div><b>Compilar do código: tenha o básico</b><p class="muted" style="margin:4px 0 0">macOS 26, Xcode 27, <code>brew install xcodegen gh</code> e o GitHub CLI logado com <code>gh auth login</code>. Para as ações do Claude, o Claude Code disponível no shell como <code>claude</code> ou com o nome que você configurar.</p></div></li>
       <li><div><b>Compile e abra</b><pre class="code">xcodegen generate
@@ -505,7 +506,7 @@ open ~/Library/Developer/Xcode/DerivedData/PRumo-*/Build/Products/Debug/PRumo.ap
       <div style="display:flex;gap:18px;align-items:center"><span class="appicon" style="width:64px;height:64px"><svg><use href="#pr"/></svg></span><h2>Coloque seus PRs no prumo.</h2></div>
       <a class="btn primary" href="#instalar">Como instalar</a>
     </div>
-    <footer class="site"><span><span class="wm"><b>PR</b>umo</span> · símbolo pull-request do IBM Carbon (Apache 2.0)</span><span>Em breve: GitLab, com várias contas e instâncias.</span><span>Claude Code é marca da Anthropic. O PRumo não é afiliado ao GitHub nem à Anthropic.</span></footer>
+    <footer class="site"><span><span class="wm"><b>PR</b>umo</span> · símbolo pull-request do IBM Carbon (Apache 2.0)</span><span><a href="https://github.com/adrianogl/prumo">Código aberto no GitHub</a> · Em breve: GitLab, com várias contas e instâncias.</span><span>Claude Code é marca da Anthropic. O PRumo não é afiliado ao GitHub nem à Anthropic.</span></footer>
   </div>
 </section>
 
