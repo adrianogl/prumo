@@ -37,12 +37,32 @@ private func discovery(_ runner: ScriptedRunner) -> GhAccountDiscovery {
     )
 }
 
+private func glabDiscovery(_ runner: ScriptedRunner) -> GlabAccountDiscovery {
+    GlabAccountDiscovery(
+        runner: runner,
+        environment: [:],
+        home: URL(fileURLWithPath: "/Users/fake"),
+        readFile: { _ in nil },
+        candidatePaths: ["/fake/glab"],
+        fileExists: { _ in true }
+    )
+}
+
+private struct GlabHostRunner: ProcessRunner {
+    let hosts: Requested
+    func run(_ executable: String, _ args: [String]) async throws -> (status: Int32, stdout: String, stderr: String) {
+        if let index = args.firstIndex(of: "--host") { hosts.add(args[index + 1]) }
+        return (0, "glpat-corp\n", "")
+    }
+}
+
 @Suite struct AccountTokenResolverTests {
     @Test func pastedAccountReadsOwnKeychainItem() async {
         let requested = Requested()
         let resolver = AccountTokenResolver(
             tokenStore: { id in requested.add(id); return FakeStore(token: "tok-a2") },
-            gh: discovery(ScriptedRunner())
+            gh: discovery(ScriptedRunner()),
+            glab: glabDiscovery(ScriptedRunner())
         )
         let token = await resolver.token(for: Account(id: "a2", login: "globex-dev", origin: .pasted))
         #expect(token == "tok-a2")
@@ -50,7 +70,7 @@ private func discovery(_ runner: ScriptedRunner) -> GhAccountDiscovery {
     }
 
     @Test func pastedAccountWithEmptyTokenIsNil() async {
-        let resolver = AccountTokenResolver(tokenStore: { _ in FakeStore(token: "") }, gh: discovery(ScriptedRunner()))
+        let resolver = AccountTokenResolver(tokenStore: { _ in FakeStore(token: "") }, gh: discovery(ScriptedRunner()), glab: glabDiscovery(ScriptedRunner()))
         #expect(await resolver.token(for: Account(id: "a2", login: "globex-dev", origin: .pasted)) == nil)
     }
 
@@ -58,7 +78,8 @@ private func discovery(_ runner: ScriptedRunner) -> GhAccountDiscovery {
         let runner = ScriptedRunner(stdout: "gho_globex\n")
         let resolver = AccountTokenResolver(
             tokenStore: { _ in FakeStore(token: "should-not-be-used") },
-            gh: discovery(runner)
+            gh: discovery(runner),
+            glab: glabDiscovery(runner)
         )
         let token = await resolver.token(for: Account(id: "a3", login: "globex-dev", origin: .ghCLI))
         #expect(token == "gho_globex")
@@ -68,16 +89,36 @@ private func discovery(_ runner: ScriptedRunner) -> GhAccountDiscovery {
     @Test func ghAccountWithoutTokenIsNil() async {
         let resolver = AccountTokenResolver(
             tokenStore: { _ in FakeStore(token: "x") },
-            gh: discovery(ScriptedRunner(status: 1))
+            gh: discovery(ScriptedRunner(status: 1)),
+            glab: glabDiscovery(ScriptedRunner())
         )
         #expect(await resolver.token(for: Account(id: "a3", login: "globex-dev", origin: .ghCLI)) == nil)
     }
 
     @Test func emuGhAccountAsksGhForUnderscoreLogin() async {
         let runner = ScriptedRunner(stdout: "gho_emu\n")
-        let resolver = AccountTokenResolver(tokenStore: { _ in FakeStore(token: nil) }, gh: discovery(runner))
+        let resolver = AccountTokenResolver(tokenStore: { _ in FakeStore(token: nil) }, gh: discovery(runner), glab: glabDiscovery(runner))
         let token = await resolver.token(for: Account(id: "a4", login: "octo_acme", origin: .ghCLI))
         #expect(token == "gho_emu")
         #expect(runner.users.all == ["octo_acme"])
+    }
+
+    @Test func glabAccountAsksGlabForHost() async {
+        let hosts = Requested()
+        let resolver = AccountTokenResolver(
+            tokenStore: { _ in FakeStore(token: "x") },
+            gh: discovery(ScriptedRunner()),
+            glab: GlabAccountDiscovery(
+                runner: GlabHostRunner(hosts: hosts),
+                environment: [:],
+                home: URL(fileURLWithPath: "/Users/fake"),
+                readFile: { _ in nil },
+                candidatePaths: ["/fake/glab"],
+                fileExists: { _ in true }
+            )
+        )
+        let account = Account(id: "g1", provider: .gitlab, host: "gitlab.empresa.com", login: "adriano", origin: .glabCLI)
+        #expect(await resolver.token(for: account) == "glpat-corp")
+        #expect(hosts.all == ["gitlab.empresa.com"])
     }
 }

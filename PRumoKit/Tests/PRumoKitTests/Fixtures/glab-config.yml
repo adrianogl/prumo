@@ -1,0 +1,19 @@
+# Configuration file for glab
+git_protocol: ssh
+editor:
+glamour_style: dark
+hosts:
+    gitlab.com:
+        # What protocol to use to access the API endpoint.
+        api_protocol: https
+        api_host: gitlab.com
+        user: adriano
+        use_keyring: "true"
+        is_oauth2: "true"
+        oauth2_expiry_date: "2026-11-05T21:04:20-03:00"
+        git_protocol: ssh
+    gitlab.empresa.com:
+        api_protocol: https
+        api_host: gitlab.empresa.com
+        user: adriano
+        git_protocol: ssh

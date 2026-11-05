@@ -63,7 +63,7 @@ final class AppModel {
         self.reminderStore = reminderStore
         self.notifications = notifications
         self.tokenStore = tokenStore
-        tokenResolver = AccountTokenResolver(tokenStore: tokenStore, gh: .system())
+        tokenResolver = AccountTokenResolver(tokenStore: tokenStore, gh: .system(), glab: .system())
         self.defaults = defaults
         self.accounts = accounts ?? AccountsStore(defaults: defaults)
         self.claude = claude ?? ClaudeSettingsStore(defaults: defaults)
