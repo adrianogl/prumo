@@ -33,8 +33,17 @@ import Testing
         #expect(AccountList.decode(nil) == nil)
     }
 
-    @Test func invalidDataMeansEmptyList() {
-        #expect(AccountList.decode(Data("nope".utf8)) == AccountList())
+    @Test func invalidDataMeansNoList() {
+        #expect(AccountList.decode(Data("nope".utf8)) == nil)
+    }
+
+    @Test func allUnreadableAccountsMeansNoList() {
+        let json = #"{"accounts":[{"id":"a1","provider":"bitbucket","login":"x"},{"nope":1}]}"#
+        #expect(AccountList.decode(Data(json.utf8)) == nil)
+    }
+
+    @Test func savedEmptyListIsValid() {
+        #expect(AccountList.decode(Data(#"{"accounts":[]}"#.utf8)) == AccountList())
     }
 
     @Test func addRejectsSameIdentityIgnoringCase() {

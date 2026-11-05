@@ -69,11 +69,11 @@ import Testing
         #expect(AccountMigration.account(from: legacy, existing: AccountList()) == nil)
     }
 
-    @Test func noMigrationWhenSavedListIsCorrupt() {
+    @Test func migratesWhenSavedListIsCorrupt() {
         let legacy = LegacyAccountState(login: "adrianogl", origin: .ghCLI, onboardingDone: true)
         let corrupt = AccountList.decode(Data("{nao é json".utf8))
-        #expect(corrupt != nil)
-        #expect(AccountMigration.account(from: legacy, existing: corrupt) == nil)
+        #expect(corrupt == nil)
+        #expect(AccountMigration.account(from: legacy, existing: corrupt)?.id == "github-legacy")
     }
 
     @Test func noMigrationBeforeOnboarding() {

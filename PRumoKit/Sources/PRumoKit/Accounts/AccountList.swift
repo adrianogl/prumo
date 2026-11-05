@@ -14,7 +14,14 @@ public struct AccountList: Codable, Equatable, Sendable {
 
     public static func decode(_ data: Data?) -> AccountList? {
         guard let data else { return nil }
-        return (try? JSONDecoder().decode(AccountList.self, from: data)) ?? AccountList()
+        guard let list = try? JSONDecoder().decode(AccountList.self, from: data) else { return nil }
+        if list.accounts.isEmpty, rawAccountCount(data) > 0 { return nil }
+        return list
+    }
+
+    private static func rawAccountCount(_ data: Data) -> Int {
+        let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return (object?["accounts"] as? [Any])?.count ?? 0
     }
 
     public func encoded() -> Data {
