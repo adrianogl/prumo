@@ -5,7 +5,10 @@ import PRumoKit
 @Observable @MainActor
 final class NotificationPreferencesStore {
     var preferences: NotificationPreferences {
-        didSet { persist() }
+        didSet {
+            persist()
+            refreshQuiet(now: .now)
+        }
     }
     private(set) var isQuiet = false
 

@@ -31,7 +31,12 @@ struct NotificationsSettingsView: View {
                     if !rangeIsValid {
                         Text(NotificationsSettingsText.invalidRange)
                             .font(.system(size: NotificationsSettingsMetrics.errorSize))
-                            .foregroundStyle(.red)
+                            .foregroundStyle(NotificationsSettingsColor.error)
+                    }
+                    if store.preferences.workingHours.weekdays.isEmpty {
+                        Text(NotificationsSettingsText.noWeekdays)
+                            .font(.system(size: NotificationsSettingsMetrics.errorSize))
+                            .foregroundStyle(NotificationsSettingsColor.error)
                     }
                 }
             }
@@ -55,10 +60,15 @@ struct NotificationsSettingsView: View {
                             width: NotificationsSettingsMetrics.weekdayButtonSize,
                             height: NotificationsSettingsMetrics.weekdayButtonSize)
                         .background(selected ? Color.prumoCaramel : Color.clear, in: .circle)
-                        .foregroundStyle(selected ? Color.white : Color.primary)
-                        .overlay(Circle().strokeBorder(Color.secondary.opacity(selected ? 0 : 0.5)))
+                        .foregroundStyle(selected ? NotificationsSettingsColor.selectedForeground : Color.primary)
+                        .overlay(Circle().strokeBorder(Color.secondary.opacity(
+                            selected
+                                ? NotificationsSettingsMetrics.selectedBorderOpacity
+                                : NotificationsSettingsMetrics.unselectedBorderOpacity)))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(NotificationsSettingsText.weekdayNames[index])
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
