@@ -11,13 +11,14 @@ struct PRRowView: View {
     @State private var menuOpen = false
 
     private var actions: RowActions {
-        RowActions(claudePurposes: pr.claudePurposes(in: tab)) { model.launchClaude(pr: pr, purpose: $0) }
+        RowActions(claudePurposes: pr.claudePurposes(in: tab, offersComments: presentation.commentsBadgeIndex != nil)) { model.launchClaude(pr: pr, purpose: $0) }
     }
 
     private func purpose(forBadgeAt index: Int) -> SessionPurpose? {
         guard tab == .mine else { return nil }
         if presentation.ciFailureBadgeIndex == index { return .fixCI }
         if presentation.conflictBadgeIndex == index { return .resolveConflict }
+        if presentation.commentsBadgeIndex == index { return .addressComments }
         return nil
     }
 

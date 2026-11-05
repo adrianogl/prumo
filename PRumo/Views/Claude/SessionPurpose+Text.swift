@@ -6,6 +6,7 @@ extension SessionPurpose {
         case .review: ClaudeText.review
         case .fixCI: ClaudeText.fixCI
         case .resolveConflict: ClaudeText.resolveConflict
+        case .addressComments: ClaudeText.addressComments
         }
     }
 
@@ -14,6 +15,7 @@ extension SessionPurpose {
         case .review: ClaudeText.review
         case .fixCI: ClaudeText.fixBadge
         case .resolveConflict: ClaudeText.resolveBadge
+        case .addressComments: ClaudeText.resolveBadge
         }
     }
 }
