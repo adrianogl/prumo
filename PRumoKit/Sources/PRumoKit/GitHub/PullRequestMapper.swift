@@ -42,6 +42,7 @@ public enum PullRequestMapper {
     }
 
     private static func reviewTarget(_ node: GraphQLResponse.PullRequestNode, viewer: String) -> ReviewRequestTarget? {
+        if node.author?.login.caseInsensitiveCompare(viewer) == .orderedSame { return nil }
         let reviewers = (node.reviewRequests?.nodes ?? []).compactMap { $0.value?.requestedReviewer }
         if reviewers.contains(where: { $0.typename == userTypename && $0.login == viewer }) { return .you }
         return reviewers.first(where: { $0.typename == teamTypename }).flatMap(\.name).map { .team(name: $0) }

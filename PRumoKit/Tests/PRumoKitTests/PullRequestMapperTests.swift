@@ -7,12 +7,15 @@ struct PullRequestMapperTests {
         try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: fixture("search-review"), mergedJSON: nil, now: .fixed)
     }
 
-    private func reviewJSON(replacingRequests requests: [[String: Any]], at index: Int) throws -> Data {
+    private func reviewJSON(replacingRequests requests: [[String: Any]], at index: Int, authorLogin: String? = nil) throws -> Data {
         var object = try JSONSerialization.jsonObject(with: fixture("search-review")) as! [String: Any]
         var data = object["data"] as! [String: Any]
         var search = data["search"] as! [String: Any]
         var nodes = search["nodes"] as! [[String: Any]]
         nodes[index]["reviewRequests"] = ["nodes": requests]
+        if let authorLogin {
+            nodes[index]["author"] = ["__typename": "User", "login": authorLogin]
+        }
         search["nodes"] = nodes
         data["search"] = search
         object["data"] = data
@@ -58,6 +61,13 @@ struct PullRequestMapperTests {
 
     @Test func reviewRequestOnlyToTeamIsTeamWithName() throws {
         #expect(try snapshot().toReview[1].reviewTarget == .team(name: "backend"))
+    }
+
+    @Test func viewerOwnPullRequestRequestedOnlyToTeamIsNotToReview() throws {
+        let team: [String: Any] = ["requestedReviewer": ["__typename": "Team", "name": "backend"]]
+        let review = try reviewJSON(replacingRequests: [team], at: 1, authorLogin: "Adriano")
+        let s = try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: review, mergedJSON: nil, now: .fixed)
+        #expect(s.toReview.map(\.id) == ["PR_201"])
     }
 
     @Test func viewerAndTeamBothRequestedIsYou() throws {

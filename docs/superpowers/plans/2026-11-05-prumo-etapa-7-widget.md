@@ -86,7 +86,7 @@ Variantes, nesta ordem:
       public static let disconnected: WidgetSnapshot
   }
   public enum WidgetSummary {
-      public static func make(snapshot: Snapshot, ignoreDrafts: Bool, muted: Set<String>, staleLimit: TimeInterval, now: Date) -> WidgetSnapshot
+      public static func make(snapshot: Snapshot, ignoreDrafts: Bool, includeTeam: Bool, muted: Set<String>, staleLimit: TimeInterval, now: Date) -> WidgetSnapshot
   }
   public enum WidgetLink {
       public static func make(_ url: URL) -> URL

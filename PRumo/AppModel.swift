@@ -140,7 +140,6 @@ final class AppModel {
     private func begin(token: String) async {
         let client = GitHubClient(token: token)
         githubClient = client
-        activityBaseline = nil
         coordinator = RefreshCoordinator(
             fetch: { () async throws(GitHubError) -> Snapshot in try await client.fetchSnapshot() },
             store: snapshotStore
@@ -148,6 +147,7 @@ final class AppModel {
         let stored = await snapshotStore.load()
         guard !Task.isCancelled else { return }
         snapshot = stored
+        activityBaseline = stored
         startPolling()
     }
 

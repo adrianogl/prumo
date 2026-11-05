@@ -38,7 +38,7 @@ struct PopoverView: View {
         .onAppear(perform: open)
         .onDisappear(perform: close)
         .onChange(of: isPresentingPicker) { _, isPresenting in
-            if !isPresenting && !NSApp.isActive { close() }
+            if !isPresenting && (!NSApp.isActive || window?.isVisible != true) { close() }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { note in
             if isPopoverWindow(note.object) { open() }

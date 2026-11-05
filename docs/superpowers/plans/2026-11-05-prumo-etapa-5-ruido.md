@@ -113,7 +113,7 @@ Eventos (por PR que já existia em `old.mine`, depois dos de comentário):
   public struct StaleReminder: Equatable, Sendable { public let key: String; public let event: NotificationEvent }
   public enum StaleReviewTracker {
       public static func key(for pr: PullRequest) -> String
-      public static func due(snapshot: Snapshot, limit: TimeInterval, reminded: Set<String>, muted: Set<String>, ignoreDrafts: Bool, now: Date) -> [StaleReminder]
+      public static func due(snapshot: Snapshot, limit: TimeInterval, reminded: Set<String>, muted: Set<String>, ignoreDrafts: Bool, includeTeam: Bool, now: Date) -> [StaleReminder]
   }
   public struct ReminderState: Codable, Equatable, Sendable {
       public var initialized = false; public var reminded: [String] = []

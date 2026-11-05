@@ -289,7 +289,7 @@ Rótulos dos chips: `CI passou`, `CI rodando`, `CI falhando`, `Aprovado`, `Alter
   ```
   `AppModel` expõe `let organization: OrganizationStore`.
 
-`AppModel.runRefresh` passa a: chamar `coordinator.refresh(options: TransitionOptions(ignoreDraftReviews: organization.settings.ignoreDraftsInReview))`; guardar o snapshot anterior para `ActivityTracker.touched` e gravar o resultado menos os silenciados em `recordActivity` (com `pruned`); postar só eventos de PRs não silenciados; chamar `learnRepositories`.
+`AppModel.runRefresh` passa a: chamar `coordinator.refresh(options: TransitionOptions(ignoreDraftReviews: organization.settings.ignoreDraftsInReview, includeTeamRequests: organization.settings.includeTeamRequests))`; guardar o snapshot anterior para `ActivityTracker.touched` e gravar o resultado menos os silenciados em `recordActivity` (com `pruned`); postar só eventos de PRs não silenciados; chamar `learnRepositories`.
 
 Popover:
 - Abas `Meus PRs`, `Revisar`, `Merge`. Revisar mostra `ReviewInclusion.visible(...)` com as duas opções. Merge mostra `mine` com `MergeReadiness.isReady`, vazio `Nenhum PR pronto para merge`.
