@@ -1,7 +1,7 @@
 import Foundation
 
 enum ClaudeSettingsMetrics {
-    static let height: CGFloat = 700
+    static let height: CGFloat = 640
     static let hintSize: CGFloat = 11
     static let templateLines = 2...4
 }
@@ -33,14 +33,10 @@ enum ClaudeSettingsText {
     static let worktreesRoot = "Pasta das worktrees"
     static let choose = "Escolher…"
     static let chooseFolderPrompt = "Escolher"
-    static let clonesHeader = "Clones encontrados"
-    static let clonesHint = "Busca automática em %@ pelo remote do repositório"
-    static let scanning = "Buscando…"
-    static let rescan = "Buscar de novo"
-    static let addManually = "+ Adicionar manualmente"
-    static let changePath = "Trocar…"
+    static let clones = "Clones"
+    static let clonesSummary = "%ld em %@ · %ld nos seus PRs"
+    static let scanningClones = "Procurando clones…"
+    static let manageClones = "Gerenciar…"
     static let noClones = "Nenhum clone encontrado"
-    static let notGitHubRepository = "Essa pasta não é um clone de um repositório do GitHub"
     static let removeWorktree = "Apagar worktree quando o PR fechar"
-    static let arrow = "→"
 }

@@ -25,6 +25,16 @@ final class ClaudeSettingsStore {
         settings.cloneOverrides.mapValues { URL(fileURLWithPath: expand($0)) }
     }
 
+    var repositories: [String] {
+        Set(scanned.keys).union(settings.cloneOverrides.keys).sorted()
+    }
+
+    func resolvedCount(of repositories: Set<String>) -> Int {
+        Set(repositories.map { $0.lowercased() })
+            .filter { CloneResolver.pick(repository: $0, scanned: scanned, overrides: overrides) != nil }
+            .count
+    }
+
     func rescan() async {
         scanGeneration += 1
         let generation = scanGeneration

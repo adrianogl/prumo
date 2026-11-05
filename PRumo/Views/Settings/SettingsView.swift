@@ -21,12 +21,17 @@ struct SettingsView: View {
         }
     }
 
+    private var pullRequestRepositories: Set<String> {
+        guard let snapshot = model.snapshot else { return [] }
+        return Set((snapshot.mine + snapshot.toReview).map(\.repository))
+    }
+
     var body: some View {
         TabView(selection: $selection) {
             Tab(SettingsText.account, systemImage: SettingsSymbol.account, value: SettingsTab.account) { account }
             Tab(SettingsText.general, systemImage: SettingsSymbol.general, value: SettingsTab.general) { general }
             Tab(ClaudeSettingsText.tab, systemImage: ClaudeSymbol.tab, value: SettingsTab.claude) {
-                ClaudeSettingsView(store: model.claude)
+                ClaudeSettingsView(store: model.claude, relevant: pullRequestRepositories)
             }
             Tab(IntegrationsSettingsText.tab, systemImage: IntegrationsSettingsSymbol.tab, value: SettingsTab.integrations) {
                 IntegrationsSettingsView(store: model.integrations)

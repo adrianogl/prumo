@@ -3,7 +3,8 @@ import PRumoKit
 
 struct ClaudeSettingsView: View {
     let store: ClaudeSettingsStore
-    @State private var manualError: String?
+    let relevant: Set<String>
+    @State private var showsClonesManager = false
     @State private var lastCustomTemplate = ""
 
     var body: some View {
@@ -40,9 +41,7 @@ struct ClaudeSettingsView: View {
                 }
             }
             Section {
-                clonesList
-            } header: {
-                clonesHeader
+                clonesSummary
             }
             Section {
                 Toggle(ClaudeSettingsText.removeWorktree, isOn: $store.settings.removeWorktreeOnClose)
@@ -50,6 +49,9 @@ struct ClaudeSettingsView: View {
         }
         .formStyle(.grouped)
         .task { await store.rescan() }
+        .sheet(isPresented: $showsClonesManager) {
+            ClonesManagerView(store: store, relevant: relevant)
+        }
     }
 
     private func templateField(_ title: String, hint hintText: String, text: Binding<String>) -> some View {
@@ -100,72 +102,26 @@ struct ClaudeSettingsView: View {
         }
     }
 
-    private var clonesHeader: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(ClaudeSettingsText.clonesHeader)
-                hint(String(format: ClaudeSettingsText.clonesHint, store.settings.clonesRoot))
-            }
-            Spacer()
-            if store.isScanning {
-                ProgressView().controlSize(.small)
-            }
-            Button(ClaudeSettingsText.rescan) {
-                Task { await store.rescan() }
-            }
-            .disabled(store.isScanning)
-        }
-    }
-
-    @ViewBuilder
-    private var clonesList: some View {
-        let repositories = Set(store.scanned.keys).union(store.settings.cloneOverrides.keys).sorted()
-        if repositories.isEmpty {
-            Text(store.isScanning ? ClaudeSettingsText.scanning : ClaudeSettingsText.noClones)
-                .foregroundStyle(.secondary)
-        }
-        ForEach(repositories, id: \.self) { repository in
+    private var clonesSummary: some View {
+        LabeledContent(ClaudeSettingsText.clones) {
             HStack {
-                Text(repository)
-                Text(ClaudeSettingsText.arrow).foregroundStyle(.secondary)
-                Text(path(for: repository))
-                    .font(.system(.body, design: .monospaced))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Spacer()
-                Button(ClaudeSettingsText.changePath) {
-                    if let url = FolderPicker.choose(prompt: ClaudeSettingsText.chooseFolderPrompt) {
-                        store.setOverride(repository: repository, path: url)
-                    }
+                if store.isScanning {
+                    ProgressView().controlSize(.small)
+                    Text(ClaudeSettingsText.scanningClones).foregroundStyle(.secondary)
+                } else if store.repositories.isEmpty {
+                    Text(ClaudeSettingsText.noClones).foregroundStyle(.secondary)
+                } else {
+                    Text(clonesSummaryText).foregroundStyle(.secondary)
                 }
+                Button(ClaudeSettingsText.manageClones) { showsClonesManager = true }
             }
-        }
-        Button(ClaudeSettingsText.addManually) { addManually() }
-        if let manualError {
-            Text(manualError).font(.system(size: ClaudeSettingsMetrics.hintSize)).foregroundStyle(.red)
         }
     }
 
-    private func path(for repository: String) -> String {
-        if let override = store.settings.cloneOverrides[repository] { return override }
-        let url = CloneResolver.pick(repository: repository, scanned: store.scanned, overrides: [:])
-        return url.map { store.abbreviate($0.path) } ?? ""
-    }
-
-    private func addManually() {
-        manualError = nil
-        guard let url = FolderPicker.choose(prompt: ClaudeSettingsText.chooseFolderPrompt) else { return }
-        Task {
-            let result = try? await SystemProcessRunner().run(
-                "/usr/bin/git", ["-C", url.path, "remote", "get-url", "origin"])
-            guard let result, result.status == 0,
-                  let repository = RemoteURL.repository(from: result.stdout)
-            else {
-                manualError = ClaudeSettingsText.notGitHubRepository
-                return
-            }
-            store.setOverride(repository: repository, path: url)
-        }
+    private var clonesSummaryText: String {
+        String(
+            format: ClaudeSettingsText.clonesSummary,
+            store.repositories.count, store.settings.clonesRoot, store.resolvedCount(of: relevant))
     }
 
     private var terminalChoice: Binding<TerminalChoice> {
