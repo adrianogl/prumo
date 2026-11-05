@@ -5,18 +5,25 @@ import Testing
 @Suite struct TerminalCommandTests {
     let directory = URL(fileURLWithPath: "/Users/ana/Code/loja")
     let scriptPath = URL(fileURLWithPath: "/Users/ana/Library/Caches/PRumo/sessions/abc.zsh")
+    static let tail = "status=$?\n[ $status -ne 0 ] && read -k1 \"?claude saiu com erro $status. Pressione uma tecla.\"\n"
     let hostile = "Fix \"it\" $(rm -rf ~) `x` it's PWNED"
 
     @Test func scriptQuotesHostilePrompt() {
         let prompt = hostile + "\u{15}\u{3}\u{1b}\r"
         let script = TerminalCommand.scriptContents(directory: directory, prompt: prompt, extraFlags: " --model opus ")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\nexec claude --model opus 'Fix \"it\" $(rm -rf ~) `x` it'\\''s PWNED\n'\n")
+        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' --model opus 'Fix \"it\" $(rm -rf ~) `x` it'\\''s PWNED\n'\n" + Self.tail)
+    }
+
+    @Test func scriptUsesGivenClaudeExecutable() {
+        let script = TerminalCommand.scriptContents(
+            directory: directory, prompt: "oi", extraFlags: "", claudeExecutable: "/Users/ana/.local/bin/claude")
+        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'/Users/ana/.local/bin/claude' 'oi'\n" + Self.tail)
     }
 
     @Test func scriptSanitizesControls() {
         let script = TerminalCommand.scriptContents(
             directory: directory, prompt: "a\r\nb\rc\td\u{0}\u{7f}\u{85}e", extraFlags: "")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\nexec claude 'a\nb\nc\tde'\n")
+        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' 'a\nb\nc\tde'\n" + Self.tail)
     }
 
     @Test func scriptRoundTripsThroughZsh() throws {
@@ -90,7 +97,7 @@ import Testing
 
     @Test func emptyFlagsNoDoubleSpace() {
         let script = TerminalCommand.scriptContents(directory: directory, prompt: "oi", extraFlags: " \n ")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\nexec claude 'oi'\n")
+        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' 'oi'\n" + Self.tail)
     }
 
     @Test func shellQuoteHelpers() {

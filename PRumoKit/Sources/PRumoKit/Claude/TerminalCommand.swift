@@ -11,11 +11,22 @@ public struct LaunchCommand: Equatable, Sendable {
 }
 
 public enum TerminalCommand {
-    public static func scriptContents(directory: URL, prompt: String, extraFlags: String) -> String {
+    public static func scriptContents(
+        directory: URL,
+        prompt: String,
+        extraFlags: String,
+        claudeExecutable: String = "claude"
+    ) -> String {
         let flags = extraFlags.trimmingCharacters(in: .whitespacesAndNewlines)
-        let claude = (["exec", "claude"] + (flags.isEmpty ? [] : [flags]) + [ShellQuote.single(sanitize(prompt))])
+        let claude = ([ShellQuote.single(claudeExecutable)] + (flags.isEmpty ? [] : [flags]) + [ShellQuote.single(sanitize(prompt))])
             .joined(separator: " ")
-        return "cd \(ShellQuote.single(directory.path)) || exit 1\n\(claude)\n"
+        return [
+            "cd \(ShellQuote.single(directory.path)) || exit 1",
+            claude,
+            "status=$?",
+            "[ $status -ne 0 ] && read -k1 \"?claude saiu com erro $status. Pressione uma tecla.\"",
+            "",
+        ].joined(separator: "\n")
     }
 
     public static func build(kind: TerminalKind, directory: URL, scriptPath: URL) -> LaunchCommand {
