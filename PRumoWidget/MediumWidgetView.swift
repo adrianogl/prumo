@@ -73,15 +73,19 @@ struct MediumWidgetView: View {
         }
     }
 
+    private func reference(_ item: WidgetItem) -> String {
+        item.reference.isEmpty ? "#\(item.number)" : item.reference
+    }
+
     private func label(_ item: WidgetItem) -> String {
         switch item.reason {
         case .ciFailing:
-            return "#\(item.number) \(item.title)"
+            return "\(reference(item)) \(item.title)"
         case .staleReview:
             let hours = item.waitingHours.map { " · \($0)h" } ?? ""
-            return "#\(item.number) \(item.title)\(hours)"
+            return "\(reference(item)) \(item.title)\(hours)"
         case .readyToMerge:
-            return "#\(item.number) \(WidgetText.readyItem)"
+            return "\(reference(item)) \(WidgetText.readyItem)"
         }
     }
 }

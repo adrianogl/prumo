@@ -46,6 +46,6 @@ public enum WidgetSummary {
     }
 
     private static func item(_ pr: PullRequest, reason: WidgetReason, waitingHours: Int? = nil) -> WidgetItem {
-        WidgetItem(id: pr.id, number: pr.number, title: pr.title, url: pr.url, reason: reason, waitingHours: waitingHours)
+        WidgetItem(id: pr.id, number: pr.number, title: pr.title, url: pr.url, reference: pr.reference, reason: reason, waitingHours: waitingHours)
     }
 }

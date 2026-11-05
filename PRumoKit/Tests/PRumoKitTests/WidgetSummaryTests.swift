@@ -109,6 +109,53 @@ import Testing
         #expect(WidgetLink.target(from: URL(string: "prumo://open")!) == nil)
     }
 
+    @Test func allowsConfiguredGitLabHost() {
+        let url = URL(string: "https://gitlab.empresa.com/grupo/app/-/merge_requests/7")!
+        #expect(WidgetLink.target(from: WidgetLink.make(url), allowedHosts: ["github.com", "gitlab.empresa.com"]) == url)
+        #expect(WidgetLink.target(from: WidgetLink.make(URL(string: "https://GitLab.Empresa.com/x")!), allowedHosts: ["gitlab.empresa.com"]) != nil)
+    }
+
+    @Test func allowsConfiguredHostWithPort() {
+        let url = URL(string: "https://gitlab.local:8443/grupo/app/-/merge_requests/7")!
+        #expect(WidgetLink.target(from: WidgetLink.make(url), allowedHosts: ["gitlab.local:8443"]) == url)
+    }
+
+    @Test func rejectsPortMismatch() {
+        let withPort = WidgetLink.make(URL(string: "https://gitlab.local:9000/x")!)
+        #expect(WidgetLink.target(from: withPort, allowedHosts: ["gitlab.local:8443"]) == nil)
+        #expect(WidgetLink.target(from: withPort, allowedHosts: ["gitlab.local"]) == nil)
+        let withoutPort = WidgetLink.make(URL(string: "https://gitlab.local/x")!)
+        #expect(WidgetLink.target(from: withoutPort, allowedHosts: ["gitlab.local:8443"]) == nil)
+    }
+
+    @Test func rejectsUnconfiguredHost() {
+        let link = WidgetLink.make(URL(string: "https://gitlab.outro.com/x")!)
+        #expect(WidgetLink.target(from: link, allowedHosts: ["github.com", "gitlab.empresa.com"]) == nil)
+    }
+
+    @Test func rejectsLookalikeHost() {
+        let allowed: Set<String> = ["gitlab.empresa.com"]
+        for target in ["https://gitlab.empresa.com.evil.io/x", "https://evilgitlab.empresa.com/x"] {
+            #expect(WidgetLink.target(from: WidgetLink.make(URL(string: target)!), allowedHosts: allowed) == nil)
+        }
+    }
+
+    @Test func rejectsHttp() {
+        let link = WidgetLink.make(URL(string: "http://gitlab.empresa.com/x")!)
+        #expect(WidgetLink.target(from: link, allowedHosts: ["gitlab.empresa.com"]) == nil)
+    }
+
+    @Test func githubStillAllowedByDefault() {
+        let url = URL(string: "https://github.com/acme/loja/pull/1")!
+        #expect(WidgetLink.target(from: WidgetLink.make(url)) == url)
+        #expect(WidgetLink.target(from: WidgetLink.make(URL(string: "https://gitlab.empresa.com/x")!)) == nil)
+    }
+
+    @Test func summaryCarriesBangReference() {
+        let snapshot = Snapshot.fixture(mine: [.fixture(id: "M1", number: 7, ci: failure, provider: .gitlab)])
+        #expect(make(snapshot).items.first?.reference == "!7")
+    }
+
     @Test func oldWidgetJSONDecodes() throws {
         let decoded = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(#"{"toReview":3}"#.utf8))
         #expect(decoded.connected == true)
