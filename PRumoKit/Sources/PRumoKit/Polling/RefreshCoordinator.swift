@@ -15,17 +15,17 @@ public actor RefreshCoordinator {
 
     public typealias RefreshResult = (snapshot: Snapshot?, events: [NotificationEvent], state: ConnectionState)
 
-    public func refresh() async -> RefreshResult {
+    public func refresh(options: TransitionOptions = .init()) async -> RefreshResult {
         let previous = tail
         let task = Task { () -> RefreshResult in
             _ = await previous?.value
-            return await self.perform()
+            return await self.perform(options: options)
         }
         tail = task
         return await task.value
     }
 
-    private func perform() async -> RefreshResult {
+    private func perform(options: TransitionOptions) async -> RefreshResult {
         let stored: Snapshot?
         if let lastKnown {
             stored = lastKnown
@@ -34,7 +34,7 @@ public actor RefreshCoordinator {
         }
         do {
             let fresh = try await fetch()
-            let events = TransitionEngine.events(from: stored, to: fresh)
+            let events = TransitionEngine.events(from: stored, to: fresh, options: options)
             lastKnown = fresh
             try? await store.save(fresh)
             return (fresh, events, .ok)

@@ -1,7 +1,7 @@
 import Foundation
 
 public enum TransitionEngine {
-    public static func events(from old: Snapshot?, to new: Snapshot) -> [NotificationEvent] {
+    public static func events(from old: Snapshot?, to new: Snapshot, options: TransitionOptions = .init()) -> [NotificationEvent] {
         guard let old, old.viewer == new.viewer else { return [] }
         let oldMine = Dictionary(old.mine.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var result: [NotificationEvent] = []
@@ -12,9 +12,10 @@ public enum TransitionEngine {
             result += reviewEvents(before, pr, viewer: new.viewer, since: threshold)
             result += commentEvents(before, pr, viewer: new.viewer, since: threshold)
         }
-        let knownReviewRequests = Set(old.toReview.map(\.id))
-        for pr in new.toReview where !knownReviewRequests.contains(pr.id) {
-            if let requestedAt = pr.reviewRequestedAt, requestedAt <= threshold { continue }
+        let oldToReviewIDs = Set(old.toReview.map(\.id))
+        let knownReviewRequests = Set(directRequests(old.toReview, options).map(\.id))
+        for pr in directRequests(new.toReview, options) where !knownReviewRequests.contains(pr.id) {
+            if !oldToReviewIDs.contains(pr.id), let requestedAt = pr.reviewRequestedAt, requestedAt <= threshold { continue }
             result.append(NotificationEvent(
                 kind: .reviewRequested, pullRequestID: pr.id,
                 title: "Review pedido: #\(pr.number)",
@@ -22,6 +23,10 @@ public enum TransitionEngine {
             ))
         }
         return result
+    }
+
+    private static func directRequests(_ prs: [PullRequest], _ options: TransitionOptions) -> [PullRequest] {
+        ReviewInclusion.visible(prs, ignoreDrafts: options.ignoreDraftReviews, includeTeam: false)
     }
 
     private static func ciEvents(_ old: PullRequest, _ new: PullRequest) -> [NotificationEvent] {

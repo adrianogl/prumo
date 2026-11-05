@@ -322,4 +322,46 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         )
         #expect(TransitionEngine.events(from: old, to: new).isEmpty)
     }
+
+    @Test func teamRequestDoesNotNotify() {
+        let old = Snapshot.fixture(toReview: [])
+        let new = Snapshot.fixture(toReview: [.fixture(id: "PR_7", number: 7, reviewTarget: .team(name: "time"))], fetchedAt: t1)
+        #expect(TransitionEngine.events(from: old, to: new).isEmpty)
+    }
+
+    @Test func teamRequestBecomingDirectNotifies() {
+        let old = Snapshot.fixture(toReview: [.fixture(id: "PR_7", number: 7, reviewRequestedAt: t0, reviewTarget: .team(name: "time"))], fetchedAt: t2)
+        let new = Snapshot.fixture(
+            toReview: [.fixture(id: "PR_7", number: 7, reviewRequestedAt: t0, reviewTarget: .you)],
+            fetchedAt: t2.addingTimeInterval(60)
+        )
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(events.map(\.kind) == [.reviewRequested])
+        #expect(events[0].pullRequestID == "PR_7")
+    }
+
+    @Test func draftReviewRequestIgnoredWhenOptionOn() {
+        let old = Snapshot.fixture(toReview: [])
+        let new = Snapshot.fixture(toReview: [.fixture(id: "PR_8", number: 8, isDraft: true)], fetchedAt: t1)
+        #expect(TransitionEngine.events(from: old, to: new, options: .init(ignoreDraftReviews: true)).isEmpty)
+    }
+
+    @Test func draftReviewRequestNotifiesWhenOptionOff() {
+        let old = Snapshot.fixture(toReview: [])
+        let new = Snapshot.fixture(toReview: [.fixture(id: "PR_8", number: 8, isDraft: true)], fetchedAt: t1)
+        let events = TransitionEngine.events(from: old, to: new, options: .init(ignoreDraftReviews: false))
+        #expect(events.map(\.kind) == [.reviewRequested])
+    }
+
+    @Test func draftBecomingReadyNotifiesWhenIgnoringDrafts() {
+        let old = Snapshot.fixture(toReview: [.fixture(id: "PR_8", number: 8, isDraft: true, reviewRequestedAt: t0)], fetchedAt: t2)
+        let new = Snapshot.fixture(
+            toReview: [.fixture(id: "PR_8", number: 8, isDraft: false, reviewRequestedAt: t0)],
+            fetchedAt: t2.addingTimeInterval(60)
+        )
+        let events = TransitionEngine.events(from: old, to: new, options: .init(ignoreDraftReviews: true))
+        #expect(events.map(\.kind) == [.reviewRequested])
+        let again = Snapshot.fixture(toReview: new.toReview, fetchedAt: t2.addingTimeInterval(120))
+        #expect(TransitionEngine.events(from: new, to: again, options: .init(ignoreDraftReviews: true)).isEmpty)
+    }
 }

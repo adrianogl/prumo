@@ -141,4 +141,22 @@ private func failed(at date: Date) -> Snapshot {
         let third = await sut.refresh()
         #expect(third.events.isEmpty)
     }
+
+    @Test func coordinatorPassesOptionsToEngine() async {
+        let draft = Snapshot.fixture(toReview: [.fixture(id: "PR_8", number: 8, isDraft: true)], fetchedAt: t1)
+        let baseline = Snapshot.fixture(fetchedAt: .fixed)
+        let (storeA, dirA) = temporaryStore()
+        let (storeB, dirB) = temporaryStore()
+        defer {
+            try? FileManager.default.removeItem(at: dirA)
+            try? FileManager.default.removeItem(at: dirB)
+        }
+        let ignoring = coordinator([.success(baseline), .success(draft)], store: storeA)
+        _ = await ignoring.refresh()
+        #expect(await ignoring.refresh().events.isEmpty)
+        let including = coordinator([.success(baseline), .success(draft)], store: storeB)
+        _ = await including.refresh(options: .init(ignoreDraftReviews: false))
+        let result = await including.refresh(options: .init(ignoreDraftReviews: false))
+        #expect(result.events.map(\.kind) == [.reviewRequested])
+    }
 }
