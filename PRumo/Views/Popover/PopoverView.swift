@@ -123,6 +123,7 @@ struct PopoverView: View {
                 .frame(width: PopoverMetrics.headerIconSize, height: PopoverMetrics.headerIconSize)
             Wordmark(size: 16)
             Spacer()
+            DoNotDisturbButton(store: model.preferences)
             Button(action: model.refreshNow) {
                 Image(systemName: PopoverSymbol.refresh)
             }

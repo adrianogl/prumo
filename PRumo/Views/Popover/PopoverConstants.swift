@@ -14,6 +14,11 @@ enum PopoverMetrics {
     static let mutedOpacity: Double = 0.55
     static let pinSize: CGFloat = 10
     static let mergedIconSize: CGFloat = 11
+    static let dndIconSize: CGFloat = 13
+    static let dndSleepSize: CGFloat = 7
+    static let dndSleepOffsetX: CGFloat = 4
+    static let dndSleepOffsetY: CGFloat = -4
+    static let dndFrameSize: CGFloat = 20
 }
 
 enum PopoverSymbol {
@@ -28,6 +33,8 @@ enum PopoverSymbol {
     static let pinned = "pin.fill"
     static let muted = "pause.fill"
     static let merged = "checkmark"
+    static let dndBell = "bell"
+    static let dndSleep = "zzz"
 }
 
 enum PopoverText {
@@ -47,6 +54,17 @@ enum PopoverText {
     static let connectPrompt = "Conecte sua conta do GitHub"
     static let connectAction = "Conectar"
     static let onboardingWindowID = "onboarding"
+    static let dnd = "Não perturbe"
+    static let dndOneHour = "Por 1 hora"
+    static let dndUntilTomorrow = "Até amanhã às 9h"
+    static let dndIndefinite = "Até eu reativar"
+    static let dndReactivate = "Reativar notificações"
+    static let dndUntilIndefinite = "Não perturbe até você reativar"
+    static let outsideWorkingHours = "Fora do horário de trabalho"
+
+    static func dndUntil(time: String) -> String { "Não perturbe até \(time)" }
+
+    static func dndUntilTomorrow(time: String) -> String { "Não perturbe até amanhã às \(time)" }
 
     static func mergedToday(count: Int) -> String { "MERGEADOS HOJE · \(count)" }
 
