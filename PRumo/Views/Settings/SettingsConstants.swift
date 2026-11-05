@@ -34,5 +34,6 @@ enum SettingsTab: Hashable {
     case account
     case general
     case claude
+    case integrations
     case about
 }

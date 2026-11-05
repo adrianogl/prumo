@@ -12,6 +12,15 @@ struct SettingsView: View {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     }
 
+    private var height: CGFloat {
+        switch selection {
+        case .claude: ClaudeSettingsMetrics.height
+        case .integrations: IntegrationsSettingsMetrics.height
+        case .about: SettingsMetrics.aboutHeight
+        default: SettingsMetrics.height
+        }
+    }
+
     var body: some View {
         TabView(selection: $selection) {
             Tab(SettingsText.account, systemImage: SettingsSymbol.account, value: SettingsTab.account) { account }
@@ -19,9 +28,12 @@ struct SettingsView: View {
             Tab(ClaudeSettingsText.tab, systemImage: ClaudeSymbol.tab, value: SettingsTab.claude) {
                 ClaudeSettingsView(store: model.claude)
             }
+            Tab(IntegrationsSettingsText.tab, systemImage: IntegrationsSettingsSymbol.tab, value: SettingsTab.integrations) {
+                IntegrationsSettingsView(store: model.integrations)
+            }
             Tab(SettingsText.about, systemImage: SettingsSymbol.about, value: SettingsTab.about) { about }
         }
-        .frame(width: SettingsMetrics.width, height: selection == .claude ? ClaudeSettingsMetrics.height : (selection == .about ? SettingsMetrics.aboutHeight : SettingsMetrics.height))
+        .frame(width: SettingsMetrics.width, height: height)
     }
 
     private var account: some View {

@@ -13,6 +13,7 @@ final class AppModel {
     var login: String?
     var origin: TokenOrigin?
     let claude: ClaudeSettingsStore
+    let integrations: IntegrationSettingsStore
     private(set) var launching: Set<String> = []
 
     @ObservationIgnored private let notifications: NotificationService
@@ -33,6 +34,7 @@ final class AppModel {
         snapshotStore: SnapshotStore = SnapshotStore(fileURL: SnapshotStore.defaultURL()),
         defaults: UserDefaults = .standard,
         claude: ClaudeSettingsStore? = nil,
+        integrations: IntegrationSettingsStore? = nil,
         worktreeRegistry: WorktreeRegistry = WorktreeRegistry(fileURL: WorktreeRegistry.defaultURL())
     ) {
         self.worktreeRegistry = worktreeRegistry
@@ -41,6 +43,7 @@ final class AppModel {
         self.snapshotStore = snapshotStore
         self.defaults = defaults
         self.claude = claude ?? ClaudeSettingsStore(defaults: defaults)
+        self.integrations = integrations ?? IntegrationSettingsStore(defaults: defaults)
         login = defaults.string(forKey: AppConstants.accountLoginKey)
         origin = defaults.string(forKey: AppConstants.tokenOriginKey).flatMap(TokenOrigin.init(rawValue:))
         notifications.onFixWithClaude = { [weak self] id, url in
