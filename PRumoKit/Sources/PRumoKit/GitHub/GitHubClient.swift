@@ -60,6 +60,9 @@ public struct GitHubClient: Sendable {
         case 401:
             throw .unauthorized
         case 403, 429:
+            if let retryAfter = response.value(forHTTPHeaderField: "retry-after").flatMap(TimeInterval.init) {
+                throw .rateLimited(resetAt: now().addingTimeInterval(retryAfter))
+            }
             if response.value(forHTTPHeaderField: "x-ratelimit-remaining") == "0" || response.statusCode == 429 {
                 let reset = response.value(forHTTPHeaderField: "x-ratelimit-reset")
                     .flatMap(TimeInterval.init)

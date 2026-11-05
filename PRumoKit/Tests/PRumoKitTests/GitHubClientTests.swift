@@ -110,6 +110,18 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
         await #expect(throws: GitHubError.unexpectedResponse) { try await client(transport).fetchSnapshot() }
     }
 
+    @Test func maps403WithRetryAfterToRateLimited() async {
+        let transport = FakeTransport { _ in (Data(), httpResponse(403, headers: ["retry-after": "60"])) }
+        await #expect(throws: GitHubError.rateLimited(resetAt: Date.fixed.addingTimeInterval(60))) {
+            try await client(transport).fetchSnapshot()
+        }
+    }
+
+    @Test func plain403StaysServerError() async {
+        let transport = FakeTransport { _ in (Data(), httpResponse(403)) }
+        await #expect(throws: GitHubError.server(status: 403)) { try await client(transport).fetchSnapshot() }
+    }
+
     @Test func partialDataWithErrorsStillMaps() async throws {
         let transport = FakeTransport { request in
             let isMine = variableQuery(request) == Queries.mine
