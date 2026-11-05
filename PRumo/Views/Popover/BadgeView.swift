@@ -6,7 +6,7 @@ extension BadgeTone {
         switch self {
         case .positive: Color(nsColor: .systemGreen)
         case .negative: Color(nsColor: .systemRed)
-        case .pending: Color(nsColor: .systemYellow)
+        case .pending: Color(nsColor: .systemGray)
         case .warning: Color(nsColor: .systemOrange)
         case .neutral: Color.secondary
         case .accent: Color.prumoCaramel

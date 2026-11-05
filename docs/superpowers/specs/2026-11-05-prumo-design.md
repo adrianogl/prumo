@@ -245,7 +245,7 @@ Sem rede ou com erro da API, o popover mantém os últimos dados com um aviso ("
   - areia `#f3e6cf` → `#d9c3a0` (degradê do fundo do ícone claro);
   - carvão `#2a2622`;
   - caramelo `#a5713a` (destaque: "PR" do logo, contadores, seleção, bolinha de "novo", alfinete).
-- **Cores de status**: as cores de sistema do macOS (verde, cinza, vermelho, azul na bolinha; amarelo e laranja nos badges), separadas da paleta da marca.
+- **Cores de status**: as cores de sistema do macOS (verde, cinza, vermelho, azul na bolinha; o badge de CI rodando também cinza; laranja nos badges de conflito e de espera), separadas da paleta da marca.
 - **Ícone do app** (Icon Composer):
   - claro: fundo areia, main em carvão, PR em caramelo;
   - escuro ("carimbo"): fundo carvão, main em areia, PR em caramelo;
