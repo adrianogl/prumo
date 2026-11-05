@@ -1,42 +1,28 @@
 import SwiftUI
 import WidgetKit
 
-struct PRumoEntry: TimelineEntry {
-    let date: Date
-}
-
-struct PRumoProvider: TimelineProvider {
-    func placeholder(in context: Context) -> PRumoEntry {
-        PRumoEntry(date: .now)
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (PRumoEntry) -> Void) {
-        completion(PRumoEntry(date: .now))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<PRumoEntry>) -> Void) {
-        completion(Timeline(entries: [PRumoEntry(date: .now)], policy: .never))
-    }
-}
-
 struct PRumoWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     let entry: PRumoEntry
 
     var body: some View {
-        Text(PRumoWidgetText.title)
-            .font(.headline)
-            .containerBackground(.fill.tertiary, for: .widget)
+        Group {
+            switch family {
+            case .systemMedium: MediumWidgetView(entry: entry)
+            default: SmallWidgetView(entry: entry)
+            }
+        }
+        .containerBackground(for: .widget) { Color.prumoPopoverBackground }
     }
 }
 
-@main
 struct PRumoWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: PRumoWidgetText.kind, provider: PRumoProvider()) { entry in
+        StaticConfiguration(kind: WidgetText.kind, provider: PRumoProvider()) { entry in
             PRumoWidgetView(entry: entry)
         }
-        .configurationDisplayName(PRumoWidgetText.displayName)
-        .description(PRumoWidgetText.description)
-        .supportedFamilies([.systemSmall])
+        .configurationDisplayName(WidgetText.displayName)
+        .description(WidgetText.description)
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

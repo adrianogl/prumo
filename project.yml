@@ -32,6 +32,8 @@ targets:
     platform: macOS
     sources:
       - path: PRumoWidget
+      - path: PRumo/Views/Brand/Wordmark.swift
+      - path: PRumo/Views/Brand/BrandColors.swift
     dependencies:
       - package: PRumoKit
     settings:
