@@ -71,7 +71,7 @@ private func launcher(
         #expect(sink.written.count == 1)
         #expect(sink.written[0].url.path == "/h/Library/Caches/PRumo/sessions/u1.zsh")
         #expect(sink.written[0].contents.contains("cd '\(worktree)' || exit 1\n"))
-        #expect(sink.written[0].contents.contains("'claude' '/code-review 812'\n"))
+        #expect(sink.written[0].contents.contains("'claude' -- '/code-review 812'\n"))
         #expect(runner.commands.last == "/usr/bin/open -na Ghostty --args --working-directory=\(worktree) -e /bin/zsh -il /h/Library/Caches/PRumo/sessions/u1.zsh")
         #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree add --detach \(worktree) refs/prumo/pull/812"))
     }
@@ -129,7 +129,7 @@ private func launcher(
     @Test func scriptCallsClaudeByName() async throws {
         let sink = ScriptSink()
         _ = try await launcher(FakeRunner(), sink: sink).launch(pr: .fixture(), purpose: .review)
-        #expect(sink.written[0].contents.contains("\n'claude' '/code-review 812'\nrc=$?\n"))
+        #expect(sink.written[0].contents.contains("\n'claude' -- '/code-review 812'\nrc=$?\n"))
     }
 
     @Test func invalidCachePathRejected() async {

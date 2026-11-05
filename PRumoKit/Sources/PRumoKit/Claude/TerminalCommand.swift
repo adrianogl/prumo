@@ -18,7 +18,7 @@ public enum TerminalCommand {
         claudeExecutable: String = "claude"
     ) -> String {
         let flags = extraFlags.trimmingCharacters(in: .whitespacesAndNewlines)
-        let claude = ([ShellQuote.single(claudeExecutable)] + (flags.isEmpty ? [] : [flags]) + [ShellQuote.single(sanitize(prompt))])
+        let claude = ([ShellQuote.single(claudeExecutable)] + (flags.isEmpty ? [] : [flags]) + ["--", ShellQuote.single(sanitize(prompt))])
             .joined(separator: " ")
         return [
             "cd \(ShellQuote.single(directory.path)) || exit 1",

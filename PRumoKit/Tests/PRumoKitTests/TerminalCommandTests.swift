@@ -11,13 +11,13 @@ import Testing
     @Test func scriptQuotesHostilePrompt() {
         let prompt = hostile + "\u{15}\u{3}\u{1b}\r"
         let script = TerminalCommand.scriptContents(directory: directory, prompt: prompt, extraFlags: " --model opus ")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' --model opus 'Fix \"it\" $(rm -rf ~) `x` it'\\''s PWNED\n'\n" + Self.tail)
+        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' --model opus -- 'Fix \"it\" $(rm -rf ~) `x` it'\\''s PWNED\n'\n" + Self.tail)
     }
 
     @Test func scriptUsesGivenClaudeExecutable() {
         let script = TerminalCommand.scriptContents(
             directory: directory, prompt: "oi", extraFlags: "", claudeExecutable: "/Users/ana/.local/bin/claude")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'/Users/ana/.local/bin/claude' 'oi'\n" + Self.tail)
+        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'/Users/ana/.local/bin/claude' -- 'oi'\n" + Self.tail)
     }
 
     @Test(arguments: [(0, Int32(0)), (3, Int32(3))])
@@ -26,7 +26,7 @@ import Testing
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let stub = dir.appendingPathComponent("claude-stub")
-        try "#!/bin/sh\nexit \(stubExit)\n".write(to: stub, atomically: true, encoding: .utf8)
+        try "#!/bin/sh\n[ \"$#\" -eq 2 ] || exit 98\n[ \"$1\" = \"--\" ] || exit 97\nexit \(stubExit)\n".write(to: stub, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: stub.path)
         let script = dir.appendingPathComponent("session.zsh")
         try TerminalCommand.scriptContents(
@@ -50,7 +50,7 @@ import Testing
     @Test func scriptSanitizesControls() {
         let script = TerminalCommand.scriptContents(
             directory: directory, prompt: "a\r\nb\rc\td\u{0}\u{7f}\u{85}e", extraFlags: "")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' 'a\nb\nc\tde'\n" + Self.tail)
+        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' -- 'a\nb\nc\tde'\n" + Self.tail)
     }
 
     @Test func scriptRoundTripsThroughZsh() throws {
@@ -124,7 +124,7 @@ import Testing
 
     @Test func emptyFlagsNoDoubleSpace() {
         let script = TerminalCommand.scriptContents(directory: directory, prompt: "oi", extraFlags: " \n ")
-        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' 'oi'\n" + Self.tail)
+        #expect(script == "cd '/Users/ana/Code/loja' || exit 1\n'claude' -- 'oi'\n" + Self.tail)
     }
 
     @Test func shellQuoteHelpers() {
