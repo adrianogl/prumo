@@ -46,8 +46,9 @@ extension Snapshot {
         viewer: String = "adriano",
         mine: [PullRequest] = [],
         toReview: [PullRequest] = [],
+        mergedToday: [MergedPullRequest] = [],
         fetchedAt: Date = .fixed
     ) -> Snapshot {
-        Snapshot(viewer: viewer, mine: mine, toReview: toReview, fetchedAt: fetchedAt)
+        Snapshot(viewer: viewer, mine: mine, toReview: toReview, mergedToday: mergedToday, fetchedAt: fetchedAt)
     }
 }

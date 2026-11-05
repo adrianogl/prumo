@@ -19,12 +19,17 @@ public struct GitHubClient: Sendable {
     }
 
     public func fetchSnapshot() async throws(GitHubError) -> Snapshot {
+        let moment = now()
         async let mine = result { () async throws(GitHubError) -> Data in try await search(Queries.mine) }
         async let review = result { () async throws(GitHubError) -> Data in try await search(Queries.review) }
+        async let merged = result { () async throws(GitHubError) -> Data in
+            try await search(Queries.merged(since: moment, timeZone: .current), query: Queries.mergedSearchQuery)
+        }
         let mineData = try await mine.get()
         let reviewData = try await review.get()
+        let mergedData = try await merged.get()
         do {
-            return try PullRequestMapper.snapshot(mineJSON: mineData, reviewJSON: reviewData, now: now())
+            return try PullRequestMapper.snapshot(mineJSON: mineData, reviewJSON: reviewData, mergedJSON: mergedData, now: moment)
         } catch {
             throw .unexpectedResponse
         }
@@ -60,8 +65,8 @@ public struct GitHubClient: Sendable {
         _ = try await send(request)
     }
 
-    private func search(_ query: String) async throws(GitHubError) -> Data {
-        try await post(query: Queries.searchQuery, variables: ["q": query])
+    private func search(_ term: String, query document: String = Queries.searchQuery) async throws(GitHubError) -> Data {
+        try await post(query: document, variables: ["q": term])
     }
 
     private func post(query: String, variables: [String: Any]) async throws(GitHubError) -> Data {

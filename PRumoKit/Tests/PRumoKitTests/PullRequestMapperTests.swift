@@ -4,7 +4,7 @@ import Testing
 
 struct PullRequestMapperTests {
     private func snapshot() throws -> Snapshot {
-        try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: fixture("search-review"), now: .fixed)
+        try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: fixture("search-review"), mergedJSON: nil, now: .fixed)
     }
 
     private func reviewJSON(replacingRequests requests: [[String: Any]], at index: Int) throws -> Data {
@@ -52,7 +52,7 @@ struct PullRequestMapperTests {
 
     @Test func reviewRequestToViewerIsYou() throws {
         let review = try reviewJSON(replacingRequests: [["requestedReviewer": ["__typename": "User", "login": "adriano"]]], at: 0)
-        let s = try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: review, now: .fixed)
+        let s = try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: review, mergedJSON: nil, now: .fixed)
         #expect(s.toReview[0].reviewTarget == .you)
     }
 
@@ -68,7 +68,7 @@ struct PullRequestMapperTests {
 
     @Test func reviewWithoutPendingRequestIsDropped() throws {
         let review = try reviewJSON(replacingRequests: [], at: 1)
-        let s = try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: review, now: .fixed)
+        let s = try PullRequestMapper.snapshot(mineJSON: fixture("search-mine"), reviewJSON: review, mergedJSON: nil, now: .fixed)
         #expect(s.toReview.map(\.id) == ["PR_201"])
     }
 
@@ -118,7 +118,7 @@ struct PullRequestMapperTests {
         data["search"] = search
         object["data"] = data
         let mine = try JSONSerialization.data(withJSONObject: object)
-        let s = try PullRequestMapper.snapshot(mineJSON: mine, reviewJSON: fixture("search-review"), now: .fixed)
+        let s = try PullRequestMapper.snapshot(mineJSON: mine, reviewJSON: fixture("search-review"), mergedJSON: nil, now: .fixed)
         #expect(s.mine.map(\.id) == ["PR_102", "PR_103", "PR_104"])
     }
 
@@ -147,14 +147,14 @@ struct PullRequestMapperTests {
     @Test func failedRunIDFromFirstFailingCheckRun() throws {
         let json = String(decoding: try fixture("search-mine"), as: UTF8.self)
             .replacingOccurrences(of: "https://github.com/acme/api/actions/runs/102001/job/1021", with: "https://github.com/globex/web-app/actions/runs/1234567/job/89")
-        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), now: .fixed)
+        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), mergedJSON: nil, now: .fixed)
         #expect(s.mine[1].failedRunID == 1234567)
     }
 
     @Test func failedRunIDNilForExternalCI() throws {
         let json = String(decoding: try fixture("search-mine"), as: UTF8.self)
             .replacingOccurrences(of: "https://github.com/acme/api/actions/runs/102001/job/1021", with: "https://ci.example.com/builds/9876")
-        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), now: .fixed)
+        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), mergedJSON: nil, now: .fixed)
         #expect(s.mine[1].ci == .failure(failedChecks: ["unit-tests"], total: 12))
         #expect(s.mine[1].failedRunID == nil)
     }
@@ -163,7 +163,7 @@ struct PullRequestMapperTests {
         let json = String(decoding: try fixture("search-mine"), as: UTF8.self)
             .replacingOccurrences(of: "\"nodes\": [\n                        {\n                          \"__typename\": \"CheckRun\",\n                          \"name\": \"unit-tests\"", with: "\"nodes\": [\n                        {\"__typename\": \"StatusContext\", \"context\": \"lint\", \"state\": \"FAILURE\"},\n                        {\n                          \"__typename\": \"CheckRun\",\n                          \"name\": \"unit-tests\"")
             .replacingOccurrences(of: "https://github.com/acme/api/actions/runs/102001/job/1021", with: "https://github.com/acme/loja/actions/runs/555/job/9")
-        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), now: .fixed)
+        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), mergedJSON: nil, now: .fixed)
         #expect(s.mine[1].ci == .failure(failedChecks: ["lint", "unit-tests"], total: 12))
         #expect(s.mine[1].failedRunID == 555)
         #expect(s.mine[1].failedRunName == "unit-tests")
@@ -172,7 +172,7 @@ struct PullRequestMapperTests {
     @Test func failedRunNameNilForExternalCI() throws {
         let json = String(decoding: try fixture("search-mine"), as: UTF8.self)
             .replacingOccurrences(of: "https://github.com/acme/api/actions/runs/102001/job/1021", with: "https://ci.example.com/builds/9876")
-        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), now: .fixed)
+        let s = try PullRequestMapper.snapshot(mineJSON: Data(json.utf8), reviewJSON: fixture("search-review"), mergedJSON: nil, now: .fixed)
         #expect(s.mine[1].failedRunID == nil)
         #expect(s.mine[1].failedRunName == nil)
     }
@@ -186,5 +186,22 @@ struct PullRequestMapperTests {
 
     @Test func reviewSearchUsesReviewRequested() {
         #expect(Queries.review == "is:pr is:open review-requested:@me archived:false")
+    }
+
+    @Test func mergedQueryUsesLocalMidnightWithOffset() throws {
+        let now = ISO8601DateFormatter().date(from: "2026-11-05T17:00:00Z")!
+        let zone = TimeZone(identifier: "America/Sao_Paulo")!
+        #expect(Queries.merged(since: now, timeZone: zone) == "is:pr author:@me is:merged merged:>=2026-11-05T00:00:00-03:00 archived:false")
+    }
+
+    @Test func mapsMergedPullRequests() throws {
+        let s = try PullRequestMapper.snapshot(
+            mineJSON: fixture("search-mine"), reviewJSON: fixture("search-review"),
+            mergedJSON: fixture("search-merged"), now: .fixed
+        )
+        #expect(s.mergedToday.map(\.id) == ["PR_900", "PR_901"])
+        #expect(s.mergedToday[0].repository == "acme/loja")
+        #expect(s.mergedToday[0].number == 900)
+        #expect(s.mergedToday[1].mergedAt == ISO8601DateFormatter().date(from: "2026-11-05T15:10:00Z"))
     }
 }

@@ -131,4 +131,15 @@ struct SnapshotStoreTests {
         await store.delete()
         #expect(await store.load() == nil)
     }
+
+    @Test func oldSnapshotWithoutMergedTodayDecodes() throws {
+        let original = Snapshot.fixture(mine: [.fixture(id: "PR_1")])
+        let encoded = try JSONEncoder().encode(original)
+        var object = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+        object.removeValue(forKey: "mergedToday")
+        let legacy = try JSONSerialization.data(withJSONObject: object)
+        let decoded = try JSONDecoder().decode(Snapshot.self, from: legacy)
+        #expect(decoded.mergedToday.isEmpty)
+        #expect(decoded.mine == original.mine)
+    }
 }

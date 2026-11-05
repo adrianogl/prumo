@@ -35,26 +35,31 @@ private func variableQuery(_ request: URLRequest) -> String? {
     return (object?["variables"] as? [String: String])?["q"]
 }
 
+private func respond(_ request: URLRequest, mine: String = "search-mine") -> (Data, HTTPURLResponse) {
+    let term = variableQuery(request)
+    if term == Queries.mine { return (fixture(mine), httpResponse(200)) }
+    if term == Queries.review { return (fixture("search-review"), httpResponse(200)) }
+    return (fixture("search-merged"), httpResponse(200))
+}
+
 private func client(_ transport: FakeTransport) -> GitHubClient {
     GitHubClient(token: "t0k", transport: transport, now: { Date.fixed })
 }
 
 @Suite struct GitHubClientTests {
-    @Test func sendsBearerTokenAndBothSearches() async throws {
-        let transport = FakeTransport { request in
-            let isMine = variableQuery(request) == Queries.mine
-            return (fixture(isMine ? "search-mine" : "search-review"), httpResponse(200))
-        }
+    @Test func fetchSnapshotSendsThreeSearches() async throws {
+        let transport = FakeTransport { respond($0) }
         let snapshot = try await client(transport).fetchSnapshot()
 
-        #expect(transport.requests.count == 2)
+        #expect(transport.requests.count == 3)
         for request in transport.requests {
             #expect(request.httpMethod == "POST")
             #expect(request.url?.absoluteString == "https://api.github.com/graphql")
             #expect(request.value(forHTTPHeaderField: "Authorization") == "bearer t0k")
         }
         let queries = Set(transport.requests.compactMap(variableQuery))
-        #expect(queries == [Queries.mine, Queries.review])
+        #expect(queries == [Queries.mine, Queries.review, Queries.merged(since: .fixed, timeZone: .current)])
+        #expect(snapshot.mergedToday.map(\.id) == ["PR_900", "PR_901"])
         #expect(snapshot.viewer == "adriano")
         #expect(snapshot.fetchedAt == Date.fixed)
         #expect(!snapshot.mine.isEmpty)
@@ -93,10 +98,7 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
     }
 
     @Test func nullNodesFromSSOProtectedOrgAreSkipped() async throws {
-        let transport = FakeTransport { request in
-            let isMine = variableQuery(request) == Queries.mine
-            return (fixture(isMine ? "search-mine-sso" : "search-review"), httpResponse(200))
-        }
+        let transport = FakeTransport { respond($0, mine: "search-mine-sso") }
         let snapshot = try await client(transport).fetchSnapshot()
         #expect(snapshot.viewer == "adriano")
         #expect(snapshot.mine.map(\.id) == ["PR_101", "PR_103", "PR_104"])
@@ -124,8 +126,7 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
 
     @Test func partialDataWithErrorsStillMaps() async throws {
         let transport = FakeTransport { request in
-            let isMine = variableQuery(request) == Queries.mine
-            var object = try JSONSerialization.jsonObject(with: fixture(isMine ? "search-mine" : "search-review")) as! [String: Any]
+            var object = try JSONSerialization.jsonObject(with: respond(request).0) as! [String: Any]
             object["errors"] = [["message": "Resource protected by organization SAML enforcement"]]
             return (try JSONSerialization.data(withJSONObject: object), httpResponse(200))
         }

@@ -9,7 +9,7 @@ public enum PullRequestMapper {
     private static let userTypename = "User"
     private static let teamTypename = "Team"
 
-    public static func snapshot(mineJSON: Data, reviewJSON: Data, now: Date) throws -> Snapshot {
+    public static func snapshot(mineJSON: Data, reviewJSON: Data, mergedJSON: Data?, now: Date) throws -> Snapshot {
         let mine = try decode(mineJSON)
         let review = try decode(reviewJSON)
         let viewer = mine.data.viewer.login
@@ -19,8 +19,20 @@ public enum PullRequestMapper {
             toReview: review.data.search.pullRequests.compactMap { node in
                 reviewTarget(node, viewer: viewer).map { map(node, viewer: viewer, target: $0) }
             },
+            mergedToday: try mergedJSON.map(mapMerged) ?? [],
             fetchedAt: now
         )
+    }
+
+    private static func mapMerged(_ data: Data) throws -> [MergedPullRequest] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(MergedSearchResponse.self, from: data).data.search.pullRequests.map {
+            MergedPullRequest(
+                id: $0.id, number: $0.number, title: $0.title, url: $0.url,
+                repository: $0.repository.nameWithOwner, mergedAt: $0.mergedAt
+            )
+        }
     }
 
     private static func decode(_ data: Data) throws -> GraphQLResponse {

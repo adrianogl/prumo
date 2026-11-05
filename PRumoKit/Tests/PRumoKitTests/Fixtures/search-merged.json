@@ -1,0 +1,25 @@
+{
+  "data": {
+    "search": {
+      "nodes": [
+        {
+          "id": "PR_900",
+          "number": 900,
+          "title": "Ajusta frete do carrinho",
+          "url": "https://github.com/acme/loja/pull/900",
+          "mergedAt": "2026-11-05T12:30:00Z",
+          "repository": { "nameWithOwner": "acme/loja" }
+        },
+        null,
+        {
+          "id": "PR_901",
+          "number": 901,
+          "title": "Atualiza dependências",
+          "url": "https://github.com/acme/api/pull/901",
+          "mergedAt": "2026-11-05T15:10:00Z",
+          "repository": { "nameWithOwner": "acme/api" }
+        }
+      ]
+    }
+  }
+}
