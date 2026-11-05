@@ -8,11 +8,13 @@ final class FirstResultGate<Value: Sendable>: @unchecked Sendable {
         self.continuation = continuation
     }
 
-    func resume(_ value: Value) {
+    @discardableResult
+    func resume(_ value: Value) -> Bool {
         let pending = lock.withLock { () -> CheckedContinuation<Value, Never>? in
             defer { continuation = nil }
             return continuation
         }
         pending?.resume(returning: value)
+        return pending != nil
     }
 }

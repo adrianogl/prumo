@@ -7,6 +7,7 @@ public actor RefreshCoordinator {
     private let accountID: String
     private let store: SnapshotStore
     private var lastKnown: Snapshot?
+    private var pendingEvents: [NotificationEvent] = []
     private var tail: Task<RefreshResult, Never>?
 
     public init(accountID: String = "", fetch: @escaping Fetch, store: SnapshotStore) {
@@ -27,6 +28,10 @@ public actor RefreshCoordinator {
         return await task.value
     }
 
+    public func carryOver(_ events: [NotificationEvent]) {
+        pendingEvents.append(contentsOf: events)
+    }
+
     public func lastSnapshot() async -> Snapshot? {
         if let lastKnown { return lastKnown }
         return await store.load()
@@ -34,6 +39,7 @@ public actor RefreshCoordinator {
 
     private func perform(options: TransitionOptions) async -> RefreshResult {
         let stored = await lastSnapshot()
+        let carried = pendingEvents
         do {
             let fetched = try await fetch()
             let stamped = accountID.isEmpty ? fetched : fetched.stamped(accountID: accountID)
@@ -41,7 +47,8 @@ public actor RefreshCoordinator {
             let events = TransitionEngine.events(from: stored, to: fresh, options: options)
             lastKnown = fresh
             try? await store.save(fresh)
-            return (fresh, events, .ok)
+            pendingEvents.removeAll()
+            return (fresh, carried + events, .ok)
         } catch {
             return (stored, [], Self.state(for: error, stored: stored))
         }

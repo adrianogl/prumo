@@ -43,9 +43,10 @@ public enum ParallelRefresh {
             Task {
                 let result = await session.coordinator.refresh(options: options)
                 timer.cancel()
-                gate.resume(AccountRefreshResult(
+                let won = gate.resume(AccountRefreshResult(
                     accountID: session.accountID, snapshot: result.snapshot, events: result.events, state: result.state
                 ))
+                if !won { await session.coordinator.carryOver(result.events) }
             }
         }
     }

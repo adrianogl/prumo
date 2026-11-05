@@ -122,6 +122,36 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
         #expect(results[1].snapshot == snapshot().stamped(accountID: "b2"))
     }
 
+    @Test func lateResultEventsAreDeliveredNextCycle() async throws {
+        let (store, directory) = temporaryStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try await store.save(snapshot(at: savedAt, viewer: "mariana"))
+        let calls = CallCounter()
+        let coordinator = RefreshCoordinator(
+            accountID: "a1",
+            fetch: { () async throws(GitHubError) -> Snapshot in
+                calls.increment()
+                if calls.value == 1 { try? await Task.sleep(for: .milliseconds(300)) }
+                return .fixture(viewer: "mariana", mine: [.fixture(ci: .success(total: 3))], fetchedAt: .fixed)
+            },
+            store: store
+        )
+        let timedOut = await ParallelRefresh.run(
+            [("a1", coordinator)], previous: [:], options: .init(), now: .fixed, deadline: .milliseconds(50)
+        )
+        #expect(timedOut[0].events.isEmpty)
+        #expect(timedOut[0].state == .offline(lastSuccess: savedAt))
+        try await Task.sleep(for: .milliseconds(600))
+        let next = await ParallelRefresh.run(
+            [("a1", coordinator)], previous: [:], options: .init(), now: .fixed
+        )
+        #expect(next[0].events.map(\.kind) == [.ciSucceeded])
+        let after = await ParallelRefresh.run(
+            [("a1", coordinator)], previous: [:], options: .init(), now: .fixed
+        )
+        #expect(after[0].events.isEmpty)
+    }
+
     @Test func runsConcurrently() async {
         let (storeA, dirA) = temporaryStore()
         let (storeB, dirB) = temporaryStore()
