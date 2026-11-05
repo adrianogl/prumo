@@ -73,6 +73,14 @@ import Testing
         #expect(ReviewRequestNote.requestedAt(notes: notes, username: "adriano") == nil)
     }
 
+    @Test func requestedAtIgnoresAssigneeMention() {
+        let assigned = [note("assigned to @adriano and requested review from @maria", at: t1)]
+        #expect(ReviewRequestNote.requestedAt(notes: assigned, username: "adriano") == nil)
+        #expect(ReviewRequestNote.requestedAt(notes: assigned, username: "maria") == t1)
+        let requested = [note("requested review from @maria and @adriano", at: t2)]
+        #expect(ReviewRequestNote.requestedAt(notes: requested, username: "adriano") == t2)
+    }
+
     @Test func requestedAtIgnoresUserNotes() {
         let notes = [note("requested review from @adriano", at: t1, system: false)]
         #expect(ReviewRequestNote.requestedAt(notes: notes, username: "adriano") == nil)

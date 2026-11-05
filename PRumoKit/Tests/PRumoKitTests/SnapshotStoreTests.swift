@@ -183,6 +183,20 @@ struct SnapshotStoreTests {
         #expect(stamped.accountViewers == ["a2": "adrianogl"])
     }
 
+    @Test func stampedKeepsGitLabProviderOnMerged() {
+        let merged = MergedPullRequest(
+            id: "gitlab.empresa.com/MergeRequest/5", number: 5, title: "Merge",
+            url: URL(string: "https://gitlab.empresa.com/vendas/api/-/merge_requests/5")!,
+            repository: "vendas/api", mergedAt: .fixed, provider: .gitlab
+        )
+        let stamped = Snapshot.fixture(viewer: "adriano", mergedToday: [merged]).stamped(accountID: "g1")
+        let item = stamped.mergedToday[0]
+        #expect(item.provider == .gitlab)
+        #expect(item.reference == "!5")
+        #expect(item.repositoryKey == "gitlab.empresa.com/vendas/api")
+        #expect(item.accountID == "g1")
+    }
+
     @Test func viewerForUsesAccountMap() {
         let snapshot = Snapshot.fixture(viewer: "adrianogl", accountViewers: ["a1": "adrianogl", "a2": "adriano-globex"])
         #expect(snapshot.viewer(for: .fixture(accountID: "a2")) == "adriano-globex")

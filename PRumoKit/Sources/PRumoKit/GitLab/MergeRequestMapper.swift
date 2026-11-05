@@ -3,6 +3,7 @@ import Foundation
 enum MergeRequestMapper {
     private static let ghost = "ghost"
     private static let mergeableStatus = "MERGEABLE"
+    private static let transientMergeStatuses: Set<String> = ["CHECKING", "UNCHECKED", "PREPARING", "APPROVALS_SYNCING"]
     private static let requestedChangesState = "REQUESTED_CHANGES"
     private static let successStatuses: Set<String> = ["SUCCESS", "MANUAL"]
     private static let failedStatuses: Set<String> = ["FAILED", "CANCELED"]
@@ -104,7 +105,7 @@ enum MergeRequestMapper {
             reviewTarget: .you,
             reviewDecision: nil,
             provider: .gitlab,
-            mergeReady: context.capabilities.hasDetailedMergeStatus ? node.detailedMergeStatus.map { $0 == mergeableStatus } : nil,
+            mergeReady: mergeReady(node.detailedMergeStatus, capabilities: context.capabilities),
             failedJobID: failure?.jobID
         )
     }
@@ -114,7 +115,10 @@ enum MergeRequestMapper {
             .filter { !context.isViewer($0.username) }
             .map { approver in
                 let noteDate = ReviewRequestNote.approvedAt(notes: notes, username: approver.username)
-                return review(prefix: approvalPrefix, author: approver.username, state: .approved, noteDate: noteDate, fallback: node.updatedAt)
+                return Review(
+                    id: "\(approvalPrefix):\(approver.username)", author: approver.username, state: .approved,
+                    submittedAt: noteDate ?? node.updatedAt
+                )
             }
         let changes = (node.reviewers?.nodes ?? [])
             .filter { $0.mergeRequestInteraction?.reviewState == requestedChangesState }
@@ -131,6 +135,11 @@ enum MergeRequestMapper {
         }
         let stamp = ISO8601DateFormatter().string(from: noteDate)
         return Review(id: "\(prefix):\(author)@\(stamp)", author: author, state: state, submittedAt: noteDate)
+    }
+
+    private static func mergeReady(_ status: String?, capabilities: GitLabCapabilities) -> Bool? {
+        guard capabilities.hasDetailedMergeStatus, let status, !transientMergeStatuses.contains(status) else { return nil }
+        return status == mergeableStatus
     }
 
     private static func comments(_ node: Node, notes: [GitLabNote]) -> [Comment] {

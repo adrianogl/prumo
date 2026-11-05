@@ -40,6 +40,13 @@ public struct MergedPullRequest: Codable, Equatable, Identifiable, Sendable {
         provider = container.decodeLossy(ProviderKind.self, forKey: .provider, default: .github)
     }
 
+    public func with(accountID: String) -> MergedPullRequest {
+        MergedPullRequest(
+            id: id, number: number, title: title, url: url, repository: repository, mergedAt: mergedAt,
+            accountID: accountID, provider: provider
+        )
+    }
+
     public var reference: String {
         provider.reference(number: number)
     }

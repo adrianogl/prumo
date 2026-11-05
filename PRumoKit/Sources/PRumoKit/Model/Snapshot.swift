@@ -47,12 +47,7 @@ public struct Snapshot: Sendable, Codable, Equatable {
             viewer: viewer,
             mine: mine.map { $0.with(accountID: accountID) },
             toReview: toReview.map { $0.with(accountID: accountID) },
-            mergedToday: mergedToday.map {
-                MergedPullRequest(
-                    id: $0.id, number: $0.number, title: $0.title, url: $0.url, repository: $0.repository,
-                    mergedAt: $0.mergedAt, accountID: accountID
-                )
-            },
+            mergedToday: mergedToday.map { $0.with(accountID: accountID) },
             fetchedAt: fetchedAt,
             accountViewers: [accountID: viewer]
         )

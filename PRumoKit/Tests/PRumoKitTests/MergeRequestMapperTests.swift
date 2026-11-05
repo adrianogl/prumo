@@ -114,7 +114,7 @@ import Testing
         let approval = try #require(approvals.first)
         #expect(approval.author == "bruna")
         #expect(approval.submittedAt == date("2026-11-05T09:30:00.500Z"))
-        #expect(approval.id.hasPrefix("approval:bruna@"))
+        #expect(approval.id == "approval:bruna")
     }
 
     @Test func approvalWithoutNoteUsesUpdatedAt() throws {
@@ -160,6 +160,30 @@ import Testing
         let baseline = try MergeRequestMapper.snapshot(bare, host: host, capabilities: full, now: start)
         #expect(baseline.mine.first?.reviews.isEmpty == true)
         #expect(TransitionEngine.events(from: baseline, to: new).contains { $0.kind == .changesRequested })
+    }
+
+    @Test func approvalIDIgnoresNoteVisibility() throws {
+        let start = date("2026-11-05T11:00:00Z")
+        let withNote = try MergeRequestMapper.snapshot(fixture("gitlab-snapshot"), host: host, capabilities: full, now: start)
+        let withoutNoteData = try mutatedFixture { mr in
+            mr["notes"] = ["nodes": []]
+        }
+        let withoutNote = try MergeRequestMapper.snapshot(withoutNoteData, host: host, capabilities: full, now: start.addingTimeInterval(60))
+        let first = try #require(try mine(12, in: withNote).reviews.first { $0.state == .approved })
+        let second = try #require(try mine(12, in: withoutNote).reviews.first { $0.state == .approved })
+        #expect(first.id == second.id)
+        #expect(first.submittedAt == date("2026-11-05T09:30:00.500Z"))
+        #expect(second.submittedAt == date("2026-11-05T12:00:00.123Z"))
+        #expect(!TransitionEngine.events(from: withNote, to: withoutNote).contains { $0.kind == .approved })
+    }
+
+    @Test(arguments: ["CHECKING", "UNCHECKED", "PREPARING", "APPROVALS_SYNCING"])
+    func transientDetailedMergeStatusIsUnknown(status: String) throws {
+        let data = try mutatedFixture { mr in
+            mr["detailedMergeStatus"] = status
+        }
+        let pr = try #require(try MergeRequestMapper.snapshot(data, host: host, capabilities: full, now: .fixed).mine.first)
+        #expect(pr.mergeReady == nil)
     }
 
     @Test func jobWithNullNameAndStatusKeepsMergeRequest() throws {

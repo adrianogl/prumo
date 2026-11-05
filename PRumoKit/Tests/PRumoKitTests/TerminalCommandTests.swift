@@ -253,4 +253,19 @@ import Testing
         #expect(!lines.contains { $0.hasPrefix("`id`") || $0.hasPrefix("$(") || $0.hasPrefix("feat/") })
         #expect(script.contains("'claude' -- 'MR !812 `id` $(rm -rf ~) '\\''x'\\'' feat/$(whoami)'\n"))
     }
+
+    @Test func gitlabSessionScriptKeepsTokenAndHostileTitleConfined() {
+        let pr = PullRequest.fixture(title: "`id` $(rm -rf ~) 'x'", repository: "grupo/app", provider: .gitlab)
+        let prompt = PromptTemplate.render("MR !{numero} {titulo}", values: PromptValues.review(pr))
+        let environment = SessionEnvironment.variables(
+            provider: .gitlab, host: "gitlab.empresa.com", token: "glpat-$(id)'z", isOAuth: true)
+        let script = TerminalCommand.scriptContents(
+            directory: directory, prompt: prompt, extraFlags: "", environment: environment, scriptPath: scriptPath)
+        let lines = script.components(separatedBy: "\n")
+        #expect(lines.first == "rm -f -- '/Users/ana/Library/Caches/PRumo/sessions/abc.zsh'")
+        #expect(lines.filter { $0.contains("glpat-") } == ["export OAUTH_TOKEN='glpat-$(id)'\\''z'"])
+        #expect(lines.contains("export GITLAB_HOST='https://gitlab.empresa.com'"))
+        #expect(lines.filter { $0.contains("`id`") || $0.contains("rm -rf") }
+            == ["'claude' -- 'MR !812 `id` $(rm -rf ~) '\\''x'\\'''"])
+    }
 }

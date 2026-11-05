@@ -38,8 +38,8 @@ enum ReviewRequestNote {
     }
 
     private static func containsMention(body: String, mention: String) -> Bool {
-        guard body.contains(requestedReviewText) else { return false }
-        var searchStart = body.startIndex
+        guard let request = body.range(of: requestedReviewText) else { return false }
+        var searchStart = request.upperBound
         while let range = body.range(of: mention, range: searchStart..<body.endIndex) {
             if range.upperBound == body.endIndex || !isUsernameCharacter(body[range.upperBound]) {
                 return true
