@@ -5,9 +5,13 @@ public protocol HTTPTransport: Sendable {
 }
 
 public struct URLSessionTransport: HTTPTransport {
+    static let requestTimeout: TimeInterval = 15
+
     public init() {}
 
     public func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        var request = request
+        request.timeoutInterval = Self.requestTimeout
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
         return (data, http)

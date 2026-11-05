@@ -287,9 +287,9 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         #expect(events[0].threadID == "PR_815")
     }
 
-    @Test func eventsAfterLongOfflineGapNotifyOnce() {
+    @Test func eventsAfterGapUnderLimitNotifyOnce() {
         let old = Snapshot.fixture(mine: [.fixture(headSHA: "A", ci: .pending(done: 1, total: 2))], fetchedAt: t0)
-        let later = t0.addingTimeInterval(8 * 3600)
+        let later = t0.addingTimeInterval(5 * 3600)
         let new = Snapshot.fixture(
             mine: [.fixture(
                 headSHA: "A", ci: .failure(failedChecks: ["unit-tests"], total: 2),
@@ -485,5 +485,26 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         #expect(merged.mine.map(\.mergeable) == [.conflicting, .mergeable, .unknown])
         #expect(merged.toReview.map(\.mergeable) == [.conflicting])
         #expect(new.keepingKnownMergeable(from: nil) == new)
+    }
+
+    @Test func recoveredAfterLongOutageDoesNotBurst() {
+        let old = Snapshot.fixture(
+            mine: [.fixture(ci: .pending(done: 1, total: 3))], toReview: [], fetchedAt: t0
+        )
+        let new = Snapshot.fixture(
+            mine: [.fixture(ci: .failure(failedChecks: ["lint"], total: 3))],
+            toReview: [.fixture(id: "PR_9", number: 9)],
+            fetchedAt: t0.addingTimeInterval(7 * 3600)
+        )
+        #expect(TransitionEngine.events(from: old, to: new).isEmpty)
+    }
+
+    @Test func recoveredAfterShortOutageNotifies() {
+        let old = Snapshot.fixture(mine: [.fixture(ci: .pending(done: 1, total: 3))], fetchedAt: t0)
+        let new = Snapshot.fixture(
+            mine: [.fixture(ci: .success(total: 3))], fetchedAt: t0.addingTimeInterval(30 * 60)
+        )
+        let events = TransitionEngine.events(from: old, to: new)
+        #expect(events.map(\.kind) == [.ciSucceeded])
     }
 }

@@ -89,6 +89,39 @@ private func snapshot(at date: Date = .fixed, viewer: String = "mariana") -> Sna
         #expect(results.map(\.state) == [.ok, .ok])
     }
 
+    @Test func slowAccountTimesOutWithoutHoldingOthers() async throws {
+        let (storeA, dirA) = temporaryStore()
+        let (storeB, dirB) = temporaryStore()
+        defer {
+            try? FileManager.default.removeItem(at: dirA)
+            try? FileManager.default.removeItem(at: dirB)
+        }
+        try await storeA.save(snapshot(at: savedAt, viewer: "mariana"))
+        let slow = RefreshCoordinator(
+            accountID: "a1",
+            fetch: { () async throws(GitHubError) -> Snapshot in
+                try? await Task.sleep(for: .seconds(5))
+                return snapshot()
+            },
+            store: storeA
+        )
+        let fast = RefreshCoordinator(
+            accountID: "b2", fetch: { () async throws(GitHubError) -> Snapshot in snapshot() }, store: storeB
+        )
+        let started = ContinuousClock.now
+        let results = await ParallelRefresh.run(
+            [("a1", slow), ("b2", fast)], previous: [:], options: .init(), now: .fixed,
+            deadline: .milliseconds(100)
+        )
+        #expect(ContinuousClock.now - started < .seconds(3))
+        #expect(results.map(\.accountID) == ["a1", "b2"])
+        #expect(results[0].state == .offline(lastSuccess: savedAt))
+        #expect(results[0].snapshot == snapshot(at: savedAt, viewer: "mariana"))
+        #expect(results[0].events.isEmpty)
+        #expect(results[1].state == .ok)
+        #expect(results[1].snapshot == snapshot().stamped(accountID: "b2"))
+    }
+
     @Test func runsConcurrently() async {
         let (storeA, dirA) = temporaryStore()
         let (storeB, dirB) = temporaryStore()
