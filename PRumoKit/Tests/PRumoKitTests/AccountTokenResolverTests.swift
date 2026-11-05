@@ -72,4 +72,12 @@ private func discovery(_ runner: ScriptedRunner) -> GhAccountDiscovery {
         )
         #expect(await resolver.token(for: Account(id: "a3", login: "globex-dev", origin: .ghCLI)) == nil)
     }
+
+    @Test func emuGhAccountAsksGhForUnderscoreLogin() async {
+        let runner = ScriptedRunner(stdout: "gho_emu\n")
+        let resolver = AccountTokenResolver(tokenStore: { _ in FakeStore(token: nil) }, gh: discovery(runner))
+        let token = await resolver.token(for: Account(id: "a4", login: "octo_acme", origin: .ghCLI))
+        #expect(token == "gho_emu")
+        #expect(runner.users.all == ["octo_acme"])
+    }
 }

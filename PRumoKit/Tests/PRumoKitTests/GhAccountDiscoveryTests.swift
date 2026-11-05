@@ -121,6 +121,32 @@ private final class PathLog: @unchecked Sendable {
         #expect(calls.all.isEmpty)
     }
 
+    @Test func emuLoginWithUnderscoreIsAccepted() async {
+        let calls = Calls()
+        let token = await discovery(hosts: fixture("gh-hosts-multi"), calls: calls, respond: { _ in (0, "gho_emu\n") })
+            .token(for: "octo_acme")
+        #expect(token == "gho_emu")
+        #expect(calls.all == [["auth", "token", "--hostname", "github.com", "--user", "octo_acme"]])
+    }
+
+    @Test func emuLoginFallsBackToActiveToken() async {
+        let hosts = "github.com:\n    users:\n        octo_acme:\n    user: octo_acme\n"
+        let calls = Calls()
+        let token = await discovery(hosts: hosts, calls: calls, respond: { args in
+            args.contains("--user") ? (1, "") : (0, "gho_emu_active\n")
+        }).token(for: "octo_acme")
+        #expect(token == "gho_emu_active")
+        #expect(calls.all.last == ["auth", "token", "--hostname", "github.com"])
+    }
+
+    @Test func loginWithTrailingNewlineNeverRuns() async {
+        let calls = Calls()
+        let token = await discovery(hosts: fixture("gh-hosts-multi"), calls: calls, respond: { _ in (0, "gho_x") })
+            .token(for: "adrianogl\n")
+        #expect(token == nil)
+        #expect(calls.all.isEmpty)
+    }
+
     @Test func noGhBinaryReturnsNoToken() async {
         let calls = Calls()
         let found = discovery(hosts: fixture("gh-hosts-multi"), installed: false, calls: calls, respond: { _ in (0, "gho_x") })

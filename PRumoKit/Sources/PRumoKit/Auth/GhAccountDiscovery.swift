@@ -34,7 +34,7 @@ public struct GhAccountDiscovery: Sendable {
     }
 
     public func token(for login: String) async -> String? {
-        guard login.range(of: "^[A-Za-z0-9-]+$", options: .regularExpression) != nil else { return nil }
+        guard login.range(of: #"^[A-Za-z0-9_-]+\z"#, options: .regularExpression) != nil else { return nil }
         guard let path = candidatePaths.first(where: fileExists) else { return nil }
         let host = GhHostsFile.githubHost
 
