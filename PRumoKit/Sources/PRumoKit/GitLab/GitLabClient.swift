@@ -8,20 +8,25 @@ public struct GitLabClient: AccountClient {
     private static let restStates: [String: PRState] = ["opened": .open, "closed": .closed, "merged": .merged]
     private static let retryField = "pipelineRetry"
     private static let cancelField = "pipelineCancel"
+    private static let cancelPollInterval: Duration = .seconds(2)
+    private static let cancelTimeout: TimeInterval = 20
+    private static let cancelingStatuses: Set<String> = ["canceling", "running"]
 
     private let host: String
     private let token: String
     private let transport: HTTPTransport
     private let now: @Sendable () -> Date
     private let cache: GitLabCapabilityCache
+    private let sleep: @Sendable (Duration) async -> Void
 
     public init(
         host: String,
         token: String,
         transport: HTTPTransport = URLSessionTransport(),
-        now: @escaping @Sendable () -> Date = Date.init
+        now: @escaping @Sendable () -> Date = Date.init,
+        sleep: @escaping @Sendable (Duration) async -> Void = { try? await Task.sleep(for: $0) }
     ) {
-        self.init(host: host, token: token, transport: transport, now: now, cache: GitLabCapabilityCache())
+        self.init(host: host, token: token, transport: transport, now: now, cache: GitLabCapabilityCache(), sleep: sleep)
     }
 
     private init(
@@ -29,17 +34,19 @@ public struct GitLabClient: AccountClient {
         token: String,
         transport: HTTPTransport,
         now: @escaping @Sendable () -> Date,
-        cache: GitLabCapabilityCache
+        cache: GitLabCapabilityCache,
+        sleep: @escaping @Sendable (Duration) async -> Void
     ) {
         self.host = host.lowercased()
         self.token = token
         self.transport = transport
         self.now = now
         self.cache = cache
+        self.sleep = sleep
     }
 
     public func replacingToken(_ token: String) -> GitLabClient {
-        GitLabClient(host: host, token: token, transport: transport, now: now, cache: cache)
+        GitLabClient(host: host, token: token, transport: transport, now: now, cache: cache, sleep: sleep)
     }
 
     public func currentUsername() async throws(ProviderError) -> String {
@@ -105,10 +112,24 @@ public struct GitLabClient: AccountClient {
         try await mutate(GitLabQueries.pipelineRetry(runID: runID), field: Self.retryField)
     }
 
-    public func cancelAndRerun(pr: PullRequest) async throws(ProviderError) {
-        guard let runID = pr.pendingRunIDs.first else { throw .unexpectedResponse }
+    public func cancelAndRerun(pr: PullRequest, runIDs: [Int]) async throws(ProviderError) {
+        guard let runID = runIDs.first else { throw .unexpectedResponse }
         try await mutate(GitLabQueries.pipelineCancel(runID: runID), field: Self.cancelField)
+        if let projectID = GitLabID.parse(pr.id)?.projectID {
+            await waitUntilCanceled(projectID: projectID, pipelineID: runID)
+        }
         try await mutate(GitLabQueries.pipelineRetry(runID: runID), field: Self.retryField)
+    }
+
+    private func waitUntilCanceled(projectID: Int, pipelineID: Int) async {
+        let deadline = now().addingTimeInterval(Self.cancelTimeout)
+        while true {
+            guard let data = try? await get(path: "/api/v4/projects/\(projectID)/pipelines/\(pipelineID)"),
+                  let pipeline = try? JSONDecoder().decode(RESTPipeline.self, from: data),
+                  Self.cancelingStatuses.contains(pipeline.status) else { return }
+            guard now() < deadline else { return }
+            await sleep(Self.cancelPollInterval)
+        }
     }
 
     private func mutate(_ mutation: String, field: String) async throws(ProviderError) {
@@ -251,4 +272,8 @@ private struct OAuthTokenInfo: Decodable {
 
 private struct RESTMergeRequest: Decodable {
     let state: String
+}
+
+private struct RESTPipeline: Decodable {
+    let status: String
 }

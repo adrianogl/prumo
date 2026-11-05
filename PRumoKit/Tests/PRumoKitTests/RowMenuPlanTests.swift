@@ -92,7 +92,7 @@ import Testing
     }
 
     private var stuck: PullRequest {
-        PullRequest.fixture(ci: .pending(done: 0, total: 3), ciPendingSince: Date.fixed.addingTimeInterval(-3600), pendingRunIDs: [77])
+        PullRequest.fixture(ci: .pending(done: 0, total: 3), ciPendingSince: Date.fixed.addingTimeInterval(-3600), pendingRuns: [PendingRun(id: 77, since: Date.fixed.addingTimeInterval(-3600))])
     }
 
     @Test func planShowsCancelAndRerunWhenStuck() {
@@ -116,7 +116,7 @@ import Testing
     @Test func gitlabStuckDisabledWithoutApiScope() {
         let pr = PullRequest.fixture(
             ci: .pending(done: 0, total: 3), provider: .gitlab,
-            ciPendingSince: Date.fixed.addingTimeInterval(-3600), pendingRunIDs: [5003])
+            ciPendingSince: Date.fixed.addingTimeInterval(-3600), pendingRuns: [PendingRun(id: 5003, since: Date.fixed.addingTimeInterval(-3600))])
         let reason = RerunAvailability.disabledReason(provider: .gitlab, scopes: ["read_api"])
         let entries = RowMenuPlan.entries(pr: pr, claudePurposes: [], jira: nil, rerunDisabledReason: reason, isCIStuck: true)
         #expect(reason != nil)

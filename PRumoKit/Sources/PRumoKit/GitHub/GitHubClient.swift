@@ -4,7 +4,7 @@ public struct GitHubClient: Sendable {
     private static let endpoint = URL(string: "https://api.github.com/graphql")!
     private static let restBase = "https://api.github.com"
     private static let cancelPollInterval: Duration = .seconds(2)
-    private static let cancelTimeout: Duration = .seconds(30)
+    public static let cancelTimeout: Duration = .seconds(30)
     private static let finishedRunStatuses: Set<String> = ["completed", "cancelled"]
     private static let alreadyFinishedStatus = 409
 
@@ -82,12 +82,17 @@ public struct GitHubClient: Sendable {
                 continue
             }
         }
+        var timedOut: [Int] = []
         for runID in runIDs {
-            try await waitUntilFinished(repository: repository, runID: runID)
-        }
-        for runID in runIDs {
+            do throws(ProviderError) {
+                try await waitUntilFinished(repository: repository, runID: runID)
+            } catch .cancelTimedOut {
+                timedOut.append(runID)
+                continue
+            }
             _ = try await send(try runRequest(repository: repository, runID: runID, action: "rerun", method: "POST"))
         }
+        if let first = timedOut.first { throw .cancelTimedOut(runID: first) }
     }
 
     private func waitUntilFinished(repository: String, runID: Int) async throws(ProviderError) {

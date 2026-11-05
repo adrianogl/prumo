@@ -99,7 +99,7 @@ import Testing
     @Test func runningPipelineMapsPendingSinceAndRun() throws {
         let pr = try mine(14, in: snapshot())
         #expect(pr.ciPendingSince == date("2026-11-05T10:52:00.000Z"))
-        #expect(pr.pendingRunIDs == [5003])
+        #expect(pr.pendingRuns == [PendingRun(id: 5003, since: date("2026-11-05T10:52:00.000Z"))])
     }
 
     @Test func pendingPipelineWithoutStartUsesCreatedAt() throws {
@@ -112,19 +112,19 @@ import Testing
         let mapped = try MergeRequestMapper.snapshot(data, host: host, capabilities: full, now: .fixed)
         let pr = try #require(mapped.mine.first { $0.number == 14 })
         #expect(pr.ciPendingSince == date("2026-11-05T10:40:00Z"))
-        #expect(pr.pendingRunIDs == [5003])
+        #expect(pr.pendingRuns == [PendingRun(id: 5003, since: date("2026-11-05T10:40:00Z"))])
     }
 
     @Test func finishedPipelineHasNoPendingData() throws {
         let pr = try mine(12, in: snapshot())
         #expect(pr.ciPendingSince == nil)
-        #expect(pr.pendingRunIDs == [])
+        #expect(pr.pendingRuns == [])
     }
 
     @Test func oldFixtureWithoutPipelineDatesHasNoPendingSince() throws {
         let pending = try oldSnapshot().mine.filter { if case .pending = $0.ci { true } else { false } }
         #expect(!pending.isEmpty)
-        #expect(pending.allSatisfy { $0.ciPendingSince == nil && !$0.pendingRunIDs.isEmpty })
+        #expect(pending.allSatisfy { $0.ciPendingSince == nil && $0.pendingRuns.isEmpty })
     }
 
     @Test func canceledPipelineIsFailure() throws {

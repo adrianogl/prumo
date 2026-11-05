@@ -4,8 +4,8 @@ extension GitHubClient: AccountClient {
         try await rerunFailedJobs(repository: pr.repository, runID: runID)
     }
 
-    public func cancelAndRerun(pr: PullRequest) async throws(ProviderError) {
-        guard !pr.pendingRunIDs.isEmpty else { throw .unexpectedResponse }
-        try await cancelAndRerun(repository: pr.repository, runIDs: pr.pendingRunIDs)
+    public func cancelAndRerun(pr: PullRequest, runIDs: [Int]) async throws(ProviderError) {
+        guard !runIDs.isEmpty else { throw .unexpectedResponse }
+        try await cancelAndRerun(repository: pr.repository, runIDs: runIDs)
     }
 }

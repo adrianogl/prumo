@@ -22,7 +22,7 @@ public enum RowMenuPlan {
         if let runID = pr.failedRunID, case .failure = pr.ci {
             entries.append(.rerunFailedJobs(jobName: pr.failedRunName ?? (pr.provider == .gitlab ? Self.pipelineLabel : ""), runID: runID, disabledReason: rerunDisabledReason))
         }
-        if isCIStuck, !pr.pendingRunIDs.isEmpty {
+        if isCIStuck, !pr.pendingRuns.isEmpty {
             entries.append(.cancelAndRerun(disabledReason: rerunDisabledReason))
         }
         entries.append(.copyLink)

@@ -807,14 +807,15 @@ final class AppModel {
     }
 
     func cancelAndRerun(pr: PullRequest) {
-        guard !rerunning.contains(pr.id), let client = session(for: pr)?.client else { return }
+        let runIDs = StuckCI.stuckRunIDs(pr: pr, now: .now, threshold: organization.settings.stuckCIThreshold)
+        guard !runIDs.isEmpty, !rerunning.contains(pr.id), let client = session(for: pr)?.client else { return }
         rerunning.insert(pr.id)
         let repository = pr.repository
         let provider = pr.provider
         Task {
             let failure = await Task.detached { () -> ProviderError? in
                 do throws(ProviderError) {
-                    try await client.cancelAndRerun(pr: pr)
+                    try await client.cancelAndRerun(pr: pr, runIDs: runIDs)
                     return nil
                 } catch {
                     return error

@@ -4,7 +4,7 @@ public enum PullRequestMapper {
     private static let failingConclusions: Set<String> = ["FAILURE", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE"]
     private static let failingStates: Set<String> = ["FAILURE", "ERROR"]
     private static let waitingStates: Set<String> = ["PENDING", "EXPECTED"]
-    private static let pendingCheckStatuses: Set<String> = ["QUEUED", "IN_PROGRESS", "PENDING", "WAITING"]
+    private static let pendingCheckStatuses: Set<String> = ["QUEUED", "IN_PROGRESS"]
     private static let checkRunTypename = "CheckRun"
     private static let ghost = "ghost"
     private static let botTypename = "Bot"
@@ -96,7 +96,7 @@ public enum PullRequestMapper {
             reviewTarget: target,
             reviewDecision: node.reviewDecision.flatMap(ReviewDecision.init(rawValue:)),
             ciPendingSince: pending.compactMap(pendingSince).min(),
-            pendingRunIDs: pendingRunIDs(pending)
+            pendingRuns: pendingRuns(pending)
         )
     }
 
@@ -160,9 +160,15 @@ public enum PullRequestMapper {
         return context.createdAt
     }
 
-    private static func pendingRunIDs(_ pending: [GraphQLResponse.Context]) -> [Int] {
-        var seen: Set<Int> = []
-        return pending.compactMap { $0.checkSuite?.workflowRun?.databaseId }.filter { seen.insert($0).inserted }
+    private static func pendingRuns(_ pending: [GraphQLResponse.Context]) -> [PendingRun] {
+        var order: [Int] = []
+        var since: [Int: Date] = [:]
+        for context in pending {
+            guard let id = context.checkSuite?.workflowRun?.databaseId, let start = pendingSince(context) else { continue }
+            if since[id] == nil { order.append(id) }
+            since[id] = min(since[id] ?? start, start)
+        }
+        return order.compactMap { id in since[id].map { PendingRun(id: id, since: $0) } }
     }
 
     private static func isFailedCheckRun(_ context: GraphQLResponse.Context) -> Bool {

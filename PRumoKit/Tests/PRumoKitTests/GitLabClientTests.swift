@@ -25,6 +25,21 @@ private func client(_ transport: FakeTransport) -> GitLabClient {
     GitLabClient(host: host, token: "glpat-t0k", transport: transport, now: { Date.fixed })
 }
 
+private final class PollClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [Duration] = []
+    var sleeps: [Duration] { lock.withLock { recorded } }
+    var elapsed: TimeInterval { lock.withLock { recorded.reduce(0) { $0 + TimeInterval($1.components.seconds) } } }
+    var now: Date { Date.fixed.addingTimeInterval(elapsed) }
+    func sleep(_ duration: Duration) { lock.withLock { recorded.append(duration) } }
+}
+
+private let gitlabPR = PullRequest.fixture(id: GitLabID.make(host: host, projectID: 42, iid: 14), provider: .gitlab)
+
+private func pollingClient(_ transport: FakeTransport, clock: PollClock) -> GitLabClient {
+    GitLabClient(host: host, token: "glpat-t0k", transport: transport, now: { clock.now }, sleep: { clock.sleep($0) })
+}
+
 @Suite struct GitLabClientTests {
     @Test func fetchSnapshotPostsQueryWithBearer() async throws {
         let transport = FakeTransport { _ in (fixture("gitlab-snapshot"), gitLabResponse(200)) }
@@ -348,16 +363,39 @@ private func client(_ transport: FakeTransport) -> GitLabClient {
         #expect(transport.requests.isEmpty)
     }
 
-    @Test func gitlabCancelThenRetry() async throws {
+    @Test func gitlabCancelWaitsForPipelineThenRetries() async throws {
+        let clock = PollClock()
         let transport = FakeTransport { request in
+            if request.httpMethod == "GET" {
+                let status = clock.elapsed < 4 ? "canceling" : "canceled"
+                return (json(["id": 5003, "status": status]), gitLabResponse(200))
+            }
             let field = graphQLQuery(request).contains("pipelineCancel") ? "pipelineCancel" : "pipelineRetry"
             return (json(["data": [field: ["errors": [String]()]]]), gitLabResponse(200))
         }
-        try await client(transport).cancelAndRerun(pr: .fixture(provider: .gitlab, pendingRunIDs: [5003]))
-        let queries = transport.requests.map(graphQLQuery)
-        #expect(queries.count == 2)
-        #expect(queries[0].contains("pipelineCancel(input: {id: \"gid://gitlab/Ci::Pipeline/5003\"})"))
-        #expect(queries[1].contains("pipelineRetry(input: {id: \"gid://gitlab/Ci::Pipeline/5003\"})"))
+        try await pollingClient(transport, clock: clock).cancelAndRerun(pr: gitlabPR, runIDs: [5003])
+
+        let steps = transport.requests.map { request in
+            request.httpMethod == "GET" ? "GET \(request.url?.path ?? "")" : graphQLQuery(request)
+        }
+        #expect(steps.count == 5)
+        #expect(steps[0].contains("pipelineCancel(input: {id: \"gid://gitlab/Ci::Pipeline/5003\"})"))
+        #expect(Array(steps[1...3]) == Array(repeating: "GET /api/v4/projects/42/pipelines/5003", count: 3))
+        #expect(steps[4].contains("pipelineRetry(input: {id: \"gid://gitlab/Ci::Pipeline/5003\"})"))
+        #expect(clock.sleeps == [.seconds(2), .seconds(2)])
+    }
+
+    @Test func gitlabCancelRetriesEvenWhenPollingTimesOut() async throws {
+        let clock = PollClock()
+        let transport = FakeTransport { request in
+            if request.httpMethod == "GET" { return (json(["id": 5003, "status": "running"]), gitLabResponse(200)) }
+            let field = graphQLQuery(request).contains("pipelineCancel") ? "pipelineCancel" : "pipelineRetry"
+            return (json(["data": [field: ["errors": [String]()]]]), gitLabResponse(200))
+        }
+        try await pollingClient(transport, clock: clock).cancelAndRerun(pr: gitlabPR, runIDs: [5003])
+
+        #expect(clock.sleeps.reduce(.zero, +) == .seconds(20))
+        #expect(graphQLQuery(try #require(transport.requests.last)).contains("pipelineRetry"))
     }
 
     @Test func gitlabCancelErrorsStopBeforeRetry() async {
@@ -365,7 +403,7 @@ private func client(_ transport: FakeTransport) -> GitLabClient {
             (json(["data": ["pipelineCancel": ["errors": ["Pipeline não pode ser cancelado"]]]]), gitLabResponse(200))
         }
         await #expect(throws: ProviderError.graphQL(messages: ["Pipeline não pode ser cancelado"])) {
-            try await client(transport).cancelAndRerun(pr: .fixture(provider: .gitlab, pendingRunIDs: [5003]))
+            try await client(transport).cancelAndRerun(pr: .fixture(provider: .gitlab), runIDs: [5003])
         }
         #expect(transport.requests.count == 1)
     }
@@ -373,7 +411,7 @@ private func client(_ transport: FakeTransport) -> GitLabClient {
     @Test func gitlabCancelWithoutPipelineSendsNothing() async {
         let transport = FakeTransport { _ in (Data(), gitLabResponse(200)) }
         await #expect(throws: ProviderError.unexpectedResponse) {
-            try await client(transport).cancelAndRerun(pr: .fixture(provider: .gitlab))
+            try await client(transport).cancelAndRerun(pr: .fixture(provider: .gitlab), runIDs: [])
         }
         #expect(transport.requests.isEmpty)
     }

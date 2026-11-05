@@ -30,14 +30,51 @@ struct PullRequestMapperTests {
     @Test func mapsPendingSinceAndRunsFromPendingChecks() throws {
         let pr = try snapshot().mine[2]
         #expect(pr.ciPendingSince == ISO8601DateFormatter().date(from: "2026-11-05T10:52:00Z"))
-        #expect(pr.pendingRunIDs == [103005, 103006])
+        #expect(pr.pendingRuns == [
+            PendingRun(id: 103005, since: try #require(ISO8601DateFormatter().date(from: "2026-11-05T11:20:00Z"))),
+            PendingRun(id: 103006, since: try #require(ISO8601DateFormatter().date(from: "2026-11-05T10:52:00Z"))),
+        ])
+    }
+
+    @Test func waitingAndConcurrencyPendingChecksAreNotStuck() throws {
+        var object = try JSONSerialization.jsonObject(with: fixture("search-mine")) as! [String: Any]
+        var data = object["data"] as! [String: Any]
+        var search = data["search"] as! [String: Any]
+        var nodes = search["nodes"] as! [[String: Any]]
+        var commits = nodes[2]["commits"] as! [String: Any]
+        var commitNodes = commits["nodes"] as! [[String: Any]]
+        var commit = commitNodes[0]["commit"] as! [String: Any]
+        var rollup = commit["statusCheckRollup"] as! [String: Any]
+        var contexts = rollup["contexts"] as! [String: Any]
+        var checks = contexts["nodes"] as! [[String: Any]]
+        checks[4]["status"] = "WAITING"
+        checks[4]["startedAt"] = "2026-11-05T08:00:00Z"
+        checks[5]["status"] = "PENDING"
+        checks[5]["startedAt"] = "2026-11-05T08:00:00Z"
+        checks[6]["state"] = "SUCCESS"
+        contexts["nodes"] = checks
+        rollup["contexts"] = contexts
+        commit["statusCheckRollup"] = rollup
+        commitNodes[0]["commit"] = commit
+        commits["nodes"] = commitNodes
+        nodes[2]["commits"] = commits
+        search["nodes"] = nodes
+        data["search"] = search
+        object["data"] = data
+        let mine = try JSONSerialization.data(withJSONObject: object)
+
+        let pr = try PullRequestMapper.snapshot(mineJSON: mine, reviewJSON: fixture("search-review"), mergedJSON: nil, now: .fixed).mine[2]
+        #expect(pr.ci == .pending(done: 5, total: 9))
+        #expect(pr.ciPendingSince == nil)
+        #expect(pr.pendingRuns == [])
+        #expect(StuckCI.since(pr: pr, now: .fixed, threshold: 30 * 60) == nil)
     }
 
     @Test func noPendingDataWhenCIFinished() throws {
         let s = try snapshot()
         for pr in [s.mine[0], s.mine[1], s.mine[3]] {
             #expect(pr.ciPendingSince == nil)
-            #expect(pr.pendingRunIDs == [])
+            #expect(pr.pendingRuns == [])
         }
     }
 

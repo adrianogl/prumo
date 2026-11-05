@@ -7,8 +7,13 @@ public enum StuckCI {
         return elapsed >= threshold ? elapsed : nil
     }
 
+    public static func stuckRunIDs(pr: PullRequest, now: Date, threshold: TimeInterval) -> [Int] {
+        guard case .pending = pr.ci else { return [] }
+        return pr.pendingRuns.filter { now.timeIntervalSince($0.since) >= threshold }.map(\.id)
+    }
+
     public static func isCancelable(pr: PullRequest, now: Date, threshold: TimeInterval) -> Bool {
-        !pr.pendingRunIDs.isEmpty && since(pr: pr, now: now, threshold: threshold) != nil
+        !stuckRunIDs(pr: pr, now: now, threshold: threshold).isEmpty
     }
 
     public static func text(_ elapsed: TimeInterval) -> String {

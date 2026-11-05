@@ -110,8 +110,13 @@ enum MergeRequestMapper {
             mergeReady: mergeReady(node.detailedMergeStatus, capabilities: context.capabilities),
             failedJobID: failure?.jobID,
             ciPendingSince: pending.flatMap { $0.startedAt ?? $0.createdAt },
-            pendingRunIDs: pending.flatMap { numericID($0.id) }.map { [$0] } ?? []
+            pendingRuns: pendingRuns(pending)
         )
+    }
+
+    private static func pendingRuns(_ pipeline: GitLabResponse.Pipeline?) -> [PendingRun] {
+        guard let pipeline, let id = numericID(pipeline.id), let since = pipeline.startedAt ?? pipeline.createdAt else { return [] }
+        return [PendingRun(id: id, since: since)]
     }
 
     private static func reviews(_ node: Node, notes: [GitLabNote], context: Context) -> [Review] {

@@ -60,7 +60,7 @@ enum RowMenuText {
     static func cancelAndRerunFailure(_ error: ProviderError, provider: ProviderKind, repository: String) -> String {
         switch error {
         case .cancelTimedOut(let runID):
-            "O run \(runID) não terminou de cancelar em 30 s. Tente de novo em instantes."
+            "O run \(runID) não terminou de cancelar em \(GitHubClient.cancelTimeout.components.seconds) s. Tente de novo em instantes."
         case .server(status: 403) where provider == .github:
             "O GitHub recusou: sem permissão para cancelar ou rodar de novo o CI em \(repository)."
         case .server(status: 404):
