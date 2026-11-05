@@ -29,9 +29,9 @@ extension StatusDot {
     var color: Color {
         switch self {
         case .ok: Color(nsColor: .systemGreen)
-        case .running: Color(nsColor: .systemYellow)
+        case .running: Color(nsColor: .systemGray)
         case .failed: Color(nsColor: .systemRed)
-        case .attention: Color(nsColor: .systemOrange)
+        case .attention: Color(nsColor: .systemBlue)
         }
     }
 }

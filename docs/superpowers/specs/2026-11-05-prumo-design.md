@@ -109,7 +109,7 @@ Dois modos, configuráveis nos Ajustes. O padrão é o detalhado.
 
 **Detalhado** (padrão):
 
-- à esquerda, bolinha de status: verde (tudo ok), amarelo (CI rodando), vermelho (CI falhou), laranja (alterações pedidas ou review parado);
+- à esquerda, bolinha de status: verde (tudo ok), cinza (CI rodando), vermelho (CI falhou), azul (precisa da sua atenção: alterações pedidas ou review parado);
 - título do PR;
 - `org/repo #número · idade`;
 - badges: CI (`✓ CI 12/12`, `✗ unit-tests` com o nome do primeiro check que falhou, `● CI 4/9`), aprovações, alterações pedidas, comentários (ícone de conversa e quantidade), draft, conflito (ícone de merge bloqueado), chave do Jira, e na aba Revisar: para você/time, autor e tamanho do diff (`+212 −48`), espera (ícone de relógio e horas);
@@ -245,7 +245,7 @@ Sem rede ou com erro da API, o popover mantém os últimos dados com um aviso ("
   - areia `#f3e6cf` → `#d9c3a0` (degradê do fundo do ícone claro);
   - carvão `#2a2622`;
   - caramelo `#a5713a` (destaque: "PR" do logo, contadores, seleção, bolinha de "novo", alfinete).
-- **Cores de status**: as cores de sistema do macOS (verde, amarelo, vermelho, laranja), separadas da paleta da marca.
+- **Cores de status**: as cores de sistema do macOS (verde, cinza, vermelho, azul na bolinha; amarelo e laranja nos badges), separadas da paleta da marca.
 - **Ícone do app** (Icon Composer):
   - claro: fundo areia, main em carvão, PR em caramelo;
   - escuro ("carimbo"): fundo carvão, main em areia, PR em caramelo;
