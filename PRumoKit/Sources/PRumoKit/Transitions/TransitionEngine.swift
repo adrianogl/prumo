@@ -6,11 +6,12 @@ public enum TransitionEngine {
         let oldMine = Dictionary(old.mine.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var result: [NotificationEvent] = []
         let threshold = old.fetchedAt.addingTimeInterval(-TransitionConstants.dateTolerance)
+        let commentFilter = CommentAuthorFilter(ignoredAuthors: options.ignoredCommentAuthors)
         for pr in new.mine {
             guard let before = oldMine[pr.id] else { continue }
             result += ciEvents(before, pr)
             result += reviewEvents(before, pr, viewer: new.viewer, since: threshold)
-            result += commentEvents(before, pr, viewer: new.viewer, since: threshold)
+            result += commentEvents(before, pr, viewer: new.viewer, since: threshold, filter: commentFilter)
             result += conflictEvents(before, pr)
             result += readyEvents(before, pr, viewer: new.viewer)
         }
@@ -74,14 +75,16 @@ public enum TransitionEngine {
         return events.filter { $0.kind == .approved } + events.filter { $0.kind == .changesRequested }
     }
 
-    private static func commentEvents(_ old: PullRequest, _ new: PullRequest, viewer: String, since: Date) -> [NotificationEvent] {
+    private static func commentEvents(
+        _ old: PullRequest, _ new: PullRequest, viewer: String, since: Date, filter: CommentAuthorFilter
+    ) -> [NotificationEvent] {
         let knownComments = Set(old.comments.map(\.id))
         let knownReviews = Set(old.reviews.map(\.id))
         let comments = new.comments
-            .filter { !knownComments.contains($0.id) && $0.author != viewer && !$0.authorIsBot && $0.createdAt > since }
+            .filter { !knownComments.contains($0.id) && $0.author != viewer && !filter.isIgnored($0) && $0.createdAt > since }
             .map { (author: $0.author, body: $0.body, url: $0.url, date: $0.createdAt) }
         let reviews = new.reviews
-            .filter { !knownReviews.contains($0.id) && $0.isComment && $0.author != viewer && !$0.authorIsBot && $0.submittedAt > since }
+            .filter { !knownReviews.contains($0.id) && $0.isComment && $0.author != viewer && !filter.isIgnored($0) && $0.submittedAt > since }
             .map { (author: $0.author, body: $0.body, url: $0.url ?? new.url, date: $0.submittedAt) }
         let fresh = comments + reviews
         guard let latest = fresh.max(by: { $0.date < $1.date }) else { return [] }

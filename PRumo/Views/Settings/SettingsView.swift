@@ -16,6 +16,7 @@ struct SettingsView: View {
         switch selection {
         case .general: SettingsMetrics.generalHeight
         case .notifications: NotificationsSettingsMetrics.height
+        case .comments: CommentsSettingsMetrics.height
         case .filters: FiltersSettingsMetrics.height
         case .claude: ClaudeSettingsMetrics.height
         case .integrations: IntegrationsSettingsMetrics.height
@@ -35,6 +36,9 @@ struct SettingsView: View {
             Tab(SettingsText.general, systemImage: SettingsSymbol.general, value: SettingsTab.general) { general }
             Tab(NotificationsSettingsText.tab, systemImage: NotificationsSettingsSymbol.tab, value: SettingsTab.notifications) {
                 NotificationsSettingsView(store: model.preferences)
+            }
+            Tab(CommentsSettingsText.tab, systemImage: CommentsSettingsSymbol.tab, value: SettingsTab.comments) {
+                CommentsSettingsView(store: model.organization)
             }
             Tab(FiltersSettingsText.tab, systemImage: FiltersSettingsSymbol.tab, value: SettingsTab.filters) {
                 FiltersSettingsView(store: model.organization)

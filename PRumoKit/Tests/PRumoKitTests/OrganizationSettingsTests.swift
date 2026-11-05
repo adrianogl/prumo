@@ -37,6 +37,29 @@ import Testing
         #expect(settings.marks.muted.isEmpty)
     }
 
+    @Test func jsonWithoutIgnoredCommentAuthorsDecodesToDefaultList() throws {
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(#"{"rowStyle":"compact"}"#.utf8))
+        #expect(settings.ignoredCommentAuthors == ["github-actions", "datadog-official"])
+        #expect(OrganizationSettings.defaults.ignoredCommentAuthors == ["github-actions", "datadog-official"])
+    }
+
+    @Test func invalidIgnoredCommentAuthorsFallBackToDefaultList() throws {
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(#"{"ignoredCommentAuthors":7}"#.utf8))
+        #expect(settings.ignoredCommentAuthors == ["github-actions", "datadog-official"])
+    }
+
+    @Test func savedEmptyIgnoredCommentAuthorsIsRespected() throws {
+        let settings = try JSONDecoder().decode(OrganizationSettings.self, from: Data(#"{"ignoredCommentAuthors":[]}"#.utf8))
+        #expect(settings.ignoredCommentAuthors.isEmpty)
+        #expect(settings.commentAuthorFilter == .none)
+    }
+
+    @Test func commentAuthorFilterUsesNormalizedList() {
+        var settings = OrganizationSettings.defaults
+        settings.ignoredCommentAuthors = [" Sonar[bot] ", ""]
+        #expect(settings.commentAuthorFilter.ignoredAuthors == ["sonar"])
+    }
+
     @Test func roundTripCodable() throws {
         var settings = OrganizationSettings.defaults
         settings.filter = RowFilter(repositories: ["o/r"], ci: [.failing], review: [.noReview], state: [.pinned], request: [.stale], authors: ["ana"])
@@ -48,6 +71,7 @@ import Testing
         settings.rowStyle = .compact
         settings.ignoreDraftsInReview = false
         settings.includeTeamRequests = true
+        settings.ignoredCommentAuthors = ["sonarcloud"]
         settings.marks = RowMarks(
             pinned: ["p1"],
             muted: ["m1": MutedPullRequest(id: "m1", number: 7, title: "T", repository: "o/r", mutedAt: Date(timeIntervalSince1970: 1_000))]

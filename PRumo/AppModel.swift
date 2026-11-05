@@ -257,7 +257,8 @@ final class AppModel {
         guard let coordinator else { return false }
         let options = TransitionOptions(
             ignoreDraftReviews: organization.settings.ignoreDraftsInReview,
-            includeTeamRequests: organization.settings.includeTeamRequests
+            includeTeamRequests: organization.settings.includeTeamRequests,
+            ignoredCommentAuthors: organization.settings.commentAuthorFilter.ignoredAuthors
         )
         let result = await coordinator.refresh(options: options)
         guard !Task.isCancelled else { return false }

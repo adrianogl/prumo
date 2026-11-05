@@ -452,7 +452,8 @@ struct PopoverView: View {
     private func presentation(for pr: PullRequest, now: Date) -> RowPresentation {
         let jiraKey = model.integrations.link(for: pr)?.key
         return switch tab {
-        case .mine: RowPresenter.mine(pr, viewer: viewer, now: now, jiraKey: jiraKey)
+        case .mine: RowPresenter.mine(
+            pr, viewer: viewer, now: now, jiraKey: jiraKey, commentFilter: organization.settings.commentAuthorFilter)
         case .review: RowPresenter.review(pr, now: now, jiraKey: jiraKey, staleLimit: staleLimit)
         case .merge: RowPresenter.merge(pr, viewer: viewer, now: now, jiraKey: jiraKey)
         }

@@ -8,6 +8,7 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
     public var rowStyle: RowStyle
     public var ignoreDraftsInReview: Bool
     public var includeTeamRequests: Bool
+    public var ignoredCommentAuthors: [String]
     public var marks: RowMarks
 
     public static let defaults = OrganizationSettings()
@@ -22,6 +23,7 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
         rowStyle: RowStyle = .detailed,
         ignoreDraftsInReview: Bool = true,
         includeTeamRequests: Bool = true,
+        ignoredCommentAuthors: [String] = OrganizationConstants.defaultIgnoredCommentAuthors,
         marks: RowMarks = RowMarks()
     ) {
         self.filter = filter
@@ -33,6 +35,7 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
         self.rowStyle = rowStyle
         self.ignoreDraftsInReview = ignoreDraftsInReview
         self.includeTeamRequests = includeTeamRequests
+        self.ignoredCommentAuthors = ignoredCommentAuthors
         self.marks = marks
     }
 
@@ -47,7 +50,13 @@ public struct OrganizationSettings: Codable, Equatable, Sendable {
         rowStyle = c.decodeLossy(RowStyle.self, forKey: .rowStyle, default: .detailed)
         ignoreDraftsInReview = c.decodeLossy(Bool.self, forKey: .ignoreDraftsInReview, default: true)
         includeTeamRequests = c.decodeLossy(Bool.self, forKey: .includeTeamRequests, default: true)
+        ignoredCommentAuthors = c.decodeLossy(
+            [String].self, forKey: .ignoredCommentAuthors, default: OrganizationConstants.defaultIgnoredCommentAuthors)
         marks = c.decodeLossy(RowMarks.self, forKey: .marks, default: RowMarks())
+    }
+
+    public var commentAuthorFilter: CommentAuthorFilter {
+        CommentAuthorFilter(ignoredAuthors: ignoredCommentAuthors)
     }
 
     public func ordering(for tab: ListTab) -> TabOrdering {

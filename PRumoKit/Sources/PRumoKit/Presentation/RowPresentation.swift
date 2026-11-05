@@ -29,7 +29,9 @@ public struct RowPresentation: Equatable, Sendable {
 }
 
 public enum RowPresenter {
-    public static func mine(_ pr: PullRequest, viewer: String, now: Date, jiraKey: String? = nil) -> RowPresentation {
+    public static func mine(
+        _ pr: PullRequest, viewer: String, now: Date, jiraKey: String? = nil, commentFilter: CommentAuthorFilter = .none
+    ) -> RowPresentation {
         let summary = ReviewSummary(pr, viewer: viewer)
         let approvals = summary.approvals
         let hasChangesRequested = summary.hasChangesRequested
@@ -54,7 +56,7 @@ public enum RowPresenter {
             conflictIndex = badges.count
             badges.append(Badge(PresentationText.conflict, .warning, .conflict))
         }
-        let commentTotal = pr.commentCount + pr.reviews.filter(\.isComment).count
+        let commentTotal = commentFilter.commentTotal(pr)
         var commentsIndex = changesRequestedIndex
         if commentTotal > 0 {
             commentsIndex = badges.count

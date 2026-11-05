@@ -161,6 +161,36 @@ private func review(_ id: String, author: String = "maria", bot: Bool = false, s
         #expect(events[0].url.absoluteString == "https://github.com/acme/loja/pull/812#c3")
     }
 
+    @Test func ignoredCommentAuthorsDoNotNotify() {
+        let old = Snapshot.fixture(mine: [.fixture()])
+        let new = Snapshot.fixture(
+            mine: [.fixture(
+                reviews: [review("r1", author: "Datadog-Official", state: .commented, body: "Relatório")],
+                comments: [comment("c1", author: "github-actions[bot]"), comment("c2", author: "ana", body: "Veja isso")]
+            )],
+            fetchedAt: t2
+        )
+        let options = TransitionOptions(ignoredCommentAuthors: ["github-actions", "datadog-official"])
+        let events = TransitionEngine.events(from: old, to: new, options: options)
+        #expect(events.count == 1)
+        #expect(events[0].title == "Comentário novo em #812")
+        #expect(events[0].body == "ana: \"Veja isso\"")
+    }
+
+    @Test func onlyIgnoredCommentAuthorsEmitNothing() {
+        let old = Snapshot.fixture(mine: [.fixture()])
+        let new = Snapshot.fixture(mine: [.fixture(comments: [comment("c1", author: "GitHub-Actions")])], fetchedAt: t2)
+        let options = TransitionOptions(ignoredCommentAuthors: ["github-actions"])
+        #expect(TransitionEngine.events(from: old, to: new, options: options).isEmpty)
+    }
+
+    @Test func removingAuthorFromListDoesNotReplayKnownComments() {
+        let pr = PullRequest.fixture(comments: [comment("c1", author: "github-actions")], commentCount: 1)
+        let old = Snapshot.fixture(mine: [pr], fetchedAt: t0)
+        let new = Snapshot.fixture(mine: [pr], fetchedAt: t2)
+        #expect(TransitionEngine.events(from: old, to: new, options: TransitionOptions(ignoredCommentAuthors: [])).isEmpty)
+    }
+
     @Test func commentedReviewWithBodyNotifiesAsComment() {
         let old = Snapshot.fixture(mine: [.fixture()])
         let new = Snapshot.fixture(

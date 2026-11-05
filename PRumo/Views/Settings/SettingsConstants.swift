@@ -46,6 +46,7 @@ enum SettingsTab: Hashable {
     case account
     case general
     case notifications
+    case comments
     case filters
     case claude
     case integrations

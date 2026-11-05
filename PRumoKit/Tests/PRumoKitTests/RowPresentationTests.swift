@@ -2,6 +2,9 @@ import Foundation
 import Testing
 @testable import PRumoKit
 
+@testable import struct PRumoKit.Comment
+private typealias RowComment = Comment
+
 @Suite struct RowPresentationTests {
     private func review(_ author: String, _ state: ReviewState, _ offset: TimeInterval) -> Review {
         Review(id: "\(author)\(offset)", author: author, state: state, submittedAt: Date.fixed.addingTimeInterval(offset))
@@ -170,6 +173,30 @@ import Testing
         let index = row.commentsBadgeIndex
         #expect(index != nil)
         #expect(row.badges[index!].icon == .comments)
+    }
+
+    @Test func commentsBadgeIgnoresListedAuthors() {
+        let pr = PullRequest.fixture(
+            comments: [
+                RowComment(id: "c1", author: "github-actions", authorIsBot: false, body: "deploy", url: URL(string: "https://x/1")!, createdAt: .fixed),
+                RowComment(id: "c2", author: "ana", authorIsBot: false, body: "ok", url: URL(string: "https://x/2")!, createdAt: .fixed)
+            ],
+            commentCount: 2
+        )
+        let filter = CommentAuthorFilter(ignoredAuthors: ["github-actions"])
+        let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed, commentFilter: filter)
+        #expect(row.badges.filter { $0.icon == .comments } == [Badge("1", .neutral, .comments)])
+    }
+
+    @Test func commentsBadgeAndIndexDisappearWhenOnlyIgnoredAuthorsCommented() {
+        let pr = PullRequest.fixture(
+            comments: [RowComment(id: "c1", author: "Datadog-Official[bot]", authorIsBot: false, body: "relatório", url: URL(string: "https://x/1")!, createdAt: .fixed)],
+            commentCount: 1
+        )
+        let filter = CommentAuthorFilter(ignoredAuthors: ["datadog-official"])
+        let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed, commentFilter: filter)
+        #expect(row.badges.contains { $0.icon == .comments } == false)
+        #expect(row.commentsBadgeIndex == nil)
     }
 
     @Test func commentsBadgeIndexIsNilWithoutCommentsOrChangesRequested() {
