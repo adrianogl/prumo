@@ -55,6 +55,47 @@ struct PickerToggleChip: View {
     }
 }
 
+struct PickerViewChip: View {
+    let name: String
+    let isOn: Bool
+    let apply: () -> Void
+    let delete: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: FiltersMetrics.viewChipRemoveSpacing) {
+            Button(action: apply) {
+                Text(name)
+                    .font(.system(size: FiltersMetrics.chipFontSize, weight: .medium))
+                    .lineLimit(1)
+                    .fixedSize()
+                    .foregroundStyle(isOn ? Color.white : Color.primary)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isOn ? .isSelected : [])
+            Button(action: delete) {
+                Image(systemName: FiltersSymbol.removeView)
+                    .font(.system(size: FiltersMetrics.viewChipRemoveSize))
+                    .foregroundStyle(isOn ? Color.white.opacity(0.8) : Color.secondary)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .opacity(isHovering ? 1 : 0)
+            .help(FiltersText.deleteView)
+            .accessibilityLabel(FiltersText.deleteView(named: name))
+        }
+        .padding(.leading, FiltersMetrics.chipHorizontalPadding)
+        .padding(.trailing, FiltersMetrics.viewChipRemoveTrailingPadding)
+        .padding(.vertical, FiltersMetrics.chipVerticalPadding)
+        .background(isOn ? Color.prumoCaramel : Color.prumoBadgeBackground, in: Capsule())
+        .onHover { isHovering = $0 }
+        .contextMenu {
+            Button(FiltersText.deleteView, action: delete)
+        }
+    }
+}
+
 struct PickerFooterButton: View {
     let title: String
     let action: () -> Void

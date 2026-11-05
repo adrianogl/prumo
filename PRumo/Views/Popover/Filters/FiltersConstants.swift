@@ -57,12 +57,16 @@ enum FiltersMetrics {
     static let rowSpacing: CGFloat = 8
     static let rowSpacerMinLength: CGFloat = 4
     static let saveViewSpacing: CGFloat = 6
+    static let viewChipRemoveSize: CGFloat = 11
+    static let viewChipRemoveSpacing: CGFloat = 4
+    static let viewChipRemoveTrailingPadding: CGFloat = 5
 }
 
 enum FiltersSymbol {
     static let chevron = "chevron.down"
     static let order = "arrow.up.arrow.down"
     static let remove = "xmark"
+    static let removeView = "xmark.circle.fill"
     static let search = "magnifyingglass"
     static let check = "checkmark"
     static let favorite = "star.fill"
@@ -93,7 +97,12 @@ enum FiltersText {
     static let favorite = "Favoritar"
     static let unfavorite = "Remover dos favoritos"
     static let removeFilter = "Remover filtro"
+    static let deleteView = "Excluir visão"
     static let separator = " · "
+
+    static func deleteView(named name: String) -> String {
+        "\(deleteView) \(name)"
+    }
 
     static func removeChip(_ label: String) -> String {
         "\(label), \(removeFilter)"

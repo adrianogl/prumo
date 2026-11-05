@@ -86,9 +86,11 @@ struct FilterPicker: View {
             PickerGroupTitle(title: FiltersText.viewsTitle)
             chipFlow {
                 ForEach(organization.settings.views) { view in
-                    chip(view.name, isOn: view.filter == filter) {
-                        organization.settings.filter = view.filter
-                    }
+                    PickerViewChip(
+                        name: view.name,
+                        isOn: view.filter == filter,
+                        apply: { organization.settings.filter = view.filter },
+                        delete: { organization.settings.views.removeAll { $0.id == view.id } })
                 }
             }
         }
