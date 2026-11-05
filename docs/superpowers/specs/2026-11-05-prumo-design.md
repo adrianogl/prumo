@@ -211,6 +211,8 @@ O app não passa `--dangerously-skip-permissions` por padrão; o Claude pede con
 
 Depende de App Group entre o app e a extensão. Com conta gratuita, o macOS pode aceitar App Group com o prefixo do Team ID sem perfil pago, mas isso precisa ser testado. Se não funcionar, o widget sai do escopo.
 
+Spike (2026-11-05): variante A (App Group group.dev.aglv.prumo) funcionou com assinatura ad-hoc; widget aparece na galeria e atualiza com reloadAllTimelines; reinício do Mac a confirmar.
+
 WidgetKit, dois tamanhos:
 
 - **Pequeno**: "para revisar" e "CI falhando".
