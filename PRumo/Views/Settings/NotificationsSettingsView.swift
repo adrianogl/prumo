@@ -3,6 +3,7 @@ import PRumoKit
 
 struct NotificationsSettingsView: View {
     let store: NotificationPreferencesStore
+    let showsGitLabNote: Bool
     @State private var start = Date.now
     @State private var end = Date.now
 
@@ -20,6 +21,12 @@ struct NotificationsSettingsView: View {
                     }
                 }
                 .disabled(store.preferences.disabled.contains(.staleReview))
+                if showsGitLabNote {
+                    Text(NotificationsSettingsText.gitLabStaleNote)
+                        .font(.system(size: NotificationsSettingsMetrics.noteSize))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Toggle(NotificationsSettingsText.groupByPullRequest, isOn: groupByPullRequest)
             }
             Section {

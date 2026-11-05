@@ -22,6 +22,7 @@ final class AppModel {
     private(set) var hotKeyRegistered = true
 
     private var sessions: [String: AccountSession] = [:]
+    @ObservationIgnored private var gitLabClients: [String: GitLabClient] = [:]
 
     @ObservationIgnored private let notifications: NotificationService
     @ObservationIgnored private let tokenStore: @Sendable (String) -> TokenStore
@@ -229,7 +230,7 @@ final class AppModel {
 
     nonisolated private static func resolveToken(_ account: Account, resolver: AccountTokenResolver) async -> String? {
         if let token = await resolver.token(for: account) { return token }
-        guard account.origin == .ghCLI else { return nil }
+        guard account.origin != .pasted else { return nil }
         for _ in 0..<AppConstants.ghTokenRetryAttempts {
             try? await Task.sleep(for: AppConstants.ghTokenRetryDelay)
             guard !Task.isCancelled else { return nil }
@@ -417,18 +418,40 @@ final class AppModel {
     }
 
     private func makeSession(_ account: Account, token: String) -> AccountSession {
-        let client = GitHubClient(token: token)
+        let credential = SessionCredential(token: token, client: makeClient(account, token: token))
+        let renewal = account.origin == .glabCLI ? tokenResolver : nil
         let gate = SessionGate()
         let coordinator = RefreshCoordinator(
             accountID: account.id,
             fetch: { () async throws(ProviderError) -> Snapshot in
                 try gate.check()
-                let fetched = try await client.fetchSnapshot()
+                if let renewal { await Self.renewToken(account, credential: credential, resolver: renewal) }
+                let fetched = try await credential.client.fetchSnapshot()
                 try gate.check()
                 return fetched
             },
             store: SnapshotStore(fileURL: AccountStorage.snapshotURL(for: account.id)))
-        return AccountSession(account: account, token: token, client: client, coordinator: coordinator, gate: gate)
+        return AccountSession(account: account, credential: credential, coordinator: coordinator, gate: gate)
+    }
+
+    private func makeClient(_ account: Account, token: String) -> any AccountClient {
+        switch account.provider {
+        case .github:
+            return GitHubClient(token: token)
+        case .gitlab:
+            let client = gitLabClients[account.id]?.replacingToken(token) ?? GitLabClient(host: account.host, token: token)
+            gitLabClients[account.id] = client
+            return client
+        }
+    }
+
+    nonisolated private static func renewToken(
+        _ account: Account, credential: SessionCredential, resolver: AccountTokenResolver
+    ) async {
+        guard let token = await resolver.token(for: account), token != credential.token,
+              let client = credential.client as? GitLabClient
+        else { return }
+        credential.replace(token: token, client: client.replacingToken(token))
     }
 
     private func stopSessions() {
@@ -441,6 +464,7 @@ final class AppModel {
     private func discard(_ id: String) {
         let session = sessions.removeValue(forKey: id)
         session?.gate.stop()
+        gitLabClients.removeValue(forKey: id)
         try? tokenStore(id).delete()
         accounts.list.remove(id: id)
         accounts.statuses.removeValue(forKey: id)
@@ -499,6 +523,7 @@ final class AppModel {
         stopPolling()
         let stopped = Array(sessions.values)
         stopSessions()
+        gitLabClients = [:]
         let ids = Set(accounts.list.accounts.map(\.id) + [AccountMigration.legacyAccountID])
         for id in ids {
             try? tokenStore(id).delete()
@@ -821,17 +846,19 @@ final class AppModel {
         let marked = marks.pinned.union(marks.muted.keys)
         let present = Set((snapshot.mine + snapshot.toReview).map(\.id))
         let absent = marked.subtracting(present)
-        let clients = accounts.list.accounts.compactMap { sessions[$0.id]?.client }
-        guard !absent.isEmpty, !pruningMarks, !clients.isEmpty,
+        let ids = absent.sorted()
+        let targets = accounts.list.accounts.compactMap { account in
+            sessions[account.id].map { (client: $0.client, ids: ids.filter(account.provider.owns(pullRequestID:))) }
+        }.filter { !$0.ids.isEmpty }
+        guard !absent.isEmpty, !pruningMarks, !targets.isEmpty,
               Date.now.timeIntervalSince(lastMarksPrune) >= AppConstants.marksPruneInterval
         else { return }
         pruningMarks = true
         lastMarksPrune = .now
-        let ids = absent.sorted()
         Task.detached { [weak self] in
             var states: [String: PRState]?
-            for client in clients {
-                guard let found = try? await client.pullRequestStates(ids: ids) else { continue }
+            for target in targets {
+                guard let found = try? await target.client.pullRequestStates(ids: target.ids) else { continue }
                 states = (states ?? [:]).merging(found) { current, _ in current }
             }
             await self?.finishMarksPrune(states: states)

@@ -7,6 +7,7 @@ enum NotificationsSettingsMetrics {
     static let weekdayButtonSize: CGFloat = 26
     static let weekdaySpacing: CGFloat = 4
     static let errorSize: CGFloat = 12
+    static let noteSize: CGFloat = 11
     static let minutesPerHour = 60
     static let unselectedBorderOpacity = 0.5
     static let selectedBorderOpacity = 0.0
@@ -30,6 +31,7 @@ enum NotificationsSettingsText {
     static let to = "às"
     static let invalidRange = "O fim precisa ser depois do início."
     static let noWeekdays = "Escolha ao menos um dia"
+    static let gitLabStaleNote = "No GitLab, quando a hora do pedido de review não aparece no histórico do MR, o PRumo conta a espera a partir da criação do MR. Nesses casos, o lembrete de review parado e a ordem por espera ficam aproximados."
     static let weekdayLetters = ["D", "S", "T", "Q", "Q", "S", "S"]
     static let weekdayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
 

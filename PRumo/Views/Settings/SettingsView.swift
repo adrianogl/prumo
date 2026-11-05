@@ -37,7 +37,9 @@ struct SettingsView: View {
             }
             Tab(SettingsText.general, systemImage: SettingsSymbol.general, value: SettingsTab.general) { general }
             Tab(NotificationsSettingsText.tab, systemImage: NotificationsSettingsSymbol.tab, value: SettingsTab.notifications) {
-                NotificationsSettingsView(store: model.preferences)
+                NotificationsSettingsView(
+                    store: model.preferences,
+                    showsGitLabNote: model.accounts.list.accounts.contains { $0.provider == .gitlab })
             }
             Tab(CommentsSettingsText.tab, systemImage: CommentsSettingsSymbol.tab, value: SettingsTab.comments) {
                 CommentsSettingsView(store: model.organization)

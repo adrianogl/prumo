@@ -5,6 +5,15 @@ import Testing
 @Suite struct PullRequestProviderTests {
     private let gitlabURL = URL(string: "https://gitlab.empresa.com/vendas/api/-/merge_requests/341")!
 
+    @Test func providerOwnsItsPullRequestIDs() {
+        let gitlab = GitLabID.make(host: "gitlab.local:8443", projectID: 7, iid: 341)
+        let github = "PR_kwDOAbc123"
+        #expect(ProviderKind.gitlab.owns(pullRequestID: gitlab))
+        #expect(!ProviderKind.gitlab.owns(pullRequestID: github))
+        #expect(ProviderKind.github.owns(pullRequestID: github))
+        #expect(!ProviderKind.github.owns(pullRequestID: gitlab))
+    }
+
     @Test func providerDefaultsToGitHubInOldJSON() throws {
         let data = try JSONEncoder().encode(PullRequest.fixture())
         var object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])

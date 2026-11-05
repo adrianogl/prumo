@@ -11,7 +11,7 @@ public struct GitLabClient: AccountClient {
     private let token: String
     private let transport: HTTPTransport
     private let now: @Sendable () -> Date
-    private let cache = GitLabCapabilityCache()
+    private let cache: GitLabCapabilityCache
 
     public init(
         host: String,
@@ -19,10 +19,25 @@ public struct GitLabClient: AccountClient {
         transport: HTTPTransport = URLSessionTransport(),
         now: @escaping @Sendable () -> Date = Date.init
     ) {
+        self.init(host: host, token: token, transport: transport, now: now, cache: GitLabCapabilityCache())
+    }
+
+    private init(
+        host: String,
+        token: String,
+        transport: HTTPTransport,
+        now: @escaping @Sendable () -> Date,
+        cache: GitLabCapabilityCache
+    ) {
         self.host = host.lowercased()
         self.token = token
         self.transport = transport
         self.now = now
+        self.cache = cache
+    }
+
+    public func replacingToken(_ token: String) -> GitLabClient {
+        GitLabClient(host: host, token: token, transport: transport, now: now, cache: cache)
     }
 
     public func currentUsername() async throws(ProviderError) -> String {

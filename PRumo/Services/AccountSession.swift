@@ -2,12 +2,14 @@ import PRumoKit
 
 struct AccountSession: Sendable {
     let account: Account
-    let token: String
-    let client: any AccountClient
+    let credential: SessionCredential
     let coordinator: RefreshCoordinator
     let gate: SessionGate
 
+    var token: String { credential.token }
+    var client: any AccountClient { credential.client }
+
     func with(account: Account) -> AccountSession {
-        AccountSession(account: account, token: token, client: client, coordinator: coordinator, gate: gate)
+        AccountSession(account: account, credential: credential, coordinator: coordinator, gate: gate)
     }
 }

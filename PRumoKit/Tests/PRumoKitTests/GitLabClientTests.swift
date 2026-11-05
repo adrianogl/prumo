@@ -140,6 +140,24 @@ private func client(_ transport: FakeTransport) -> GitLabClient {
         #expect(!graphQLQuery(transport.requests[2]).contains("mergeRequestInteraction"))
     }
 
+    @Test func replacingTokenKeepsCapabilities() async throws {
+        let transport = FakeTransport { request in
+            graphQLQuery(request).contains("detailedMergeStatus")
+                ? (missingField("detailedMergeStatus", type: "MergeRequest"), gitLabResponse(200))
+                : (fixture("gitlab-snapshot"), gitLabResponse(200))
+        }
+        let original = client(transport)
+        _ = try await original.fetchSnapshot()
+        let renewed = original.replacingToken("glpat-n0vo")
+
+        #expect(await renewed.capabilities().hasDetailedMergeStatus == false)
+        _ = try await renewed.fetchSnapshot()
+        let last = try #require(transport.requests.last)
+        #expect(last.value(forHTTPHeaderField: "Authorization") == "Bearer glpat-n0vo")
+        #expect(!graphQLQuery(last).contains("detailedMergeStatus"))
+        #expect(transport.requests.count == 3)
+    }
+
     @Test func otherGraphQLErrorIsNotRetried() async {
         let transport = FakeTransport { _ in
             (json(["errors": [["message": "Internal server error"]]]), gitLabResponse(200))

@@ -35,6 +35,7 @@ enum AccountsSettingsText {
     static let add = "Adicionar conta…"
     static let originGh = "token do GitHub CLI"
     static let originPasted = "token pessoal no Keychain"
+    static let originGlab = "token do glab"
     static let connected = "conectada"
     static let connecting = "conectando…"
     static let offline = "sem acesso"
@@ -64,16 +65,47 @@ enum AccountsSettingsText {
     static let unavailable = "O GitHub não respondeu. Tente de novo em instantes."
     static let ghTokenMissing = "Não deu para ler o token do gh."
     static let keychainFailure = "Não deu para guardar o token no Keychain."
+    static let address = "Endereço"
+    static let addressPlaceholder = "gitlab.com"
+    static let gitLabTokenField = "Token pessoal (escopo read_api)"
+    static let createGitLabToken = "Criar token no GitLab"
+    static let gitLabInvalidToken = "Token inválido ou sem o escopo read_api."
+    static let gitLabUnavailable = "O GitLab não respondeu. Tente de novo em instantes."
+    static let glabTokenMissing = "Não deu para ler o token do glab."
+    static let insecureAddress = "Use um endereço https."
+    static let invalidAddress = "Endereço inválido."
 
     static func detail(host: String, origin: TokenOrigin) -> String {
-        "\(host) · \(origin == .ghCLI ? originGh : originPasted)"
+        "\(host) · \(originName(origin))"
     }
+
+    static func originName(_ origin: TokenOrigin) -> String {
+        switch origin {
+        case .ghCLI: originGh
+        case .glabCLI: originGlab
+        case .pasted: originPasted
+        }
+    }
+
+    static func providerName(_ provider: ProviderKind) -> String {
+        switch provider {
+        case .github: "GitHub"
+        case .gitlab: "GitLab"
+        }
+    }
+
+    static func gitLabNoAccess(_ host: String) -> String { "Sem acesso a \(host). Confira a VPN." }
+    static func foundInGlab(login: String, host: String) -> String { "Encontrei no glab: @\(login) em \(host)" }
 
     static func rateLimitedUntil(_ time: String) -> String { "limite da API até \(time)" }
     static func removeTitle(_ name: String) -> String { "Remover \(name)?" }
     static func reconnectTitle(_ name: String) -> String { "Reconectar \(name)" }
     static func foundInGh(login: String, host: String) -> String { "Encontrei no gh: @\(login) em \(host)" }
     static func otherLogin(_ found: String, expected: String) -> String { "Esse token é de @\(found), não de @\(expected)." }
+}
+
+enum AddAccountOptions {
+    static let providers: [ProviderKind] = [.github, .gitlab]
 }
 
 enum AddAccountMode: Identifiable {

@@ -16,26 +16,18 @@ struct AddAccountSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AccountsSettingsMetrics.sheetSpacing) {
             Text(title).font(.headline)
-            if model.reconnecting == nil, !model.detected.isEmpty {
-                ForEach(model.detected, id: \.login) { account in
-                    detectedRow(account)
-                }
-                hint(AccountsSettingsText.orPastedToken)
-            }
-            field(AccountsSettingsText.tokenField) {
-                SecureField(AccountsSettingsText.tokenField, text: $model.tokenInput)
-                    .labelsHidden()
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit(connect)
-            }
-            Link(AccountsSettingsText.createToken, destination: AppConstants.tokenCreationURL)
-                .font(.system(size: AccountsSettingsMetrics.fieldLabelSize))
             if model.reconnecting == nil {
-                field(AccountsSettingsText.nickname) {
-                    TextField(AccountsSettingsText.nickname, text: $model.nickname)
-                        .labelsHidden()
-                        .textFieldStyle(.roundedBorder)
+                Picker(AccountsSettingsText.sheetTitle, selection: $model.provider) {
+                    ForEach(AddAccountOptions.providers, id: \.self) { provider in
+                        Text(AccountsSettingsText.providerName(provider)).tag(provider)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+            switch model.provider {
+            case .github: gitHubForm
+            case .gitlab: gitLabForm
             }
             if let message = model.errorMessage {
                 Text(message)
@@ -58,17 +50,81 @@ struct AddAccountSheet: View {
         .padding(AccountsSettingsMetrics.sheetPadding)
         .frame(width: AccountsSettingsMetrics.sheetWidth)
         .task { await model.detect() }
+        .onChange(of: model.provider) { model.errorMessage = nil }
     }
 
-    private func detectedRow(_ account: GhAccount) -> some View {
+    @ViewBuilder
+    private var gitHubForm: some View {
+        if model.reconnecting == nil, !model.detected.isEmpty {
+            ForEach(model.detected, id: \.login) { account in
+                detectedRow(
+                    kind: .github,
+                    text: AccountsSettingsText.foundInGh(
+                        login: account.login, host: GhHostsFile.normalizeHost(account.host))
+                ) { await model.use(account) }
+            }
+            hint(AccountsSettingsText.orPastedToken)
+        }
+        tokenField(AccountsSettingsText.tokenField)
+        Link(AccountsSettingsText.createToken, destination: AppConstants.tokenCreationURL)
+            .font(.system(size: AccountsSettingsMetrics.fieldLabelSize))
+        nicknameField
+    }
+
+    @ViewBuilder
+    private var gitLabForm: some View {
+        if model.reconnecting == nil, !model.detectedGlab.isEmpty {
+            ForEach(model.detectedGlab, id: \.host) { account in
+                detectedRow(
+                    kind: .gitlab,
+                    text: AccountsSettingsText.foundInGlab(login: account.login ?? "", host: account.host)
+                ) { await model.use(account) }
+            }
+            hint(AccountsSettingsText.orPastedToken)
+        }
+        if model.reconnecting == nil {
+            field(AccountsSettingsText.address) {
+                TextField(AccountsSettingsText.address, text: $model.address, prompt: Text(AccountsSettingsText.addressPlaceholder))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
+            }
+        }
+        tokenField(AccountsSettingsText.gitLabTokenField)
+        nicknameField
+        Link(AccountsSettingsText.createGitLabToken, destination: model.gitLabTokenURL)
+            .font(.system(size: AccountsSettingsMetrics.fieldLabelSize))
+    }
+
+    private func tokenField(_ label: String) -> some View {
+        field(label) {
+            SecureField(label, text: $model.tokenInput)
+                .labelsHidden()
+                .textFieldStyle(.roundedBorder)
+                .onSubmit(connect)
+        }
+    }
+
+    @ViewBuilder
+    private var nicknameField: some View {
+        if model.reconnecting == nil {
+            field(AccountsSettingsText.nickname) {
+                TextField(AccountsSettingsText.nickname, text: $model.nickname)
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+            }
+        }
+    }
+
+    private func detectedRow(kind: ProviderKind, text: String, use: @escaping () async -> Void) -> some View {
         HStack(spacing: AccountsSettingsMetrics.detectedSpacing) {
-            ProviderIcon(kind: .github, size: AccountsSettingsMetrics.detectedIconSize)
-            Text(AccountsSettingsText.foundInGh(login: account.login, host: GhHostsFile.normalizeHost(account.host)))
+            ProviderIcon(kind: kind, size: AccountsSettingsMetrics.detectedIconSize)
+            Text(text)
                 .font(.system(size: AccountsSettingsMetrics.detectedTextSize))
             Spacer()
             Button(AccountsSettingsText.use) {
                 Task {
-                    await model.use(account)
+                    await use()
                     if model.isFinished { dismiss() }
                 }
             }
