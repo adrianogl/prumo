@@ -220,7 +220,8 @@ final class AppModel {
 
     private func runLaunch(pr: PullRequest, purpose: SessionPurpose, mayAskForClone: Bool) async {
         let launcher = ClaudeLauncher(
-            settings: claude.settings, scanned: claude.scanned, runner: SystemProcessRunner())
+            settings: claude.settings, scanned: claude.scanned,
+            runner: SystemProcessRunner(timeout: AppConstants.longCommandTimeout))
         let result = await Task.detached { () -> Result<LaunchResult, ClaudeLaunchError> in
             do throws(ClaudeLaunchError) {
                 return .success(try await launcher.launch(pr: pr, purpose: purpose))
@@ -271,7 +272,8 @@ final class AppModel {
         let registry = worktreeRegistry
         let worktreesRoot = Self.expandedURL(settings.worktreesRoot)
         Task.detached { [weak self] in
-            let manager = WorktreeManager(runner: SystemProcessRunner(), worktreesRoot: worktreesRoot)
+            let manager = WorktreeManager(
+                runner: SystemProcessRunner(timeout: AppConstants.longCommandTimeout), worktreesRoot: worktreesRoot)
             let candidates = WorktreeCleanup.stale(records: await registry.records(), snapshot: snapshot)
             var present: [WorktreeRecord] = []
             for record in candidates {

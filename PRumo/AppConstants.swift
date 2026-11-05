@@ -10,6 +10,7 @@ enum AppConstants {
     static let claudeSettingsKey = "claudeSettings"
     static let ghTokenRetryAttempts = 3
     static let ghTokenRetryDelay: Duration = .seconds(2)
+    static let longCommandTimeout: Duration = .seconds(300)
     static let keychainService = "dev.aglv.prumo"
     static let keychainAccount = "github-token"
     static let launchApprovalMessage = "Aprove em Ajustes do Sistema > Itens de Início"
