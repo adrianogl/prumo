@@ -73,16 +73,25 @@ public enum RowPresenter {
         )
     }
 
-    public static func review(_ pr: PullRequest, now: Date, jiraKey: String? = nil) -> RowPresentation {
+    public static func review(
+        _ pr: PullRequest, now: Date, jiraKey: String? = nil, staleLimit: TimeInterval? = nil
+    ) -> RowPresentation {
+        let requestedAt = pr.reviewRequestedAt ?? pr.createdAt
+        let waited = now.timeIntervalSince(requestedAt)
+        let isStale = staleLimit.map { waited >= $0 } ?? false
         var badges = [requestBadge(pr.reviewTarget), Badge(pr.author, .neutral)]
+        if isStale {
+            let hours = Int(waited / PresentationMetrics.secondsPerHour)
+            badges.append(Badge("\(PresentationText.waitingPrefix) \(hours)h", .warning, .clock))
+        }
         if let ci = ciBadge(pr.ci) { badges.append(ci) }
         badges.append(Badge("+\(pr.additions) \(PresentationText.minus)\(pr.deletions)", .neutral))
         if let jiraKey { badges.append(Badge(jiraKey, .neutral)) }
 
         return RowPresentation(
-            dot: dot(ci: pr.ci, hasChangesRequested: false),
+            dot: dot(ci: pr.ci, hasChangesRequested: isStale),
             title: pr.title,
-            subtitle: subtitle(pr, from: pr.reviewRequestedAt ?? pr.createdAt, now: now),
+            subtitle: subtitle(pr, from: requestedAt, now: now),
             badges: badges
         )
     }

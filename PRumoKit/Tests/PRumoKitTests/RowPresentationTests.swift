@@ -257,4 +257,23 @@ import Testing
         let pr = PullRequest.fixture(reviewTarget: .team(name: "backend"))
         #expect(RowPresenter.compactLine(pr, tab: .review, viewer: "adriano", now: .fixed) == "loja #812 · adriano · time backend · agora")
     }
+
+    @Test func reviewRowShowsWaitBadgeAndAttentionDot() {
+        let pr = PullRequest.fixture(reviewRequestedAt: Date.fixed.addingTimeInterval(-26.5 * 3600))
+        let row = RowPresenter.review(pr, now: .fixed, staleLimit: 24 * 3600)
+        #expect(row.dot == .attention)
+        #expect(row.badges.contains(Badge("esperando há 26h", .warning, .clock)))
+        let fresh = RowPresenter.review(pr, now: .fixed, staleLimit: 48 * 3600)
+        #expect(fresh.dot == .ok)
+        #expect(!fresh.badges.contains { $0.icon == .clock })
+        #expect(RowPresenter.review(pr, now: .fixed).dot == .ok)
+    }
+
+    @Test func failingCIStaysFailedWhenStale() {
+        let pr = PullRequest.fixture(
+            ci: .failure(failedChecks: ["unit"], total: 3),
+            reviewRequestedAt: Date.fixed.addingTimeInterval(-30 * 3600)
+        )
+        #expect(RowPresenter.review(pr, now: .fixed, staleLimit: 24 * 3600).dot == .failed)
+    }
 }

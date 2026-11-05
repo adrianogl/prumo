@@ -1,3 +1,5 @@
+import Foundation
+
 enum PresentationText {
     static let draft = "draft"
     static let conflict = "conflito"
@@ -19,4 +21,9 @@ enum PresentationText {
     static let ciRunning = "CI rodando"
     static let ciFailed = "CI falhou"
     static let separator = " · "
+    static let waitingPrefix = "esperando há"
+}
+
+enum PresentationMetrics {
+    static let secondsPerHour: TimeInterval = 3600
 }
