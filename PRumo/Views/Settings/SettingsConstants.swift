@@ -7,6 +7,8 @@ enum SettingsMetrics {
     static let aboutHeight: CGFloat = 280
     static let generalHeight: CGFloat = 340
     static let hotKeyButtonWidth: CGFloat = 110
+    static let hotKeyRecorderSpacing: CGFloat = 4
+    static let hotKeyFontSize: CGFloat = 12
 }
 
 enum SettingsSymbol {

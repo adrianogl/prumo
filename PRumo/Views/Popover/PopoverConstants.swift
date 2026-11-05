@@ -2,6 +2,7 @@ import SwiftUI
 
 enum PopoverMetrics {
     static let width: CGFloat = 390
+    static let footerFontSize: CGFloat = 11
     static let listMaxHeight: CGFloat = 520
     static let headerIconSize: CGFloat = 26
     static let badgeSpacing: CGFloat = 5

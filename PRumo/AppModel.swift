@@ -19,6 +19,7 @@ final class AppModel {
     private(set) var launching: Set<String> = []
     private(set) var rerunning: Set<String> = []
     private(set) var hotKey: HotKeyCombo
+    private(set) var hotKeyRegistered = true
 
     @ObservationIgnored private let notifications: NotificationService
     @ObservationIgnored private let tokenStore: TokenStore
@@ -129,16 +130,25 @@ final class AppModel {
     }
 
     func registerHotKey() {
-        _ = globalHotKey.register(hotKey)
+        hotKeyRegistered = globalHotKey.register(hotKey)
+    }
+
+    func suspendHotKey() {
+        globalHotKey.unregister()
+    }
+
+    func resumeHotKey() {
+        registerHotKey()
     }
 
     func setHotKey(_ combo: HotKeyCombo) -> Bool {
         guard combo.isValid else { return false }
         guard globalHotKey.register(combo) else {
-            _ = globalHotKey.register(hotKey)
+            hotKeyRegistered = globalHotKey.register(hotKey)
             return false
         }
         hotKey = combo
+        hotKeyRegistered = true
         if let data = try? JSONEncoder().encode(combo) {
             defaults.set(data, forKey: AppConstants.hotKeyKey)
         }

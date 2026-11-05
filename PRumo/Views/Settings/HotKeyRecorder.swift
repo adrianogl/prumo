@@ -11,11 +11,11 @@ struct HotKeyRecorder: View {
 
     var body: some View {
         LabeledContent(SettingsText.hotKey) {
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: SettingsMetrics.hotKeyRecorderSpacing) {
                 HStack {
                     Button(action: toggleRecording) {
                         Text(isRecording ? SettingsText.hotKeyRecording : model.hotKey.display)
-                            .font(.system(size: 12, design: isRecording ? .default : .monospaced))
+                            .font(.system(size: SettingsMetrics.hotKeyFontSize, design: isRecording ? .default : .monospaced))
                             .frame(minWidth: SettingsMetrics.hotKeyButtonWidth)
                     }
                     Button(SettingsText.hotKeyRestore) {
@@ -25,9 +25,12 @@ struct HotKeyRecorder: View {
                     .disabled(model.hotKey == .standard)
                 }
                 if let warning {
-                    Text(warning).font(.system(size: 12)).foregroundStyle(.red)
+                    Text(warning).font(.system(size: SettingsMetrics.hotKeyFontSize)).foregroundStyle(.red)
                 }
             }
+        }
+        .onAppear {
+            if !model.hotKeyRegistered { warning = SettingsText.hotKeyInUse }
         }
         .onDisappear(perform: stopRecording)
     }
@@ -43,6 +46,7 @@ struct HotKeyRecorder: View {
     private func startRecording() {
         warning = nil
         isRecording = true
+        model.suspendHotKey()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             MainActor.assumeIsolated {
                 record(event)
@@ -52,6 +56,7 @@ struct HotKeyRecorder: View {
     }
 
     private func stopRecording() {
+        if isRecording { model.resumeHotKey() }
         isRecording = false
         if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil

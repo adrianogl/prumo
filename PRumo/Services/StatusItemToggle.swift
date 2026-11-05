@@ -4,6 +4,7 @@ import AppKit
 enum StatusItemToggle {
     static func toggle() -> Bool {
         guard let button = statusBarButton() else { return false }
+        NSApp.activate()
         button.performClick(nil)
         return true
     }

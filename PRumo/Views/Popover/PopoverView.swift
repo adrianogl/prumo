@@ -344,7 +344,7 @@ struct PopoverView: View {
                     }
                 }
                 Text(model.hotKey.display)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.system(size: PopoverMetrics.footerFontSize, design: .monospaced))
             }
             Spacer()
             Button(action: showSettings) {
@@ -352,7 +352,7 @@ struct PopoverView: View {
             }
             .buttonStyle(.plain)
         }
-        .font(.system(size: 11))
+        .font(.system(size: PopoverMetrics.footerFontSize))
         .foregroundStyle(.secondary)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
