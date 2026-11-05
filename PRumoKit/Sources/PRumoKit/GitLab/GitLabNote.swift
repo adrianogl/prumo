@@ -29,18 +29,9 @@ struct GitLabNote: Decodable, Equatable, Sendable {
         url = try container.decodeIfPresent(URL.self, forKey: .url)
         author = try container.decodeIfPresent(GitLabUser.self, forKey: .author)
         let raw = try container.decode(String.self, forKey: .createdAt)
-        guard let date = Self.parseDate(raw) else {
+        guard let date = GitLabDate.parse(raw) else {
             throw DecodingError.dataCorruptedError(forKey: .createdAt, in: container, debugDescription: "Data inválida: \(raw)")
         }
         createdAt = date
-    }
-
-    private static func parseDate(_ raw: String) -> Date? {
-        let fractional = ISO8601DateFormatter()
-        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = fractional.date(from: raw) { return date }
-        let plain = ISO8601DateFormatter()
-        plain.formatOptions = [.withInternetDateTime]
-        return plain.date(from: raw)
     }
 }

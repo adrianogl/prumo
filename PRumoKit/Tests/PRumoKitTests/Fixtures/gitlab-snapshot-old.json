@@ -1,0 +1,735 @@
+{
+ "data": {
+  "currentUser": {
+   "username": "adriano",
+   "authored": {
+    "nodes": [
+     {
+      "iid": "12",
+      "title": "Corrige cálculo do frete",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/12",
+      "draft": false,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-12",
+      "targetBranch": "main",
+      "sourceProjectId": 77,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha12",
+      "conflicts": false,
+      "userNotesCount": 2,
+      "diffStatsSummary": {
+       "additions": 42,
+       "deletions": 12
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "adriano"
+      },
+      "approvedBy": {
+       "nodes": [
+        {
+         "username": "adriano"
+        },
+        {
+         "username": "bruna"
+        }
+       ]
+      },
+      "reviewers": {
+       "nodes": [
+        {
+         "username": "adriano"
+        },
+        {
+         "username": "bruna"
+        },
+        {
+         "username": "carla"
+        }
+       ]
+      },
+      "headPipeline": {
+       "id": "gid://gitlab/Ci::Pipeline/5001",
+       "status": "SUCCESS",
+       "jobs": {
+        "count": 7,
+        "nodes": [
+         {
+          "id": "gid://gitlab/Ci::Build/9000",
+          "name": "job0",
+          "status": "SUCCESS",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9001",
+          "name": "job1",
+          "status": "SUCCESS",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9002",
+          "name": "job2",
+          "status": "SUCCESS",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9003",
+          "name": "job3",
+          "status": "SUCCESS",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9004",
+          "name": "job4",
+          "status": "SUCCESS",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9005",
+          "name": "job5",
+          "status": "SUCCESS",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9006",
+          "name": "job6",
+          "status": "SUCCESS",
+          "allowFailure": false
+         }
+        ]
+       }
+      },
+      "notes": {
+       "nodes": [
+        {
+         "id": "gid://gitlab/Note/1",
+         "body": "requested review from @bruna and @carla",
+         "system": true,
+         "createdAt": "2026-11-04T10:05:00Z",
+         "url": "https://gitlab.empresa.com/vendas/api/-/merge_requests/12#note_1",
+         "author": {
+          "username": "adriano",
+          "bot": false
+         }
+        },
+        {
+         "id": "gid://gitlab/Note/2",
+         "body": "approved this merge request",
+         "system": true,
+         "createdAt": "2026-11-05T09:30:00.500Z",
+         "url": "https://gitlab.empresa.com/vendas/api/-/merge_requests/12#note_2",
+         "author": {
+          "username": "bruna",
+          "bot": false
+         }
+        },
+        {
+         "id": "gid://gitlab/Note/3",
+         "body": "Faltou tratar o CEP vazio",
+         "system": false,
+         "createdAt": "2026-11-05T09:40:00Z",
+         "url": "https://gitlab.empresa.com/vendas/api/-/merge_requests/12#note_3",
+         "author": {
+          "username": "carla",
+          "bot": false
+         }
+        },
+        {
+         "id": "gid://gitlab/Note/4",
+         "body": "Cobertura caiu 2%",
+         "system": false,
+         "createdAt": "2026-11-05T09:41:00Z",
+         "url": "https://gitlab.empresa.com/vendas/api/-/merge_requests/12#note_4",
+         "author": {
+          "username": "codecov-bot",
+          "bot": true
+         }
+        }
+       ]
+      }
+     },
+     {
+      "iid": "13",
+      "title": "Atualiza dependências",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/13",
+      "draft": false,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-13",
+      "targetBranch": "main",
+      "sourceProjectId": 99,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha13",
+      "conflicts": true,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 43,
+       "deletions": 13
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "adriano"
+      },
+      "approvedBy": {
+       "nodes": []
+      },
+      "reviewers": {
+       "nodes": []
+      },
+      "headPipeline": {
+       "id": "gid://gitlab/Ci::Pipeline/5002",
+       "status": "FAILED",
+       "jobs": {
+        "count": 3,
+        "nodes": [
+         {
+          "id": "gid://gitlab/Ci::Build/9101",
+          "name": "lint",
+          "status": "FAILED",
+          "allowFailure": true
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9102",
+          "name": "testes",
+          "status": "FAILED",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9103",
+          "name": "build",
+          "status": "SUCCESS",
+          "allowFailure": false
+         }
+        ]
+       }
+      },
+      "notes": {
+       "nodes": []
+      }
+     },
+     {
+      "iid": "14",
+      "title": "Rascunho do checkout",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/14",
+      "draft": true,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-14",
+      "targetBranch": "main",
+      "sourceProjectId": 77,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha14",
+      "conflicts": false,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 44,
+       "deletions": 14
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "adriano"
+      },
+      "approvedBy": {
+       "nodes": []
+      },
+      "reviewers": {
+       "nodes": []
+      },
+      "headPipeline": {
+       "id": "gid://gitlab/Ci::Pipeline/5003",
+       "status": "RUNNING",
+       "jobs": {
+        "count": 7,
+        "nodes": [
+         {
+          "id": "gid://gitlab/Ci::Build/9201",
+          "name": "a",
+          "status": "SUCCESS",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9202",
+          "name": "b",
+          "status": "SUCCESS",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9203",
+          "name": "c",
+          "status": "SKIPPED",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9204",
+          "name": "d",
+          "status": "RUNNING",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9205",
+          "name": "e",
+          "status": "PENDING",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9206",
+          "name": "f",
+          "status": "CREATED",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9207",
+          "name": "g",
+          "status": "RUNNING",
+          "allowFailure": false
+         }
+        ]
+       }
+      },
+      "notes": {
+       "nodes": []
+      }
+     },
+     {
+      "iid": "15",
+      "title": "Remove feature flag antiga",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/15",
+      "draft": false,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-15",
+      "targetBranch": "main",
+      "sourceProjectId": 77,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha15",
+      "conflicts": false,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 45,
+       "deletions": 15
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "adriano"
+      },
+      "approvedBy": {
+       "nodes": []
+      },
+      "reviewers": {
+       "nodes": []
+      },
+      "headPipeline": {
+       "id": "gid://gitlab/Ci::Pipeline/5004",
+       "status": "CANCELED",
+       "jobs": {
+        "count": 2,
+        "nodes": [
+         {
+          "id": "gid://gitlab/Ci::Build/9301",
+          "name": "testes",
+          "status": "CANCELED",
+          "allowFailure": false
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9302",
+          "name": "build",
+          "status": "SUCCESS",
+          "allowFailure": false
+         }
+        ]
+       }
+      },
+      "notes": {
+       "nodes": []
+      }
+     },
+     {
+      "iid": "16",
+      "title": "Ajusta README",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/16",
+      "draft": false,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-16",
+      "targetBranch": "main",
+      "sourceProjectId": 77,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha16",
+      "conflicts": false,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 46,
+       "deletions": 16
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "adriano"
+      },
+      "approvedBy": {
+       "nodes": []
+      },
+      "reviewers": {
+       "nodes": []
+      },
+      "headPipeline": null,
+      "notes": {
+       "nodes": []
+      }
+     },
+     {
+      "iid": "17",
+      "title": "Liga métricas",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/17",
+      "draft": false,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-17",
+      "targetBranch": "main",
+      "sourceProjectId": 77,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha17",
+      "conflicts": false,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 47,
+       "deletions": 17
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "adriano"
+      },
+      "approvedBy": {
+       "nodes": []
+      },
+      "reviewers": {
+       "nodes": []
+      },
+      "headPipeline": {
+       "id": "gid://gitlab/Ci::Pipeline/5005",
+       "status": "SUCCESS",
+       "jobs": {
+        "count": 2,
+        "nodes": [
+         {
+          "id": "gid://gitlab/Ci::Build/9401",
+          "name": "auditoria",
+          "status": "FAILED",
+          "allowFailure": true
+         },
+         {
+          "id": "gid://gitlab/Ci::Build/9402",
+          "name": "testes",
+          "status": "SUCCESS",
+          "allowFailure": false
+         }
+        ]
+       }
+      },
+      "notes": {
+       "nodes": []
+      }
+     }
+    ]
+   },
+   "review": {
+    "nodes": [
+     {
+      "iid": "40",
+      "title": "Nova tela de pedidos",
+      "webUrl": "https://gitlab.empresa.com/vendas/web/-/merge_requests/40",
+      "draft": false,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-40",
+      "targetBranch": "main",
+      "sourceProjectId": 78,
+      "targetProjectId": 78,
+      "diffHeadSha": "sha40",
+      "conflicts": false,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 70,
+       "deletions": 40
+      },
+      "project": {
+       "id": "gid://gitlab/Project/78",
+       "fullPath": "vendas/web"
+      },
+      "author": {
+       "username": "bruna"
+      },
+      "approvedBy": {
+       "nodes": []
+      },
+      "reviewers": {
+       "nodes": [
+        {
+         "username": "adriano"
+        }
+       ]
+      },
+      "headPipeline": null,
+      "notes": {
+       "nodes": [
+        {
+         "id": "gid://gitlab/Note/10",
+         "body": "requested review from @adriano",
+         "system": true,
+         "createdAt": "2026-11-05T11:00:00Z",
+         "url": "https://gitlab.empresa.com/vendas/web/-/merge_requests/40#note_10",
+         "author": {
+          "username": "bruna",
+          "bot": false
+         }
+        }
+       ]
+      }
+     },
+     {
+      "iid": "41",
+      "title": "Refatora estoque",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/41",
+      "draft": false,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-41",
+      "targetBranch": "main",
+      "sourceProjectId": 77,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha41",
+      "conflicts": false,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 71,
+       "deletions": 41
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "carla"
+      },
+      "approvedBy": {
+       "nodes": [
+        {
+         "username": "adriano"
+        }
+       ]
+      },
+      "reviewers": {
+       "nodes": [
+        {
+         "username": "adriano"
+        }
+       ]
+      },
+      "headPipeline": null,
+      "notes": {
+       "nodes": [
+        {
+         "id": "gid://gitlab/Note/11",
+         "body": "requested review from @adriano",
+         "system": true,
+         "createdAt": "2026-11-05T08:00:00Z",
+         "url": "https://gitlab.empresa.com/vendas/api/-/merge_requests/41#note_11",
+         "author": {
+          "username": "carla",
+          "bot": false
+         }
+        },
+        {
+         "id": "gid://gitlab/Note/12",
+         "body": "approved this merge request",
+         "system": true,
+         "createdAt": "2026-11-05T08:30:00Z",
+         "url": "https://gitlab.empresa.com/vendas/api/-/merge_requests/41#note_12",
+         "author": {
+          "username": "adriano",
+          "bot": false
+         }
+        }
+       ]
+      }
+     },
+     {
+      "iid": "42",
+      "title": "Corrige timeout do ERP",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/42",
+      "draft": false,
+      "createdAt": "2026-11-03T15:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-42",
+      "targetBranch": "main",
+      "sourceProjectId": 77,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha42",
+      "conflicts": false,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 72,
+       "deletions": 42
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "bruna"
+      },
+      "approvedBy": {
+       "nodes": []
+      },
+      "reviewers": {
+       "nodes": [
+        {
+         "username": "adriano"
+        }
+       ]
+      },
+      "headPipeline": null,
+      "notes": {
+       "nodes": []
+      }
+     },
+     {
+      "iid": "12",
+      "title": "Corrige cálculo do frete",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/12",
+      "draft": false,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-12",
+      "targetBranch": "main",
+      "sourceProjectId": 77,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha12",
+      "conflicts": false,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 42,
+       "deletions": 12
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "adriano"
+      },
+      "approvedBy": {
+       "nodes": []
+      },
+      "reviewers": {
+       "nodes": [
+        {
+         "username": "adriano"
+        }
+       ]
+      },
+      "headPipeline": null,
+      "notes": {
+       "nodes": []
+      }
+     },
+     {
+      "iid": "43",
+      "title": "Ajusta cache de preços",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/43",
+      "draft": false,
+      "createdAt": "2026-11-04T10:00:00Z",
+      "updatedAt": "2026-11-05T12:00:00.123Z",
+      "sourceBranch": "feat/mr-43",
+      "targetBranch": "main",
+      "sourceProjectId": 77,
+      "targetProjectId": 77,
+      "diffHeadSha": "sha43",
+      "conflicts": false,
+      "userNotesCount": 0,
+      "diffStatsSummary": {
+       "additions": 73,
+       "deletions": 43
+      },
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      },
+      "author": {
+       "username": "carla"
+      },
+      "approvedBy": {
+       "nodes": []
+      },
+      "reviewers": {
+       "nodes": [
+        {
+         "username": "adriano"
+        }
+       ]
+      },
+      "headPipeline": null,
+      "notes": {
+       "nodes": [
+        {
+         "id": "gid://gitlab/Note/13",
+         "body": "requested review from @adriano",
+         "system": true,
+         "createdAt": "2026-11-05T07:00:00Z",
+         "url": "https://gitlab.empresa.com/vendas/api/-/merge_requests/43#note_13",
+         "author": {
+          "username": "carla",
+          "bot": false
+         }
+        },
+        {
+         "id": "gid://gitlab/Note/14",
+         "body": "Pode trocar o TTL?",
+         "system": false,
+         "createdAt": "2026-11-05T07:30:00Z",
+         "url": "https://gitlab.empresa.com/vendas/api/-/merge_requests/43#note_14",
+         "author": {
+          "username": "adriano",
+          "bot": false
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "merged": {
+    "nodes": [
+     {
+      "iid": "9",
+      "title": "Corrige arredondamento",
+      "webUrl": "https://gitlab.empresa.com/vendas/api/-/merge_requests/9",
+      "mergedAt": "2026-11-05T10:15:00Z",
+      "project": {
+       "id": "gid://gitlab/Project/77",
+       "fullPath": "vendas/api"
+      }
+     }
+    ]
+   }
+  }
+ }
+}
