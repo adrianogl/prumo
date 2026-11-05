@@ -238,4 +238,32 @@ private func client(_ transport: FakeTransport) -> GitHubClient {
         let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
         await #expect(throws: GitHubError.unauthorized) { try await client(transport).pullRequestStates(ids: ["A"]) }
     }
+
+    @Test func viewerLoginParsesLogin() async throws {
+        let transport = FakeTransport { _ in (Data(#"{"data":{"viewer":{"login":"globex-dev"}}}"#.utf8), httpResponse(200)) }
+        let login = try await client(transport).viewerLogin()
+        #expect(login == "globex-dev")
+        let body = try JSONSerialization.jsonObject(with: transport.requests[0].httpBody ?? Data()) as? [String: Any]
+        #expect(body?["query"] as? String == Queries.viewer)
+    }
+
+    @Test func viewerLogin401IsUnauthorized() async {
+        let transport = FakeTransport { _ in (Data(), httpResponse(401)) }
+        await #expect(throws: GitHubError.unauthorized) { try await client(transport).viewerLogin() }
+    }
+
+    @Test func rerunUsesFailedRunOfPR() async throws {
+        let transport = FakeTransport { _ in (Data(), httpResponse(201)) }
+        try await client(transport).rerunFailedJobs(pr: .fixture(repository: "acme/loja", failedRunID: 42))
+        #expect(transport.requests.count == 1)
+        #expect(transport.requests[0].url?.absoluteString == "https://api.github.com/repos/acme/loja/actions/runs/42/rerun-failed-jobs")
+    }
+
+    @Test func rerunWithoutRunIsUnexpected() async {
+        let transport = FakeTransport { _ in (Data(), httpResponse(201)) }
+        await #expect(throws: GitHubError.unexpectedResponse) {
+            try await client(transport).rerunFailedJobs(pr: .fixture(failedRunID: nil))
+        }
+        #expect(transport.requests.isEmpty)
+    }
 }

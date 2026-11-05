@@ -1,6 +1,7 @@
 import Foundation
 
 public enum Queries {
+    public static let viewer = "query { viewer { login } }"
     public static let mine = "is:pr is:open author:@me archived:false"
     public static let review = "is:pr is:open review-requested:@me archived:false"
 

@@ -54,6 +54,15 @@ public struct GitHubClient: Sendable {
         }
     }
 
+    public func viewerLogin() async throws(GitHubError) -> String {
+        let data = try await post(query: Queries.viewer, variables: [:])
+        do {
+            return try JSONDecoder().decode(ViewerResponse.self, from: data).data.viewer.login
+        } catch {
+            throw .unexpectedResponse
+        }
+    }
+
     public func rerunFailedJobs(repository: String, runID: Int) async throws(GitHubError) {
         guard let url = URL(string: "\(Self.restBase)/repos/\(repository)/actions/runs/\(runID)/rerun-failed-jobs") else {
             throw .unexpectedResponse
