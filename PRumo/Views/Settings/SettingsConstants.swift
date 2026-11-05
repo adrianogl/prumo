@@ -2,7 +2,7 @@ import Foundation
 
 enum SettingsMetrics {
     static let aboutLogoSize: CGFloat = 64
-    static let width: CGFloat = 420
+    static let width: CGFloat = 600
     static let height: CGFloat = 220
     static let aboutHeight: CGFloat = 280
     static let generalHeight: CGFloat = 270
