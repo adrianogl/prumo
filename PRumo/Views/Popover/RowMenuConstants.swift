@@ -14,6 +14,9 @@ enum RowMenuText {
     static let network = "Sem conexão com o GitHub."
     static let rateLimited = "Limite da API do GitHub. Tente de novo mais tarde."
     static let genericError = "O GitHub respondeu com erro."
+    static let gitlabNetwork = "Sem conexão com o GitLab."
+    static let gitlabRateLimited = "Limite da API do GitLab. Tente de novo mais tarde."
+    static let gitlabGenericError = "O GitLab respondeu com erro."
 
     static func openJira(_ key: String) -> String {
         "Abrir card no Jira: \(key)"
@@ -38,15 +41,17 @@ enum RowMenuText {
         case .server(status: 404):
             "Run \(runID) não encontrado em \(repository)."
         case .server(let status):
-            "O GitHub respondeu com erro (HTTP \(status))."
+            provider == .gitlab ? "O GitLab respondeu com erro (HTTP \(status))." : "O GitHub respondeu com erro (HTTP \(status))."
         case .unauthorized:
             unauthorized
         case .network:
-            network
+            provider == .gitlab ? gitlabNetwork : network
         case .rateLimited:
-            rateLimited
+            provider == .gitlab ? gitlabRateLimited : rateLimited
+        case .graphQL(let messages) where provider == .gitlab:
+            messages.isEmpty ? gitlabGenericError : messages.joined(separator: " ")
         case .graphQL, .unexpectedResponse:
-            genericError
+            provider == .gitlab ? gitlabGenericError : genericError
         }
     }
 }
