@@ -1,0 +1,6 @@
+{
+  "name": "prumo",
+  "compatibility_date": "2026-11-04",
+  "assets": { "directory": "./site" },
+  "routes": [{ "pattern": "prumo.aglv.dev", "custom_domain": true }]
+}
