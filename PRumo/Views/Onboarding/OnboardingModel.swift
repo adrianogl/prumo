@@ -12,12 +12,14 @@ final class OnboardingModel {
     var errorMessage: String?
     var launchAtLogin = true
     var launchError: String?
+    var ignoreDrafts: Bool
 
     @ObservationIgnored private let app: AppModel
     @ObservationIgnored private var ghToken: String?
 
     init(app: AppModel) {
         self.app = app
+        ignoreDrafts = app.organization.settings.ignoreDraftsInReview
     }
 
     func detectGh() async {
@@ -73,6 +75,10 @@ final class OnboardingModel {
             }
         }
         launchError = LaunchAtLogin.approvalMessage(enabled: launchAtLogin)
+    }
+
+    func applyIgnoreDrafts() {
+        app.organization.settings.ignoreDraftsInReview = ignoreDrafts
     }
 
     func useOtherToken() {

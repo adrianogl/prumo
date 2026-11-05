@@ -5,6 +5,7 @@ enum SettingsMetrics {
     static let width: CGFloat = 420
     static let height: CGFloat = 220
     static let aboutHeight: CGFloat = 280
+    static let generalHeight: CGFloat = 270
 }
 
 enum SettingsSymbol {
@@ -25,6 +26,9 @@ enum SettingsText {
     static let disconnect = "Desconectar"
     static let interval = "Atualizar a cada"
     static let launchAtLogin = "Abrir ao iniciar o macOS"
+    static let rowStyle = "Linha do PR"
+    static let rowStyleDetailed = "Detalhada"
+    static let rowStyleCompact = "Compacta"
     static let version = "Versão"
     static let iconCredit = "Símbolo pull-request do IBM Carbon, licença Apache 2.0"
     static let license = "Ver licença"
@@ -33,6 +37,7 @@ enum SettingsText {
 enum SettingsTab: Hashable {
     case account
     case general
+    case filters
     case claude
     case integrations
     case about

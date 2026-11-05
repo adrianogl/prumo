@@ -14,6 +14,8 @@ struct SettingsView: View {
 
     private var height: CGFloat {
         switch selection {
+        case .general: SettingsMetrics.generalHeight
+        case .filters: FiltersSettingsMetrics.height
         case .claude: ClaudeSettingsMetrics.height
         case .integrations: IntegrationsSettingsMetrics.height
         case .about: SettingsMetrics.aboutHeight
@@ -30,6 +32,9 @@ struct SettingsView: View {
         TabView(selection: $selection) {
             Tab(SettingsText.account, systemImage: SettingsSymbol.account, value: SettingsTab.account) { account }
             Tab(SettingsText.general, systemImage: SettingsSymbol.general, value: SettingsTab.general) { general }
+            Tab(FiltersSettingsText.tab, systemImage: FiltersSettingsSymbol.tab, value: SettingsTab.filters) {
+                FiltersSettingsView(store: model.organization)
+            }
             Tab(ClaudeSettingsText.tab, systemImage: ClaudeSymbol.tab, value: SettingsTab.claude) {
                 ClaudeSettingsView(store: model.claude, relevant: pullRequestRepositories)
             }
@@ -68,6 +73,10 @@ struct SettingsView: View {
                     Text(option.label).tag(option.seconds)
                 }
             }
+            Picker(SettingsText.rowStyle, selection: rowStyle) {
+                Text(SettingsText.rowStyleDetailed).tag(RowStyle.detailed)
+                Text(SettingsText.rowStyleCompact).tag(RowStyle.compact)
+            }
             Toggle(SettingsText.launchAtLogin, isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) { applyLaunchAtLogin() }
             if let launchError {
@@ -79,6 +88,12 @@ struct SettingsView: View {
             launchAtLogin = LaunchAtLogin.isEnabled
             launchError = LaunchAtLogin.approvalMessage(enabled: launchAtLogin)
         }
+    }
+
+    private var rowStyle: Binding<RowStyle> {
+        Binding(
+            get: { model.organization.settings.rowStyle },
+            set: { model.organization.settings.rowStyle = $0 })
     }
 
     private var about: some View {

@@ -110,6 +110,8 @@ struct OnboardingView: View {
             Text(OnboardingText.readyTitle).font(.system(size: 16, weight: .semibold))
             Toggle(OnboardingText.launchAtLogin, isOn: $flow.launchAtLogin)
                 .onChange(of: flow.launchAtLogin) { flow.applyLaunchAtLogin() }
+            Toggle(OnboardingText.ignoreDrafts, isOn: $flow.ignoreDrafts)
+                .onChange(of: flow.ignoreDrafts) { flow.applyIgnoreDrafts() }
             if let error = flow.launchError {
                 Text(error).font(.system(size: 12)).foregroundStyle(.red)
             }

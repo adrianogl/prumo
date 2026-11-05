@@ -36,6 +36,7 @@ enum OnboardingText {
     static let skip = "Agora não"
     static let readyTitle = "Tudo pronto"
     static let launchAtLogin = "Abrir ao iniciar o macOS"
+    static let ignoreDrafts = "Ignorar drafts em Revisar"
     static let readyNote = "O PRumo fica no canto da barra de menu. Na primeira leitura não dispara notificação pelo que já existe; só pelo que mudar depois."
     static let start = "Começar"
 }
