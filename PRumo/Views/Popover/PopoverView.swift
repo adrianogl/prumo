@@ -232,17 +232,7 @@ struct PopoverView: View {
 
     private func source(for tab: ListTab) -> [PullRequest] {
         guard let snapshot = model.snapshot else { return [] }
-        let settings = organization.settings
-        return switch tab {
-        case .mine:
-            snapshot.mine
-        case .review:
-            ReviewInclusion.visible(
-                snapshot.toReview, ignoreDrafts: settings.ignoreDraftsInReview,
-                includeTeam: settings.includeTeamRequests)
-        case .merge:
-            snapshot.mine.filter { MergeReadiness.isReady($0, viewer: snapshot.viewer(for: $0)) }
-        }
+        return TabSource.pullRequests(snapshot, tab: tab, settings: organization.settings)
     }
 
     private func sections(for tab: ListTab, now: Date) -> [RowSection] {

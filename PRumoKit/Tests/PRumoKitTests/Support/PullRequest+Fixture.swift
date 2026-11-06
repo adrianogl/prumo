@@ -33,7 +33,8 @@ extension PullRequest {
         mergeReady: Bool? = nil,
         failedJobID: Int? = nil,
         ciPendingSince: Date? = nil,
-        pendingRuns: [PendingRun] = []
+        pendingRuns: [PendingRun] = [],
+        checks: [CheckRun] = []
     ) -> PullRequest {
         PullRequest(
             id: id, number: number, title: title, url: url, repository: repository, author: author,
@@ -44,7 +45,7 @@ extension PullRequest {
             failedRunID: failedRunID, failedRunName: failedRunName,
             reviewTarget: reviewTarget, reviewDecision: reviewDecision, accountID: accountID,
             provider: provider, mergeReady: mergeReady, failedJobID: failedJobID,
-            ciPendingSince: ciPendingSince, pendingRuns: pendingRuns
+            ciPendingSince: ciPendingSince, pendingRuns: pendingRuns, checks: checks
         )
     }
 }

@@ -57,7 +57,13 @@ public enum TerminalCommand {
         case .custom(let template):
             let resolved = substitute(template, values: ["{dir}": ShellQuote.single(dir), "{cmd}": runLine])
             return LaunchCommand(executable: "/bin/zsh", arguments: ["-lc", resolved])
+        case .embedded:
+            return embedded(scriptPath: scriptPath)
         }
+    }
+
+    public static func embedded(scriptPath: URL) -> LaunchCommand {
+        LaunchCommand(executable: "/bin/zsh", arguments: ["-il", scriptPath.path])
     }
 
     private static func isValidVariableName(_ name: String) -> Bool {

@@ -31,6 +31,7 @@ enum ClaudeSettingsText {
     static let terminalApp = "Terminal"
     static let iterm = "iTerm"
     static let custom = "Personalizado"
+    static let embedded = "Dentro do PRumo"
     static let customTemplate = "Template do terminal"
     static let customHint = "Use {dir} e {cmd}. Não coloque {cmd} entre aspas."
     static let clonesRoot = "Pasta dos clones"

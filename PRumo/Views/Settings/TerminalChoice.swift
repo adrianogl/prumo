@@ -1,6 +1,7 @@
 import PRumoKit
 
 enum TerminalChoice: CaseIterable, Identifiable {
+    case embedded
     case ghostty
     case terminal
     case iterm
@@ -14,6 +15,7 @@ enum TerminalChoice: CaseIterable, Identifiable {
         case .terminal: self = .terminal
         case .iterm: self = .iterm
         case .custom: self = .custom
+        case .embedded: self = .embedded
         }
     }
 
@@ -23,6 +25,7 @@ enum TerminalChoice: CaseIterable, Identifiable {
         case .terminal: ClaudeSettingsText.terminalApp
         case .iterm: ClaudeSettingsText.iterm
         case .custom: ClaudeSettingsText.custom
+        case .embedded: ClaudeSettingsText.embedded
         }
     }
 }

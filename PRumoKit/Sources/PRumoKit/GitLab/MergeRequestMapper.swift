@@ -11,6 +11,9 @@ enum MergeRequestMapper {
     private static let failedJobStatus = "FAILED"
     private static let terminalJobStatuses: Set<String> = ["SUCCESS", "FAILED", "CANCELED", "SKIPPED", "MANUAL"]
     private static let pendingPipelineStatuses: Set<String> = ["CREATED", "WAITING_FOR_RESOURCE", "PREPARING", "PENDING", "RUNNING"]
+    private static let runningJobStatus = "RUNNING"
+    private static let successJobStatus = "SUCCESS"
+    private static let skippedJobStatuses: Set<String> = ["SKIPPED", "MANUAL", "CANCELED"]
     private static let pipelineFallbackName = "pipeline"
     private static let jobFallbackName = "job"
     private static let approvalPrefix = "approval"
@@ -110,7 +113,8 @@ enum MergeRequestMapper {
             mergeReady: mergeReady(node.detailedMergeStatus, capabilities: context.capabilities),
             failedJobID: failure?.jobID,
             ciPendingSince: pending.flatMap { $0.startedAt ?? $0.createdAt },
-            pendingRuns: pendingRuns(pending)
+            pendingRuns: pendingRuns(pending),
+            checks: checks(node.headPipeline, base: node.webUrl)
         )
     }
 
@@ -168,6 +172,25 @@ enum MergeRequestMapper {
         }
         if pipeline.status == skippedStatus { return .none }
         return .pending(done: jobs.filter { $0.status.map(terminalJobStatuses.contains) ?? false }.count, total: total)
+    }
+
+    private static func checks(_ pipeline: GitLabResponse.Pipeline?, base: URL) -> [CheckRun] {
+        (pipeline?.jobs?.nodes ?? []).map { job in
+            CheckRun(
+                name: job.name ?? jobFallbackName, state: checkState(job),
+                startedAt: job.startedAt, completedAt: job.finishedAt,
+                url: job.webPath.flatMap { URL(string: $0, relativeTo: base)?.absoluteURL })
+        }
+    }
+
+    private static func checkState(_ job: GitLabResponse.Job) -> CheckState {
+        switch job.status ?? "" {
+        case successJobStatus: .success
+        case failedJobStatus: job.allowFailure == true ? .skipped : .failure
+        case runningJobStatus: .running
+        case let status where skippedJobStatuses.contains(status): .skipped
+        default: .pending
+        }
     }
 
     private static func blockingFailedJobs(_ jobs: [GitLabResponse.Job]) -> [GitLabResponse.Job] {

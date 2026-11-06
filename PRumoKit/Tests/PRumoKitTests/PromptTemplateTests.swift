@@ -85,7 +85,9 @@ import Testing
         #expect(custom == #"{"kind":"custom","template":"t {dir}"}"#)
         let ghostty = try String(decoding: encoder.encode(TerminalKind.ghostty), as: UTF8.self)
         #expect(ghostty == #"{"kind":"ghostty"}"#)
-        for kind in [TerminalKind.ghostty, .terminal, .iterm, .custom(template: "x")] {
+        let embedded = try String(decoding: encoder.encode(TerminalKind.embedded), as: UTF8.self)
+        #expect(embedded == #"{"kind":"embedded"}"#)
+        for kind in [TerminalKind.ghostty, .terminal, .iterm, .custom(template: "x"), .embedded] {
             let data = try encoder.encode(kind)
             #expect(try JSONDecoder().decode(TerminalKind.self, from: data) == kind)
         }

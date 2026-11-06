@@ -55,6 +55,9 @@ struct GitLabResponse: Decodable {
         let name: String?
         let status: String?
         let allowFailure: Bool?
+        let startedAt: Date?
+        let finishedAt: Date?
+        let webPath: String?
     }
 
     struct MergeRequestNode: Decodable {

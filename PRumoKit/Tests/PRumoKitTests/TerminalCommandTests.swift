@@ -130,8 +130,15 @@ import Testing
         #expect(command.arguments == ["-lc", "sh -c \"/bin/zsh -il '\(scriptPath.path)'\""])
     }
 
+    @Test func embeddedRunsInteractiveLoginZsh() {
+        let command = TerminalCommand.embedded(scriptPath: scriptPath)
+        #expect(command.executable == "/bin/zsh")
+        #expect(command.arguments == ["-il", scriptPath.path])
+        #expect(TerminalCommand.build(kind: .embedded, directory: directory, scriptPath: scriptPath) == command)
+    }
+
     @Test func noKindCarriesPromptText() {
-        let kinds: [TerminalKind] = [.ghostty, .terminal, .iterm, .custom(template: "x {dir} {cmd}")]
+        let kinds: [TerminalKind] = [.ghostty, .terminal, .iterm, .custom(template: "x {dir} {cmd}"), .embedded]
         for kind in kinds {
             let command = TerminalCommand.build(kind: kind, directory: directory, scriptPath: scriptPath)
             let all = ([command.executable] + command.arguments).joined(separator: " ")
@@ -217,7 +224,7 @@ import Testing
 
     @Test func tokenNeverInLaunchArguments() {
         let token = "ghp_SECRETTOKEN123"
-        let kinds: [TerminalKind] = [.ghostty, .terminal, .iterm, .custom(template: "x {dir} {cmd}")]
+        let kinds: [TerminalKind] = [.ghostty, .terminal, .iterm, .custom(template: "x {dir} {cmd}"), .embedded]
         for kind in kinds {
             let command = TerminalCommand.build(kind: kind, directory: directory, scriptPath: scriptPath)
             let all = [command.executable] + command.arguments

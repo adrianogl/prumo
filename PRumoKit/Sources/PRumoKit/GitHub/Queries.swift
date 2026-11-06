@@ -70,7 +70,7 @@ public enum Queries {
                       nodes {
                         __typename
                         ... on CheckRun {
-                          name status conclusion detailsUrl startedAt
+                          name status conclusion detailsUrl startedAt completedAt
                           checkSuite { createdAt workflowRun { databaseId } }
                         }
                         ... on StatusContext { context state createdAt }

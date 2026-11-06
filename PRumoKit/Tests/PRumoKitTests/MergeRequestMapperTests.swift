@@ -70,6 +70,23 @@ import Testing
         #expect(snapshot.toReview.first?.id == "gitlab:gitlab.empresa.com:78:40")
     }
 
+    @Test func mapsJobsToChecksWithDurationAndURL() throws {
+        let checks = try mine(12, in: snapshot()).checks
+        #expect(checks.count == 7)
+        #expect(checks[0].name == "job0")
+        #expect(checks[0].state == .success)
+        #expect(checks[0].duration == 150)
+        #expect(checks[0].url?.absoluteString == "https://gitlab.empresa.com/grupo/api/-/jobs/9000")
+        #expect(checks[1].duration == nil)
+    }
+
+    @Test func mapsJobStatesToCheckStates() throws {
+        let s = try snapshot()
+        #expect(try mine(13, in: s).checks.map(\.state) == [.skipped, .failure, .success])
+        #expect(try mine(14, in: s).checks.map(\.state) == [.success, .success, .skipped, .running, .pending, .pending, .running])
+        #expect(try mine(16, in: s).checks.isEmpty)
+    }
+
     @Test func pipelineSuccessIsCISuccess() throws {
         let pr = try mine(12, in: snapshot())
         #expect(pr.ci == .success(total: 7))

@@ -255,6 +255,32 @@ private func launcher(
         #expect(sink.cleaned[0].date == fixedNow)
     }
 
+    @Test func embeddedPreparesScriptWithoutSpawningTerminal() async throws {
+        let runner = FakeRunner()
+        let sink = ScriptSink()
+        var settings = ClaudeSettings.defaults
+        settings.terminal = .embedded
+        let launched = try await launcher(runner, sink: sink, settings: settings).launch(pr: .fixture(), purpose: .review)
+        #expect(launched.directory.path == worktree)
+        #expect(launched.embeddedScript?.path == "/h/Library/Caches/PRumo/sessions/u1.zsh")
+        #expect(sink.written.count == 1)
+        #expect(sink.removed.isEmpty)
+        #expect(!runner.commands.contains { $0.hasPrefix("/usr/bin/open") || $0.hasPrefix("/usr/bin/osascript") })
+    }
+
+    @Test func externalLaunchHasNoEmbeddedScript() async throws {
+        let launched = try await launcher(FakeRunner()).launch(pr: .fixture(), purpose: .review)
+        #expect(launched.embeddedScript == nil)
+    }
+
+    @Test func discardWorktreeRemovesCleanWorktree() async throws {
+        let runner = FakeRunner()
+        let l = launcher(runner)
+        let launched = try await l.launch(pr: .fixture(), purpose: .review)
+        await l.discardWorktree(launched, pr: .fixture())
+        #expect(runner.commands.contains("/usr/bin/git -C /h/Code/acme/loja worktree remove \(worktree)"))
+    }
+
     @Test func launchFailureRemovesCreatedWorktree() async {
         let runner = FakeRunner { $0.hasPrefix("/usr/bin/open") ? (1, "", "x") : (0, "", "") }
         await #expect(throws: ClaudeLaunchError.launchFailed("x")) {

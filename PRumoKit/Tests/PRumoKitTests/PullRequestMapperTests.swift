@@ -27,6 +27,48 @@ struct PullRequestMapperTests {
         #expect(s.mine.map(\.ci) == [.success(total: 12), .failure(failedChecks: ["unit-tests"], total: 12), .pending(done: 4, total: 9), .none])
     }
 
+    @Test func mapsEachCheckWithStateAndDuration() throws {
+        var object = try JSONSerialization.jsonObject(with: fixture("search-mine")) as! [String: Any]
+        var data = object["data"] as! [String: Any]
+        var search = data["search"] as! [String: Any]
+        var nodes = search["nodes"] as! [[String: Any]]
+        var commits = nodes[1]["commits"] as! [String: Any]
+        var commitNodes = commits["nodes"] as! [[String: Any]]
+        var commit = commitNodes[0]["commit"] as! [String: Any]
+        var rollup = commit["statusCheckRollup"] as! [String: Any]
+        var contexts = rollup["contexts"] as! [String: Any]
+        var contextNodes = contexts["nodes"] as! [[String: Any]]
+        contextNodes[0]["startedAt"] = "2026-11-05T10:00:00Z"
+        contextNodes[0]["completedAt"] = "2026-11-05T10:02:10Z"
+        contextNodes.append(["__typename": "CheckRun", "name": "docs", "status": "COMPLETED", "conclusion": "SKIPPED"])
+        contextNodes.append(["__typename": "StatusContext", "context": "ci/legacy", "state": "SUCCESS", "createdAt": "2026-11-05T09:00:00Z"])
+        contexts["nodes"] = contextNodes
+        rollup["contexts"] = contexts
+        commit["statusCheckRollup"] = rollup
+        commitNodes[0]["commit"] = commit
+        commits["nodes"] = commitNodes
+        nodes[1]["commits"] = commits
+        search["nodes"] = nodes
+        data["search"] = search
+        object["data"] = data
+        let mine = try JSONSerialization.data(withJSONObject: object)
+
+        let pr = try PullRequestMapper.snapshot(mineJSON: mine, reviewJSON: fixture("search-review"), mergedJSON: nil, now: .fixed).mine[1]
+
+        #expect(pr.checks.map(\.name) == ["unit-tests", "docs", "ci/legacy"])
+        #expect(pr.checks.map(\.state) == [.failure, .skipped, .success])
+        #expect(pr.checks[0].duration == 130)
+        #expect(pr.checks[1].duration == nil)
+    }
+
+    @Test func mapsRunningAndQueuedChecks() throws {
+        let checks = try snapshot().mine[2].checks
+        #expect(checks.first { $0.name == "deploy" }?.state == .running)
+        #expect(checks.first { $0.name == "Pre-build" }?.state == .pending)
+        #expect(checks.first { $0.name == "lint" }?.state == .pending)
+        #expect(try snapshot().mine[3].checks.isEmpty)
+    }
+
     @Test func mapsPendingSinceAndRunsFromPendingChecks() throws {
         let pr = try snapshot().mine[2]
         #expect(pr.ciPendingSince == ISO8601DateFormatter().date(from: "2026-11-05T10:52:00Z"))

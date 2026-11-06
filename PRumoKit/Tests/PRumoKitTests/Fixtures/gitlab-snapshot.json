@@ -74,7 +74,10 @@
           "id": "gid://gitlab/Ci::Build/9000",
           "name": "job0",
           "status": "SUCCESS",
-          "allowFailure": false
+          "allowFailure": false,
+          "startedAt": "2026-11-05T09:01:00Z",
+          "finishedAt": "2026-11-05T09:03:30Z",
+          "webPath": "/grupo/api/-/jobs/9000"
          },
          {
           "id": "gid://gitlab/Ci::Build/9001",

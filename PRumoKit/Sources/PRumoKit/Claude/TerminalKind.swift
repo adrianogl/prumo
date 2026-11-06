@@ -3,6 +3,7 @@ public enum TerminalKind: Codable, Equatable, Sendable {
     case terminal
     case iterm
     case custom(template: String)
+    case embedded
 
     private enum CodingKeys: String, CodingKey {
         case kind
@@ -17,6 +18,7 @@ public enum TerminalKind: Codable, Equatable, Sendable {
         case "terminal": self = .terminal
         case "iterm": self = .iterm
         case "custom": self = .custom(template: try container.decode(String.self, forKey: .template))
+        case "embedded": self = .embedded
         default:
             throw DecodingError.dataCorruptedError(
                 forKey: .kind, in: container, debugDescription: "Terminal desconhecido: \(kind)")
@@ -32,6 +34,7 @@ public enum TerminalKind: Codable, Equatable, Sendable {
         case .custom(let template):
             try container.encode("custom", forKey: .kind)
             try container.encode(template, forKey: .template)
+        case .embedded: try container.encode("embedded", forKey: .kind)
         }
     }
 }

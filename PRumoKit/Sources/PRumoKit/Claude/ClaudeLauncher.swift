@@ -121,6 +121,9 @@ public struct ClaudeLauncher: Sendable {
             throw .launchFailed(Self.message(for: error))
         }
 
+        if settings.terminal == .embedded {
+            return LaunchResult(directory: directory, clone: clone, embeddedScript: scriptURL)
+        }
         let command = TerminalCommand.build(kind: settings.terminal, directory: directory, scriptPath: scriptURL)
         let result: (status: Int32, stdout: String, stderr: String)
         do {
@@ -136,6 +139,11 @@ public struct ClaudeLauncher: Sendable {
             throw .launchFailed(stderr.isEmpty ? ClaudeMessages.terminalExit(result.status) : stderr)
         }
         return LaunchResult(directory: directory, clone: clone)
+    }
+
+    public func discardWorktree(_ result: LaunchResult, pr: PullRequest) async {
+        let worktrees = WorktreeManager(runner: runner, worktreesRoot: expand(settings.worktreesRoot), exists: exists)
+        _ = await worktrees.removeIfClean(path: result.directory, clone: result.clone, number: pr.number)
     }
 
     private func discard(created: Bool, worktrees: WorktreeManager, directory: URL, clone: URL, number: Int) async {

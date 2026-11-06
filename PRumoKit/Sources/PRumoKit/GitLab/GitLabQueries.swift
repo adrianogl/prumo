@@ -34,7 +34,7 @@ enum GitLabQueries {
           author { username }
           approvedBy { nodes { username } }
           reviewers { nodes { \(reviewer) } }
-          headPipeline { id status createdAt startedAt jobs(first: 100) { count nodes { id name status allowFailure } } }
+          headPipeline { id status createdAt startedAt jobs(first: 100) { count nodes { id name status allowFailure startedAt finishedAt webPath } } }
           notes(last: 50) { nodes { id body system createdAt url author { username bot } } }
         }
         """

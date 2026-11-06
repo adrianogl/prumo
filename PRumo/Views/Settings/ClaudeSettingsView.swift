@@ -155,6 +155,7 @@ struct ClaudeSettingsView: View {
                 case .terminal: store.settings.terminal = .terminal
                 case .iterm: store.settings.terminal = .iterm
                 case .custom: store.settings.terminal = .custom(template: lastCustomTemplate)
+                case .embedded: store.settings.terminal = .embedded
                 }
             }
         )

@@ -88,12 +88,13 @@ struct GraphQLResponse: Decodable {
         let context: String?
         let state: String?
         let startedAt: Date?
+        let completedAt: Date?
         let createdAt: Date?
         let checkSuite: CheckSuite?
 
         enum CodingKeys: String, CodingKey {
             case typename = "__typename"
-            case name, status, conclusion, detailsUrl, context, state, startedAt, createdAt, checkSuite
+            case name, status, conclusion, detailsUrl, context, state, startedAt, completedAt, createdAt, checkSuite
         }
     }
 

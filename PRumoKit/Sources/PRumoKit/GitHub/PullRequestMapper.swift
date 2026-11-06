@@ -5,6 +5,9 @@ public enum PullRequestMapper {
     private static let failingStates: Set<String> = ["FAILURE", "ERROR"]
     private static let waitingStates: Set<String> = ["PENDING", "EXPECTED"]
     private static let pendingCheckStatuses: Set<String> = ["QUEUED", "IN_PROGRESS"]
+    private static let skippedConclusions: Set<String> = ["NEUTRAL", "SKIPPED", "STALE"]
+    private static let runningCheckStatus = "IN_PROGRESS"
+    private static let successValue = "SUCCESS"
     private static let checkRunTypename = "CheckRun"
     private static let ghost = "ghost"
     private static let botTypename = "Bot"
@@ -96,8 +99,38 @@ public enum PullRequestMapper {
             reviewTarget: target,
             reviewDecision: node.reviewDecision.flatMap(ReviewDecision.init(rawValue:)),
             ciPendingSince: pending.compactMap(pendingSince).min(),
-            pendingRuns: pendingRuns(pending)
+            pendingRuns: pendingRuns(pending),
+            checks: (commit?.statusCheckRollup?.contexts.nodes ?? []).compactMap(mapCheck)
         )
+    }
+
+    private static func mapCheck(_ context: GraphQLResponse.Context) -> CheckRun? {
+        if context.typename == checkRunTypename {
+            guard let name = context.name else { return nil }
+            return CheckRun(
+                name: name, state: checkRunState(context),
+                startedAt: context.startedAt, completedAt: context.completedAt,
+                url: context.detailsUrl.flatMap(URL.init(string:)))
+        }
+        guard let name = context.context else { return nil }
+        return CheckRun(name: name, state: statusContextState(context.state ?? ""), startedAt: context.createdAt)
+    }
+
+    private static func checkRunState(_ context: GraphQLResponse.Context) -> CheckState {
+        guard context.status == "COMPLETED" else {
+            return context.status == runningCheckStatus ? .running : .pending
+        }
+        let conclusion = context.conclusion ?? ""
+        if conclusion == successValue { return .success }
+        if failingConclusions.contains(conclusion) { return .failure }
+        if skippedConclusions.contains(conclusion) { return .skipped }
+        return .pending
+    }
+
+    private static func statusContextState(_ state: String) -> CheckState {
+        if state == successValue { return .success }
+        if failingStates.contains(state) { return .failure }
+        return .pending
     }
 
     private static func mapReview(_ node: GraphQLResponse.ReviewNode) -> Review? {
