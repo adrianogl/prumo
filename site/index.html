@@ -246,12 +246,12 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
       <h1>Seus PRs no <em>prumo</em>, sem abrir o GitHub nem o GitLab.</h1>
       <p class="lede">O PRumo fica no canto da tela e acompanha os PRs que você abriu e os reviews pedidos a você e ao seu time, de várias contas do GitHub e do GitLab numa lista só. Avisa quando a CI termina, quando aprovam, quando chega comentário e quando o PR fica pronto para merge. Para CI quebrada, conflito e comentários, abre o Claude Code já na branch do PR.</p>
       <div class="cta">
-        <a class="btn download" href="PRumo.dmg" download>Baixar para macOS</a>
+        <a class="btn download" href="https://github.com/adrianogl/prumo/releases/latest/download/PRumo.dmg">Baixar para macOS</a>
         <a class="btn ghost" href="#instalar">Como instalar</a>
         <a class="btn ghost" href="#claude">Ver o Claude no fluxo</a>
         <a class="btn ghost" href="https://github.com/adrianogl/prumo">Código no GitHub</a>
       </div>
-      <div class="dl-meta">Versão 0.1.0 · macOS 26 ou mais novo · <a href="#instalar">leia o aviso sobre a primeira abertura</a></div>
+      <div class="dl-meta">Versão <span data-version>0.2.0</span> · macOS 26 ou mais novo · <a href="#instalar">leia o aviso sobre a primeira abertura</a></div>
       <div class="req">macOS 26 ou mais novo · usa o seu gh e o seu glab · sem servidor</div>
     </div>
 
@@ -335,6 +335,8 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
       <div class="card"><span class="ic" style="color:var(--caramel)">↺</span><div><b>Re-rodar a pipeline</b><span>Com token de escopo <code>api</code>. Com <code>read_api</code>, o item fica desabilitado e diz o escopo que falta.</span></div></div>
       <div class="card"><span class="ic"><svg class="ico"><use href="#chat"/></svg></span><div><b>Claude Code no MR</b><span>Revisar, corrigir CI, resolver conflito e comentários com <code>glab</code>, na worktree do MR e com o token da conta dona só naquela sessão.</span></div></div>
       <div class="card"><span class="ic" style="color:var(--attn)">⊘</span><div><b>Uma conta fora do ar</b><span>VPN desligada ou token vencido avisa só naquela conta. As outras seguem atualizando, e os itens dela ficam esmaecidos com o último dado.</span></div></div>
+      <div class="card"><span class="ic"><svg class="ico"><use href="#pr"/></svg></span><div><b>Uma linha por PR</b><span>O mesmo PR visto por duas contas do GitHub aparece uma vez só e notifica uma vez. Fica com a conta em que ele é seu.</span></div></div>
+      <div class="card"><span class="ic">⎘</span><div><b>Checkout da conta certa</b><span>Em MR, o menu copia <code>glab mr checkout</code>. Se o <code>glab</code> estiver logado em outra conta naquele endereço, o item avisa antes.</span></div></div>
     </div>
     <p class="muted" style="margin:24px 0 0;font-size:14.5px">Com uma conta só, nada muda. Com mais de uma, a linha mostra de qual conta é: <code>adriano · gitlab.empresa.com · vendas/api !341 · 5h</code>.</p>
   </div>
@@ -423,6 +425,8 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
       <div class="card"><span class="ic">⌥</span><div><b>Uma chave por tipo</b><span>Cada notificação liga e desliga sozinha. As de CI de um mesmo PR podem ficar empilhadas na Central de Notificações.</span></div></div>
       <div class="card"><span class="ic"><svg class="ico"><use href="#chat"/></svg></span><div><b>Autores ignorados</b><span>Comentários de quem está na lista, como <code>github-actions</code>, não contam no badge, não notificam e não acendem a bolinha de novo. Comentário seu ou de bot também não.</span></div></div>
       <div class="card"><span class="ic"><svg class="ico"><use href="#pause"/></svg></span><div><b>Silenciar um PR</b><span>Pelo menu da linha ou pela notificação. Reativa pelo mesmo menu ou nos Ajustes.</span></div></div>
+      <div class="card"><span class="ic"><svg class="ico"><use href="#refresh"/></svg></span><div><b>Sem enxurrada depois do sono</b><span>Se o Mac ficou mais de 6 h dormindo, o que mudou nesse tempo entra na lista sem virar uma fila de notificações.</span></div></div>
+      <div class="card"><span class="ic" style="color:var(--info)">●</span><div><b>Novidade sem som</b><span>Commit novo ou evento novo acende uma bolinha na linha, mesmo com a notificação daquele tipo desligada. PR silenciado não acende.</span></div></div>
     </div>
     <p class="muted" style="margin:24px 0 0;font-size:14.5px">Na primeira abertura, ao reiniciar ou ao adicionar uma conta, nada do que já existia vira aviso.</p>
   </div>
@@ -499,13 +503,14 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
       <h2>Como instalar</h2>
       <p>Baixe o DMG ou compile do código. O PRumo não passa pela App Store.</p>
     </div>
-    <a class="btn download" href="PRumo.dmg" download>Baixar para macOS</a>
-    <p class="dl-meta">Versão 0.1.0 · macOS 26 ou mais novo</p>
+    <a class="btn download" href="https://github.com/adrianogl/prumo/releases/latest/download/PRumo.dmg">Baixar para macOS</a>
+    <p class="dl-meta">Versão <span data-version>0.2.0</span> · macOS 26 ou mais novo</p>
     <div class="notice">
       <p><b>O app não é notarizado pela Apple.</b> Na primeira abertura, o macOS bloqueia. Para liberar, abra Ajustes do Sistema › Privacidade e Segurança e clique em "Abrir mesmo assim", ou rode no terminal:</p>
       <pre class="code">xattr -dr com.apple.quarantine /Applications/PRumo.app</pre>
       <p>O widget pode não aparecer em outros Macs, porque o app não tem assinatura de desenvolvedor.</p>
     </div>
+    <p class="muted" style="margin:20px 0 0">Depois de instalado, o PRumo avisa quando sai versão nova e instala sozinho, em Ajustes › Atualizações.</p>
     <p class="muted" style="margin:28px 0 0">Prefere compilar? O código está em <a href="https://github.com/adrianogl/prumo">github.com/adrianogl/prumo</a>. Siga os passos abaixo.</p>
     <ol class="steps">
       <li><div><b>Compilar do código: tenha o básico</b><p class="muted" style="margin:4px 0 0">macOS 26, Xcode 27, <code>brew install xcodegen gh</code> e o GitHub CLI logado com <code>gh auth login</code>. Para as ações do Claude, o Claude Code disponível no shell como <code>claude</code> ou com o nome que você configurar.</p></div></li>
@@ -528,5 +533,15 @@ open ~/Library/Developer/Xcode/DerivedData/PRumo-*/Build/Products/Debug/PRumo.ap
   </div>
 </section>
 
+<script>
+fetch("https://api.github.com/repos/adrianogl/prumo/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+  .then((r) => (r.ok ? r.json() : Promise.reject()))
+  .then((release) => {
+    const version = String(release.tag_name || "").replace(/^v/, "");
+    if (!/^\d+\.\d+\.\d+$/.test(version)) return;
+    document.querySelectorAll("[data-version]").forEach((el) => { el.textContent = version; });
+  })
+  .catch(() => {});
+</script>
 </body>
 </html>
