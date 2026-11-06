@@ -32,7 +32,7 @@ struct AddAccountSheet: View {
             if let message = model.errorMessage {
                 Text(message)
                     .font(.system(size: AccountsSettingsMetrics.errorSize))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.statusBad)
             }
             HStack(spacing: AccountsSettingsMetrics.buttonSpacing) {
                 Spacer()

@@ -53,7 +53,7 @@ public enum RowPresenter {
         var changesRequestedIndex: Int?
         if hasChangesRequested {
             changesRequestedIndex = badges.count
-            badges.append(Badge(PresentationText.changesRequested, .negative))
+            badges.append(Badge(PresentationText.changesRequested, .warning))
         }
         if pr.isDraft { badges.append(Badge(PresentationText.draft, .neutral)) }
         var conflictIndex: Int?

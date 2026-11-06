@@ -96,7 +96,7 @@ struct ClaudeSettingsView: View {
             if isInvalid {
                 Text(ClaudeSettingsText.commandInvalid)
                     .font(.system(size: ClaudeSettingsMetrics.hintSize))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.statusBad)
             }
         }
     }

@@ -39,7 +39,7 @@ struct OnboardingView: View {
                 ProgressView(OnboardingText.checking).controlSize(.small)
             } else if let login = flow.ghLogin {
                 Label(OnboardingText.foundGh(login), systemImage: OnboardingSymbol.found)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.statusOK)
                     .multilineTextAlignment(.center)
                 HStack(spacing: 8) {
                     Button(OnboardingText.useThisAccount, action: flow.useGh)
@@ -68,7 +68,7 @@ struct OnboardingView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
             if let message = flow.errorMessage {
-                Text(message).font(.system(size: 12)).foregroundStyle(.red)
+                Text(message).font(.system(size: 12)).foregroundStyle(Color.statusBad)
             }
             HStack(spacing: 8) {
                 Spacer()
@@ -113,7 +113,7 @@ struct OnboardingView: View {
             Toggle(OnboardingText.ignoreDrafts, isOn: $flow.ignoreDrafts)
                 .onChange(of: flow.ignoreDrafts) { flow.applyIgnoreDrafts() }
             if let error = flow.launchError {
-                Text(error).font(.system(size: 12)).foregroundStyle(.red)
+                Text(error).font(.system(size: 12)).foregroundStyle(Color.statusBad)
             }
             Text(OnboardingText.readyNote)
                 .font(.system(size: 12))
@@ -133,7 +133,7 @@ struct OnboardingView: View {
     @ViewBuilder
     private var errorLine: some View {
         if let message = flow.errorMessage {
-            Text(message).font(.system(size: 12)).foregroundStyle(.red).padding(.top, 6)
+            Text(message).font(.system(size: 12)).foregroundStyle(Color.statusBad).padding(.top, 6)
         }
     }
 }

@@ -17,7 +17,7 @@ private typealias RowComment = Comment
         )
         let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed)
         #expect(row.dot == .failed)
-        #expect(row.badges == [Badge("✗ unit-tests", .negative), Badge("alterações pedidas", .negative)])
+        #expect(row.badges == [Badge("✗ unit-tests", .negative), Badge("alterações pedidas", .warning)])
     }
 
     @Test func changesRequestedWinsOverPendingCI() {
@@ -63,7 +63,7 @@ private typealias RowComment = Comment
             review("bia", .changesRequested, 6),
         ])
         let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed)
-        #expect(row.badges == [Badge("✓ 1 aprovação", .positive), Badge("alterações pedidas", .negative)])
+        #expect(row.badges == [Badge("✓ 1 aprovação", .positive), Badge("alterações pedidas", .warning)])
         #expect(row.dot == .attention)
     }
 
@@ -164,7 +164,7 @@ private typealias RowComment = Comment
         let row = RowPresenter.mine(pr, viewer: "adriano", now: .fixed)
         let index = row.commentsBadgeIndex
         #expect(index != nil)
-        #expect(row.badges[index!] == Badge(PresentationText.changesRequested, .negative))
+        #expect(row.badges[index!] == Badge(PresentationText.changesRequested, .warning))
     }
 
     @Test func commentsBadgeIndexPrefersCommentsBadgeWhenBothApply() {

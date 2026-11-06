@@ -62,10 +62,10 @@ struct WarningBanner<Content: View>: View {
             Spacer(minLength: 0)
         }
         .font(.system(size: 11.5))
-        .foregroundStyle(Color(nsColor: .systemOrange))
+        .foregroundStyle(Color.statusAttention)
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(nsColor: .systemOrange).opacity(0.12))
+        .background(Color.statusAttention.opacity(0.12))
     }
 }

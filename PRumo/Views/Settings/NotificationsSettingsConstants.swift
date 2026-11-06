@@ -15,7 +15,6 @@ enum NotificationsSettingsMetrics {
 
 enum NotificationsSettingsColor {
     static let selectedForeground = Color.white
-    static let error = Color.red
 }
 
 enum NotificationsSettingsSymbol {

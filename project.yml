@@ -38,6 +38,7 @@ targets:
       - path: PRumoWidget
       - path: PRumo/Views/Brand/Wordmark.swift
       - path: PRumo/Views/Brand/BrandColors.swift
+      - path: PRumo/Views/Brand/StatusColors.swift
     dependencies:
       - package: PRumoKit
     settings:

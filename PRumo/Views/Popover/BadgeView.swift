@@ -4,10 +4,10 @@ import PRumoKit
 extension BadgeTone {
     var color: Color {
         switch self {
-        case .positive: Color(nsColor: .systemGreen)
-        case .negative: Color(nsColor: .systemRed)
-        case .pending: Color(nsColor: .systemGray)
-        case .warning: Color(nsColor: .systemOrange)
+        case .positive: Color.statusOK
+        case .negative: Color.statusBad
+        case .pending: Color.statusIdle
+        case .warning: Color.statusAttention
         case .neutral: Color.secondary
         case .accent: Color.prumoCaramel
         }
@@ -28,10 +28,10 @@ extension BadgeIcon {
 extension StatusDot {
     var color: Color {
         switch self {
-        case .ok: Color(nsColor: .systemGreen)
-        case .running: Color(nsColor: .systemGray)
-        case .failed: Color(nsColor: .systemRed)
-        case .attention: Color(nsColor: .systemBlue)
+        case .ok: Color.statusOK
+        case .running: Color.statusIdle
+        case .failed: Color.statusBad
+        case .attention: Color.statusAttention
         }
     }
 }

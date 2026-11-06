@@ -20,7 +20,7 @@ struct MergedRowView: View {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: PopoverSymbol.merged)
                     .font(.system(size: PopoverMetrics.mergedIconSize, weight: .semibold))
-                    .foregroundStyle(Color(nsColor: .systemGreen))
+                    .foregroundStyle(Color.statusOK)
                     .frame(width: PopoverMetrics.dotSize)
                     .padding(.top, 2)
                 VStack(alignment: .leading, spacing: 3) {

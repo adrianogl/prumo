@@ -73,10 +73,10 @@ struct AccountRowView: View {
 
     private var stateColor: Color {
         switch status?.state {
-        case nil: .gray
-        case .ok: .green
-        case .unauthorized: .red
-        case .offline, .rateLimited, .unexpectedResponse: .orange
+        case nil: .statusIdle
+        case .ok: .statusOK
+        case .unauthorized: .statusBad
+        case .offline, .rateLimited, .unexpectedResponse: .statusAttention
         }
     }
 }

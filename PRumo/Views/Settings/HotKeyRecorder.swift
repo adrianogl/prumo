@@ -25,7 +25,7 @@ struct HotKeyRecorder: View {
                     .disabled(model.hotKey == .standard)
                 }
                 if let warning {
-                    Text(warning).font(.system(size: SettingsMetrics.hotKeyFontSize)).foregroundStyle(.red)
+                    Text(warning).font(.system(size: SettingsMetrics.hotKeyFontSize)).foregroundStyle(Color.statusBad)
                 }
             }
         }

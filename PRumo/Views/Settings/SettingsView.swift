@@ -87,7 +87,7 @@ struct SettingsView: View {
             Toggle(SettingsText.launchAtLogin, isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) { applyLaunchAtLogin() }
             if let launchError {
-                Text(launchError).font(.system(size: 12)).foregroundStyle(.red)
+                Text(launchError).font(.system(size: 12)).foregroundStyle(Color.statusBad)
             }
         }
         .formStyle(.grouped)

@@ -122,7 +122,7 @@ struct ClonesManagerView: View {
             if let manualError {
                 Text(manualError)
                     .font(.system(size: ClaudeSettingsMetrics.hintSize))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.statusBad)
             }
         }
     }

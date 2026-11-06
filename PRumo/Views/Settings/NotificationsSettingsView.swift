@@ -38,12 +38,12 @@ struct NotificationsSettingsView: View {
                     if !rangeIsValid {
                         Text(NotificationsSettingsText.invalidRange)
                             .font(.system(size: NotificationsSettingsMetrics.errorSize))
-                            .foregroundStyle(NotificationsSettingsColor.error)
+                            .foregroundStyle(Color.statusBad)
                     }
                     if store.preferences.workingHours.weekdays.isEmpty {
                         Text(NotificationsSettingsText.noWeekdays)
                             .font(.system(size: NotificationsSettingsMetrics.errorSize))
-                            .foregroundStyle(NotificationsSettingsColor.error)
+                            .foregroundStyle(Color.statusBad)
                     }
                 }
             }
