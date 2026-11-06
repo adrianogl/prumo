@@ -17,6 +17,7 @@ final class AppModel {
     let integrations: IntegrationSettingsStore
     let organization: OrganizationStore
     let preferences: NotificationPreferencesStore
+    let updates: UpdateStore
     private(set) var launching: Set<String> = []
     private(set) var rerunning: Set<String> = []
     private(set) var hotKey: HotKeyCombo
@@ -74,6 +75,7 @@ final class AppModel {
         self.integrations = integrations ?? IntegrationSettingsStore(defaults: defaults)
         self.organization = organization ?? OrganizationStore(defaults: defaults)
         self.preferences = preferences ?? NotificationPreferencesStore(defaults: defaults)
+        updates = UpdateStore(defaults: defaults, notifications: notifications)
         hotKey = defaults.data(forKey: AppConstants.hotKeyKey)
             .flatMap { try? JSONDecoder().decode(HotKeyCombo.self, from: $0) }
             .flatMap { $0.isValid ? $0 : nil } ?? .standard

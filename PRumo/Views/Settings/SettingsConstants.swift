@@ -2,7 +2,7 @@ import Foundation
 
 enum SettingsMetrics {
     static let aboutLogoSize: CGFloat = 64
-    static let width: CGFloat = 600
+    static let width: CGFloat = 640
     static let aboutHeight: CGFloat = 280
     static let generalHeight: CGFloat = 380
     static let hotKeyButtonWidth: CGFloat = 110
@@ -42,5 +42,6 @@ enum SettingsTab: Hashable {
     case filters
     case claude
     case integrations
+    case updates
     case about
 }

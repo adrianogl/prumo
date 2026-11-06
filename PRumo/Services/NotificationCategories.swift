@@ -12,4 +12,8 @@ enum NotificationCategories {
     static let fixWithClaudeTitle = "Corrigir com Claude"
     static let muteTitle = "Silenciar"
     static let pullRequestIDKey = "pullRequestID"
+
+    static func updateTitle(_ version: String) -> String {
+        "PRumo \(version) disponível"
+    }
 }

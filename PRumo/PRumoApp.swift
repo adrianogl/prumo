@@ -14,6 +14,7 @@ struct PRumoApp: App {
         _model = State(initialValue: model)
         model.start()
         model.registerHotKey()
+        model.updates.start()
     }
 
     var body: some Scene {

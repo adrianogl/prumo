@@ -9,7 +9,7 @@ struct SettingsView: View {
     @State private var selection = SettingsTab.accounts
 
     private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        Bundle.main.object(forInfoDictionaryKey: AppConstants.shortVersionInfoKey) as? String ?? ""
     }
 
     private var height: CGFloat {
@@ -21,8 +21,13 @@ struct SettingsView: View {
         case .filters: FiltersSettingsMetrics.height
         case .claude: ClaudeSettingsMetrics.height
         case .integrations: IntegrationsSettingsMetrics.height
+        case .updates: UpdatesSettingsMetrics.height
         case .about: SettingsMetrics.aboutHeight
         }
+    }
+
+    private var updatesSymbol: String {
+        model.updates.available == nil ? UpdatesSettingsSymbol.tab : UpdatesSettingsSymbol.tabWithUpdate
     }
 
     private var pullRequestRepositories: Set<String> {
@@ -53,6 +58,10 @@ struct SettingsView: View {
             Tab(IntegrationsSettingsText.tab, systemImage: IntegrationsSettingsSymbol.tab, value: SettingsTab.integrations) {
                 IntegrationsSettingsView(store: model.integrations)
             }
+            Tab(UpdatesSettingsText.tab, systemImage: updatesSymbol, value: SettingsTab.updates) {
+                UpdatesSettingsView(store: model.updates)
+            }
+            .badge(model.updates.available == nil ? nil : Text(UpdatesSettingsText.badge))
             Tab(SettingsText.about, systemImage: SettingsSymbol.about, value: SettingsTab.about) { about }
         }
         .frame(width: SettingsMetrics.width, height: height)

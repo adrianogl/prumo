@@ -69,6 +69,14 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, Sen
         }
     }
 
+    func postUpdate(version: String, url: URL) {
+        let content = UNMutableNotificationContent()
+        content.title = NotificationCategories.updateTitle(version)
+        content.userInfo = [AppConstants.notificationURLKey: url.absoluteString]
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification

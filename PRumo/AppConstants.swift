@@ -17,6 +17,13 @@ enum AppConstants {
     static let unseenActivityKey = "unseenActivity"
     static let organizationTeamDefaultMigratedKey = "organizationTeamDefaultMigrated"
     static let hotKeyKey = "globalHotKey"
+    static let updateAutoCheckKey = "updateAutoCheck"
+    static let updateLastCheckKey = "updateLastCheck"
+    static let updateNotifiedVersionKey = "updateNotifiedVersion"
+    static let updateCheckInterval: Duration = .seconds(24 * 3600)
+    static let updateCommandTimeout: Duration = .seconds(120)
+    static let updateWorkDirectoryPrefix = "PRumoUpdate-"
+    static let shortVersionInfoKey = "CFBundleShortVersionString"
     static let hotKeySignature: UInt32 = 0x5052_6D6F
     static let hotKeyID: UInt32 = 1
     static let statusBarWindowClass = "NSStatusBarWindow"
