@@ -5,8 +5,8 @@ options:
     macOS: "26.0"
 settings:
   base:
-    MARKETING_VERSION: 0.2.2
-    CURRENT_PROJECT_VERSION: 3
+    MARKETING_VERSION: 0.3.0
+    CURRENT_PROJECT_VERSION: 4
 packages:
   PRumoKit:
     path: PRumoKit
