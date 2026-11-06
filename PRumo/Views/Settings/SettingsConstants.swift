@@ -4,7 +4,7 @@ enum SettingsMetrics {
     static let aboutLogoSize: CGFloat = 64
     static let width: CGFloat = 640
     static let aboutHeight: CGFloat = 280
-    static let generalHeight: CGFloat = 380
+    static let generalHeight: CGFloat = 420
     static let hotKeyButtonWidth: CGFloat = 110
     static let hotKeyRecorderSpacing: CGFloat = 4
     static let hotKeyFontSize: CGFloat = 12
@@ -21,6 +21,7 @@ enum SettingsText {
     static let interval = "Atualizar a cada"
     static let stuckCIThreshold = "Considerar CI parado após"
     static let launchAtLogin = "Abrir ao iniciar o macOS"
+    static let openWindowAtLaunch = "Abrir a janela ao iniciar"
     static let rowStyle = "Linha do PR"
     static let rowStyleDetailed = "Detalhada"
     static let rowStyleCompact = "Compacta"

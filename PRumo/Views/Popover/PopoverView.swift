@@ -17,7 +17,6 @@ struct PopoverView: View {
     @Environment(\.openSettings) private var openSettings
 
     private var organization: OrganizationStore { model.organization }
-    private var staleLimit: TimeInterval { TimeInterval(model.preferences.preferences.staleReviewHours * 3600) }
     private var viewer: String { model.snapshot?.viewer ?? "" }
 
     private func viewer(for pr: PullRequest) -> String {
@@ -161,6 +160,9 @@ struct PopoverView: View {
         case PopoverKey.mineTab: return switchTab(.mine)
         case PopoverKey.reviewTab: return switchTab(.review)
         case PopoverKey.mergeTab: return switchTab(.merge)
+        case PopoverKey.openWindow:
+            model.mainWindow.open()
+            return .handled
         case PopoverKey.rowMenu: return showRowMenu()
         case PopoverKey.claude: return launchClaude()
         case PopoverKey.openJira:
@@ -186,7 +188,7 @@ struct PopoverView: View {
     }
 
     private func menuEntries(for pr: PullRequest) -> [RowMenuEntry] {
-        PRRowView.menuEntries(pr: pr, tab: tab, presentation: presentation(for: pr, now: .now), model: model)
+        listing(tab).menuEntries(for: pr)
     }
 
     private func moveSelection(_ direction: MoveDirection) -> KeyPress.Result {
@@ -230,21 +232,12 @@ struct PopoverView: View {
         return .handled
     }
 
-    private func source(for tab: ListTab) -> [PullRequest] {
-        guard let snapshot = model.snapshot else { return [] }
-        return TabSource.pullRequests(snapshot, tab: tab, settings: organization.settings)
+    private func listing(_ tab: ListTab) -> PullRequestListing {
+        PullRequestListing(model: model, tab: tab)
     }
 
     private func sections(for tab: ListTab, now: Date) -> [RowSection] {
-        let settings = organization.settings
-        let context = FilterContext(
-            viewer: viewer, viewers: model.snapshot?.accountViewers ?? [:], marks: settings.marks, unseen: highlighted.union(organization.unseen),
-            staleLimit: staleLimit, now: now)
-        let filtered = RowFiltering.apply(source(for: tab), filter: settings.filter, tab: tab, context: context)
-        let searched = trimmedQuery.isEmpty ? filtered : filtered.filter { SearchMatcher.matches($0, query: trimmedQuery) }
-        return RowOrdering.sections(
-            searched, tab: tab, ordering: settings.ordering(for: tab), marks: settings.marks,
-            viewer: { model.snapshot?.viewer(for: $0) ?? viewer })
+        listing(tab).sections(filter: organization.settings.filter, query: trimmedQuery, highlighted: highlighted, now: now)
     }
 
     private func rowCount(for tab: ListTab) -> Int {
@@ -277,10 +270,7 @@ struct PopoverView: View {
     }
 
     private func staleSince(accountID: String) -> (isStale: Bool, since: Date?) {
-        guard hasMultipleAccounts, let status = model.accounts.statuses[accountID], status.isProblem else {
-            return (false, nil)
-        }
-        return (true, status.lastSuccess)
+        listing(tab).staleSince(accountID: accountID)
     }
 
     private func showOnboarding() {
@@ -311,6 +301,13 @@ struct PopoverView: View {
             Wordmark(size: 16)
             Spacer()
             DoNotDisturbButton(store: model.preferences)
+            Button(action: model.mainWindow.open) {
+                Image(systemName: MainWindowSymbol.open)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help(MainWindowText.openHelp)
+            .accessibilityLabel(MainWindowText.open)
             Button(action: model.refreshNow) {
                 Image(systemName: PopoverSymbol.refresh)
             }
@@ -489,19 +486,7 @@ struct PopoverView: View {
     }
 
     private func presentation(for pr: PullRequest, now: Date) -> RowPresentation {
-        let jiraKey = model.integrations.link(for: pr)?.key
-        let account = model.accountLabel(for: pr)
-        let stale = staleSince(accountID: pr.accountID).since
-        let stuck = model.stuckCIDuration(for: pr, now: now)
-        return switch tab {
-        case .mine: RowPresenter.mine(
-            pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey, commentFilter: organization.settings.commentAuthorFilter,
-            account: account, staleSince: stale, ciStuckFor: stuck)
-        case .review: RowPresenter.review(
-            pr, now: now, jiraKey: jiraKey, staleLimit: staleLimit, account: account, staleSince: stale, ciStuckFor: stuck)
-        case .merge: RowPresenter.merge(
-            pr, viewer: viewer(for: pr), now: now, jiraKey: jiraKey, account: account, staleSince: stale, ciStuckFor: stuck)
-        }
+        listing(tab).presentation(for: pr, now: now)
     }
 
     private func footerStatus(now: Date) -> String? {

@@ -46,3 +46,16 @@ struct PullRequestActivityTests {
         #expect(items.map(\.id) == ["r29", "r28", "r27", "r26", "r25"])
     }
 }
+
+struct ReviewerStatusTests {
+    @Test func keepsLatestDecisionPerAuthorIgnoringComments() {
+        let reviews = [
+            Review(id: "1", author: "carla", state: .changesRequested, submittedAt: .fixed.addingTimeInterval(-300)),
+            Review(id: "2", author: "carla", state: .approved, submittedAt: .fixed.addingTimeInterval(-100)),
+            Review(id: "3", author: "joao", state: .commented, submittedAt: .fixed, body: "nit"),
+            Review(id: "4", author: "ana", state: .dismissed, submittedAt: .fixed.addingTimeInterval(-50)),
+            Review(id: "5", author: "bia", state: .pending, submittedAt: .fixed),
+        ]
+        #expect(ReviewerStatus.latest(reviews).map(\.id) == ["4", "2"])
+    }
+}

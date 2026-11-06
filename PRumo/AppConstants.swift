@@ -17,6 +17,7 @@ enum AppConstants {
     static let unseenActivityKey = "unseenActivity"
     static let organizationTeamDefaultMigratedKey = "organizationTeamDefaultMigrated"
     static let hotKeyKey = "globalHotKey"
+    static let openWindowAtLaunchKey = "openWindowAtLaunch"
     static let updateAutoCheckKey = "updateAutoCheck"
     static let updateLastCheckKey = "updateLastCheck"
     static let updateNotifiedVersionKey = "updateNotifiedVersion"

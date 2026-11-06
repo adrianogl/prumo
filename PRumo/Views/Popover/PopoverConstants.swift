@@ -42,6 +42,7 @@ enum PopoverKey {
     static let reviewTab: Character = "2"
     static let mergeTab: Character = "3"
     static let rowMenu: Character = "."
+    static let openWindow: Character = "o"
     static let claude = Character(ClaudeText.shortcutKey)
     static let openJira = RowMenuKey.openJira
     static let copy = RowMenuKey.copy

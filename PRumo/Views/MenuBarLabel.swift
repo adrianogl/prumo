@@ -6,11 +6,9 @@ struct MenuBarLabel: View {
     let model: AppModel
     @Environment(\.openWindow) private var openWindow
 
-    private var reviewCount: Int {
-        guard let snapshot = model.snapshot else { return 0 }
-        return Counters.reviewBadge(snapshot, ignoreDrafts: model.organization.settings.ignoreDraftsInReview,
-            includeTeam: model.organization.settings.includeTeamRequests)
-    }
+    @AppStorage(AppConstants.openWindowAtLaunchKey) private var openWindowAtLaunch = false
+
+    private var reviewCount: Int { model.reviewBadgeCount }
     private var hasFailure: Bool { model.snapshot.map(Counters.hasFailingCI) ?? false }
 
     var body: some View {
@@ -22,6 +20,10 @@ struct MenuBarLabel: View {
             if hasFailure {
                 Image(nsImage: Self.failureDot)
             }
+        }
+        .task {
+            model.mainWindow.opener = { openWindow(id: MainWindowText.id) }
+            if openWindowAtLaunch, !model.needsOnboarding { model.mainWindow.open() }
         }
         .onChange(of: model.needsOnboarding, initial: true) {
             if model.needsOnboarding {

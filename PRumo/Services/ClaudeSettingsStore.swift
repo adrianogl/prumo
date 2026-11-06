@@ -17,8 +17,16 @@ final class ClaudeSettingsStore {
     init(defaults: UserDefaults = .standard, home: String = NSHomeDirectory()) {
         self.defaults = defaults
         self.home = home
-        settings = defaults.data(forKey: AppConstants.claudeSettingsKey)
-            .flatMap { try? JSONDecoder().decode(ClaudeSettings.self, from: $0) } ?? .defaults
+        let stored = defaults.data(forKey: AppConstants.claudeSettingsKey)
+            .flatMap { try? JSONDecoder().decode(ClaudeSettings.self, from: $0) }
+        settings = stored ?? Self.firstRunSettings(defaults)
+        if stored == nil { persist() }
+    }
+
+    private static func firstRunSettings(_ defaults: UserDefaults) -> ClaudeSettings {
+        var settings = ClaudeSettings.defaults
+        if !defaults.bool(forKey: AppConstants.onboardingDoneKey) { settings.terminal = .embedded }
+        return settings
     }
 
     var overrides: [String: URL] {

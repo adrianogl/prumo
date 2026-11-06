@@ -4,6 +4,7 @@ import PRumoKit
 struct SettingsView: View {
     let model: AppModel
     @AppStorage(AppConstants.refreshIntervalKey) private var interval = AppConstants.defaultRefreshInterval
+    @AppStorage(AppConstants.openWindowAtLaunchKey) private var openWindowAtLaunch = false
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var launchError: String?
     @State private var selection = SettingsTab.accounts
@@ -86,6 +87,7 @@ struct SettingsView: View {
                 Text(SettingsText.rowStyleCompact).tag(RowStyle.compact)
             }
             HotKeyRecorder(model: model)
+            Toggle(SettingsText.openWindowAtLaunch, isOn: $openWindowAtLaunch)
             Toggle(SettingsText.launchAtLogin, isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) { applyLaunchAtLogin() }
             if let launchError {

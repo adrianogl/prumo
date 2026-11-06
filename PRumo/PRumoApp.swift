@@ -15,6 +15,9 @@ struct PRumoApp: App {
         model.start()
         model.registerHotKey()
         model.updates.start()
+        let window = model.mainWindow
+        AppDelegate.reopen = { window.open() }
+        AppDelegate.shouldTerminate = { model.confirmQuitWithLiveSessions() }
     }
 
     var body: some Scene {
@@ -24,6 +27,14 @@ struct PRumoApp: App {
             MenuBarLabel(model: model)
         }
         .menuBarExtraStyle(.window)
+
+        Window(MainWindowText.title, id: MainWindowText.id) {
+            MainWindowView(model: model)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: MainWindowMetrics.defaultWidth, height: MainWindowMetrics.defaultHeight)
+        .windowResizability(.contentMinSize)
+        .defaultLaunchBehavior(.suppressed)
 
         Window(OnboardingText.windowTitle, id: OnboardingText.id) {
             OnboardingView(app: model)

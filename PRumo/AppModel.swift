@@ -18,6 +18,9 @@ final class AppModel {
     let organization: OrganizationStore
     let preferences: NotificationPreferencesStore
     let updates: UpdateStore
+    let mainWindow = MainWindowPresence()
+    let terminals = TerminalSessionStore()
+    var windowFocusRequest: String?
     private(set) var launching: Set<String> = []
     private(set) var rerunning: Set<String> = []
     private(set) var hotKey: HotKeyCombo
@@ -864,6 +867,7 @@ final class AppModel {
             showAlert(ClaudeText.customTerminalEmpty)
             return
         }
+        if claude.settings.terminal == .embedded, !prepareEmbeddedLaunch(pr: pr, purpose: purpose) { return }
         launching.insert(pr.id)
         Task {
             await runLaunch(pr: pr, purpose: purpose, mayAskForClone: true, rescanned: false)
@@ -896,6 +900,7 @@ final class AppModel {
         switch result {
         case .success(let launched):
             await register(launched, pr: pr)
+            if let script = launched.embeddedScript { startEmbedded(pr: pr, purpose: purpose, directory: launched.directory, script: script) }
             return
         case .failure(let failure):
             error = failure
