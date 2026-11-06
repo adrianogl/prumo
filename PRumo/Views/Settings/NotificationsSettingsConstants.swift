@@ -3,7 +3,7 @@ import PRumoKit
 import SwiftUI
 
 enum NotificationsSettingsMetrics {
-    static let height: CGFloat = 640
+    static let height: CGFloat = 720
     static let weekdayButtonSize: CGFloat = 26
     static let weekdaySpacing: CGFloat = 4
     static let errorSize: CGFloat = 12
@@ -19,10 +19,19 @@ enum NotificationsSettingsColor {
 
 enum NotificationsSettingsSymbol {
     static let tab = "bell"
+    static let blocked = "bell.slash"
+}
+
+enum NotificationsSettingsLink {
+    static let systemSettings = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=dev.aglv.prumo")!
 }
 
 enum NotificationsSettingsText {
     static let tab = "Notificações"
+    static let sendTest = "Enviar notificação de teste"
+    static let testSent = "Notificação enviada. Se ela não apareceu, confira se algum Foco está ativo."
+    static let blocked = "O macOS está bloqueando as notificações do PRumo."
+    static let openSystemSettings = "Abrir ajustes de notificações"
     static let staleAfter = "Lembrar review parado após"
     static let groupByPullRequest = "Agrupar notificações de CI"
     static let workingHoursOnly = "Só em horário de trabalho"

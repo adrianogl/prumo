@@ -4,11 +4,16 @@ import PRumoKit
 struct NotificationsSettingsView: View {
     let store: NotificationPreferencesStore
     let showsGitLabNote: Bool
+    let permission: () async -> NotificationPermission
+    let sendTest: () async -> NotificationPermission
+    @State private var currentPermission: NotificationPermission?
+    @State private var testSent = false
     @State private var start = Date.now
     @State private var end = Date.now
 
     var body: some View {
         Form {
+            testSection
             Section {
                 ForEach(NotificationToggle.allCases, id: \.self) { toggle in
                     Toggle(NotificationsSettingsText.title(toggle), isOn: binding(for: toggle))
@@ -50,8 +55,44 @@ struct NotificationsSettingsView: View {
         }
         .formStyle(.grouped)
         .onAppear(perform: loadRange)
+        .task { currentPermission = await permission() }
         .onChange(of: start) { commitRange() }
         .onChange(of: end) { commitRange() }
+    }
+
+    private var testSection: some View {
+        Section {
+            if currentPermission == .denied {
+                HStack(spacing: 6) {
+                    Image(systemName: NotificationsSettingsSymbol.blocked)
+                    Text(NotificationsSettingsText.blocked)
+                    Spacer(minLength: 0)
+                    Button(NotificationsSettingsText.openSystemSettings) {
+                        NSWorkspace.shared.open(NotificationsSettingsLink.systemSettings)
+                    }
+                }
+                .foregroundStyle(Color.statusBad)
+            }
+            HStack {
+                Button(NotificationsSettingsText.sendTest) {
+                    Task {
+                        let result = await sendTest()
+                        currentPermission = result
+                        testSent = result == .allowed
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            if testSent {
+                Text(NotificationsSettingsText.testSent)
+                    .font(.system(size: NotificationsSettingsMetrics.noteSize))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            Task { currentPermission = await permission() }
+        }
     }
 
     private var weekdayButtons: some View {

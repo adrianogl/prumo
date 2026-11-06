@@ -43,6 +43,23 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate, Sen
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
+    func permission() async -> NotificationPermission {
+        switch await UNUserNotificationCenter.current().notificationSettings().authorizationStatus {
+        case .authorized, .provisional, .ephemeral: .allowed
+        case .denied: .denied
+        case .notDetermined: .notAsked
+        @unknown default: .denied
+        }
+    }
+
+    func postTest() {
+        let content = UNMutableNotificationContent()
+        content.title = NotificationCategories.testTitle
+        content.body = NotificationCategories.testBody
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
     func post(_ events: [NotificationEvent], grouped: Bool, subtitles: [String: String]) {
         let center = UNUserNotificationCenter.current()
         for event in events {

@@ -44,7 +44,9 @@ struct SettingsView: View {
             Tab(NotificationsSettingsText.tab, systemImage: NotificationsSettingsSymbol.tab, value: SettingsTab.notifications) {
                 NotificationsSettingsView(
                     store: model.preferences,
-                    showsGitLabNote: model.accounts.list.accounts.contains { $0.provider == .gitlab })
+                    showsGitLabNote: model.accounts.list.accounts.contains { $0.provider == .gitlab },
+                    permission: model.notificationPermission,
+                    sendTest: model.sendTestNotification)
             }
             Tab(CommentsSettingsText.tab, systemImage: CommentsSettingsSymbol.tab, value: SettingsTab.comments) {
                 CommentsSettingsView(store: model.organization)

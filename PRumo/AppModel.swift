@@ -448,6 +448,21 @@ final class AppModel {
         await notifications.requestAuthorization()
     }
 
+    func notificationPermission() async -> NotificationPermission {
+        await notifications.permission()
+    }
+
+    func sendTestNotification() async -> NotificationPermission {
+        if await notifications.permission() == .notAsked {
+            _ = await notifications.requestAuthorization()
+        }
+        let permission = await notifications.permission()
+        if permission == .allowed {
+            notifications.postTest()
+        }
+        return permission
+    }
+
     private func begin(tokens: [String: String]) async {
         stopSessions()
         let list = accounts.list.accounts
