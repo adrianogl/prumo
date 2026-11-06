@@ -9,6 +9,7 @@ final class UpdateStore {
     private(set) var status: UpdateStatus = .idle
     private(set) var lastCheck: Date?
     private(set) var installing = false
+    private(set) var checkFailed = false
     var installError: UpdateInstallError?
     var autoCheck: Bool {
         didSet {
@@ -82,8 +83,10 @@ final class UpdateStore {
         guard status != .checking else { return }
         guard let installed else {
             status = .failed
+            checkFailed = true
             return
         }
+        let previous = status
         status = .checking
         do throws(UpdateError) {
             if let release = try await UpdateChecker(installed: installed).check() {
@@ -92,8 +95,10 @@ final class UpdateStore {
             } else {
                 status = .upToDate
             }
+            checkFailed = false
         } catch {
-            status = .failed
+            status = previous == .idle || previous == .upToDate ? .failed : previous
+            checkFailed = true
         }
         let now = Date.now
         lastCheck = now

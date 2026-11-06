@@ -32,6 +32,10 @@ private final class FakeUpdateFiles: UpdateFileManaging, @unchecked Sendable {
     var writable = true
     var existing: Set<String> = ["/mnt/work/mount/PRumo.app"]
     var failing: Set<String> = []
+    var infos: [String: [String: String]] = [
+        "/Applications/PRumo.app": ["CFBundleIdentifier": "dev.aglv.prumo", "CFBundleShortVersionString": "0.2.0"],
+        "/Applications/.PRumo-0.3.0.app": ["CFBundleIdentifier": "dev.aglv.prumo", "CFBundleShortVersionString": "0.3.0"],
+    ]
 
     var operations: [String] {
         lock.withLock { log }
@@ -51,6 +55,8 @@ private final class FakeUpdateFiles: UpdateFileManaging, @unchecked Sendable {
     func isWritable(_ url: URL) -> Bool { writable }
 
     func exists(_ url: URL) -> Bool { existing.contains(url.path) }
+
+    func infoDictionary(ofApp url: URL) -> [String: String]? { infos[url.path] }
 
     func createDirectory(_ url: URL) throws { try record("mkdir \(url.path)") }
 
@@ -184,6 +190,37 @@ private func installer(
         #expect(runner.commands.contains("/usr/bin/hdiutil detach /mnt/work/mount -force"))
         #expect(files.operations.contains("remove /Applications/.PRumo-0.3.0.app"))
         #expect(!runner.commands.contains { $0.hasPrefix("/bin/sh") })
+    }
+
+    @Test func wrongBundleIdentifierIsRejected() async {
+        let runner = InstallRunner()
+        let files = FakeUpdateFiles()
+        files.infos["/Applications/.PRumo-0.3.0.app"] = ["CFBundleIdentifier": "outro.app", "CFBundleShortVersionString": "0.3.0"]
+        await #expect(throws: UpdateInstallError.packageMismatch) {
+            try await installer(runner: runner, files: files)
+                .install(release(), replacing: appURL, workDirectory: work, processID: 42)
+        }
+        #expect(!files.operations.contains { $0.hasPrefix("replace") })
+        #expect(files.operations.contains("remove /Applications/.PRumo-0.3.0.app"))
+        #expect(!runner.commands.contains { $0.hasPrefix("/bin/sh") })
+    }
+
+    @Test func wrongVersionIsRejected() async {
+        let files = FakeUpdateFiles()
+        files.infos["/Applications/.PRumo-0.3.0.app"] = ["CFBundleIdentifier": "dev.aglv.prumo", "CFBundleShortVersionString": "0.2.0"]
+        await #expect(throws: UpdateInstallError.packageMismatch) {
+            try await installer(files: files).install(release(), replacing: appURL, workDirectory: work, processID: 42)
+        }
+        #expect(!files.operations.contains { $0.hasPrefix("replace") })
+    }
+
+    @Test func unreadableInfoPlistIsRejected() async {
+        let files = FakeUpdateFiles()
+        files.infos["/Applications/.PRumo-0.3.0.app"] = nil
+        await #expect(throws: UpdateInstallError.packageMismatch) {
+            try await installer(files: files).install(release(), replacing: appURL, workDirectory: work, processID: 42)
+        }
+        #expect(!files.operations.contains { $0.hasPrefix("replace") })
     }
 
     @Test func quarantineFailureIsIgnored() async throws {

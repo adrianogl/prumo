@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-    echo "Uso: scripts/release.sh [--dry-run] <versão X.Y.Z>" >&2
+    echo "Uso: scripts/release.sh [--dry-run] [--notes-file <arquivo>] <versão X.Y.Z>" >&2
     exit 64
 }
 
@@ -13,15 +13,22 @@ fail() {
 
 dry_run=false
 version=""
-for arg in "$@"; do
-    case "$arg" in
+custom_notes=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --dry-run) dry_run=true ;;
+        --notes-file) [[ $# -ge 2 ]] || usage; custom_notes="$2"; shift ;;
         -h|--help) usage ;;
         -*) usage ;;
-        *) [[ -z "$version" ]] || usage; version="$arg" ;;
+        *) [[ -z "$version" ]] || usage; version="$1" ;;
     esac
+    shift
 done
 [[ -n "$version" ]] || usage
+if [[ -n "$custom_notes" ]]; then
+    [[ -s "$custom_notes" ]] || fail "arquivo de notas \"$custom_notes\" não existe ou está vazio"
+    custom_notes="$(cd "$(dirname "$custom_notes")" && pwd)/$(basename "$custom_notes")"
+fi
 
 cd "$(dirname "$0")/.."
 
@@ -47,6 +54,7 @@ version_key() {
 
 tag="v$version"
 git rev-parse -q --verify "refs/tags/$tag" > /dev/null && fail "a tag $tag já existe"
+git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null 2>&1 && fail "a tag $tag já existe no remoto"
 gh auth status > /dev/null 2>&1 || fail "gh não está logado (rode gh auth login)"
 
 previous_tag=$(git describe --tags --abbrev=0 --match 'v*' HEAD 2> /dev/null || true)
@@ -83,24 +91,29 @@ if $project_changed; then
     run git add project.yml
     run git commit -m "chore: versão $version"
 fi
-run git tag -a "$tag" -m "PRumo $version"
-run git push origin main --follow-tags
+run git push origin main
 
 notes_file=$(mktemp -t prumo-release-notes)
 trap 'rm -f "$notes_file"' EXIT
 range="HEAD"
-[[ -n "$previous_tag" ]] && range="$previous_tag..HEAD"
-git log --pretty='- %s' "$range" | grep -E '^- (feat|fix)(\(|!|:)' > "$notes_file" || true
-[[ -s "$notes_file" ]] || echo "- Ajustes internos." > "$notes_file"
+if [[ -n "$custom_notes" ]]; then
+    cp "$custom_notes" "$notes_file"
+    range="notas de $custom_notes"
+else
+    [[ -n "$previous_tag" ]] && range="$previous_tag..HEAD"
+    git log --pretty='- %s' "$range" | grep -E '^- (feat|fix)(\(|!|:)' > "$notes_file" || true
+    [[ -s "$notes_file" ]] || echo "- Ajustes internos." > "$notes_file"
+fi
 
 echo "Notas do release ($range):"
 cat "$notes_file"
 
-run gh release create "$tag" build/PRumo.dmg build/PRumo.dmg.sha256 \
-    --title "PRumo $version" --notes-file "$notes_file"
-
 if $dry_run; then
+    echo "[dry-run] gh release create $tag build/PRumo.dmg build/PRumo.dmg.sha256 --target $(git rev-parse HEAD)"
     echo "[dry-run] nada foi publicado"
 else
+    gh release create "$tag" build/PRumo.dmg build/PRumo.dmg.sha256 \
+        --title "PRumo $version" --notes-file "$notes_file" --target "$(git rev-parse HEAD)" \
+        || fail "o release não foi criado e nenhuma tag existe; o commit já está no remoto, rode o script de novo"
     echo "Release $tag publicado"
 fi

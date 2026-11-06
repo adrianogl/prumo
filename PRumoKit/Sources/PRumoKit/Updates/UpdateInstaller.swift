@@ -41,6 +41,11 @@ public struct UpdateInstaller: Sendable {
             throw .copyFailed
         }
 
+        guard packageMatches(staging, release: release, current: appURL) else {
+            files.removeItem(staging)
+            throw .packageMismatch
+        }
+
         do {
             try files.replaceItem(at: appURL, with: staging)
         } catch {
@@ -60,6 +65,15 @@ public struct UpdateInstaller: Sendable {
         } catch {
             throw .downloadFailed
         }
+    }
+
+    private func packageMatches(_ staged: URL, release: ReleaseInfo, current: URL) -> Bool {
+        guard let candidate = files.infoDictionary(ofApp: staged),
+              let identifier = files.infoDictionary(ofApp: current)?[UpdateConstants.bundleIdentifierKey],
+              candidate[UpdateConstants.bundleIdentifierKey] == identifier,
+              let version = candidate[UpdateConstants.shortVersionKey].flatMap(AppVersion.init)
+        else { return false }
+        return version == release.version
     }
 
     private func attach(_ image: URL, at mount: URL) async throws(UpdateInstallError) {

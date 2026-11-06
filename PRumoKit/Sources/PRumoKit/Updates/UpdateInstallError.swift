@@ -7,6 +7,7 @@ public enum UpdateInstallError: Error, Equatable {
     case checksumMismatch
     case mountFailed
     case copyFailed
+    case packageMismatch
     case replaceFailed
     case relaunchFailed
 }

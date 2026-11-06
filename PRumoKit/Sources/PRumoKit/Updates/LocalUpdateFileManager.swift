@@ -11,6 +11,14 @@ public struct LocalUpdateFileManager: UpdateFileManaging {
         FileManager.default.fileExists(atPath: url.path)
     }
 
+    public func infoDictionary(ofApp url: URL) -> [String: String]? {
+        let plist = url.appendingPathComponent(UpdateConstants.infoPlistPath)
+        guard let data = try? Data(contentsOf: plist),
+              let object = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+        else { return nil }
+        return object.compactMapValues { $0 as? String }
+    }
+
     public func createDirectory(_ url: URL) throws {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     }

@@ -9,6 +9,10 @@ struct UpdatesSettingsView: View {
             Section {
                 Text("\(UpdatesSettingsText.installedPrefix) \(store.installed?.description ?? UpdatesSettingsText.unknownVersion)")
                 status
+                if store.checkFailed, store.available != nil {
+                    Label(UpdatesSettingsText.failed, systemImage: UpdatesSettingsSymbol.failed)
+                        .foregroundStyle(.secondary)
+                }
                 if let release = store.available {
                     available(release)
                 }

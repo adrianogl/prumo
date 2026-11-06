@@ -37,6 +37,7 @@ enum UpdatesSettingsText {
     static let failureNotWritable = "O PRumo não tem permissão para substituir o app na pasta onde ele está."
     static let failureDownload = "Não foi possível baixar a versão nova."
     static let failureChecksum = "O arquivo baixado não confere. Nada foi instalado."
+    static let failurePackage = "O pacote baixado não corresponde a esta versão. Nada foi instalado."
     static let failureMount = "Não foi possível abrir o DMG da versão nova."
     static let failureCopy = "Não foi possível copiar o app novo."
     static let failureReplace = "Não foi possível substituir o app atual."

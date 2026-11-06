@@ -7,6 +7,7 @@ extension UpdateInstallError {
         case .notWritable: UpdatesSettingsText.failureNotWritable
         case .downloadFailed: UpdatesSettingsText.failureDownload
         case .checksumMismatch: UpdatesSettingsText.failureChecksum
+        case .packageMismatch: UpdatesSettingsText.failurePackage
         case .mountFailed: UpdatesSettingsText.failureMount
         case .copyFailed: UpdatesSettingsText.failureCopy
         case .replaceFailed: UpdatesSettingsText.failureReplace
