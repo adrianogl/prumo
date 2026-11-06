@@ -179,6 +179,89 @@ td .act{display:inline-flex;gap:5px;align-items:center;background:var(--claude-b
 .keys div>span:first-child{flex:none;min-width:92px;display:flex;gap:4px;flex-wrap:wrap}
 .keys div>span:last-child{color:var(--muted)}
 
+.soon{display:inline-flex;gap:8px;align-items:center;margin-top:16px;padding:5px 12px 5px 5px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13.5px;text-decoration:none;color:var(--ink)}
+.soon:hover{border-color:var(--caramel)}
+.tag{display:inline-block;background:color-mix(in srgb,var(--caramel) 16%,transparent);color:var(--caramel-ink);border-radius:999px;padding:2px 9px;font-weight:600;font-size:12px;letter-spacing:.02em}
+.devstage{position:relative;max-width:920px;height:620px;margin:44px auto 40px}
+.devstage.narrow{height:500px}
+.devinner{position:absolute;left:0;top:0;width:920px;height:620px;transform-origin:top left}
+.narrow .devinner{width:240px;height:500px}
+.dev{position:absolute;background:#0e0e0f;box-shadow:0 0 0 1.5px #8d8984,0 0 0 3px #2e2c2a,0 30px 60px rgba(20,16,12,.28)}
+.dev .scr{position:relative;overflow:hidden;background:var(--bg);color:var(--ink)}
+.dev .vp{position:absolute;left:0;top:0;transform-origin:top left;font-size:15px;line-height:1.35}
+.ipad{left:0;top:0;padding:14px;border-radius:40px}
+.ipad::after{content:"";position:absolute;top:4px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#2a2a2d}
+.ipad .scr{width:716px;height:500px;border-radius:26px}
+.ipad .vp{width:1194px;height:834px;transform:scale(.6)}
+.promax{left:672px;top:112px;padding:8px;border-radius:46px}
+.promax .scr{width:220px;height:478px;border-radius:38px}
+.promax .vp{width:440px;height:956px;transform:scale(.5)}
+.promax::before{content:"";position:absolute;left:-4.5px;top:96px;width:3px;height:40px;border-radius:2px;background:#8d8984;box-shadow:0 52px 0 #8d8984}
+.promax::after{content:"";position:absolute;right:-4.5px;top:150px;width:3px;height:62px;border-radius:2px;background:#8d8984}
+.narrow .ipad{display:none}
+.narrow .promax{left:0;top:0}
+.sbar{position:relative;display:flex;justify-content:space-between;align-items:center;height:54px;padding:0 30px 0 46px;font:600 17px var(--display)}
+.sbar .ic3{display:flex;gap:6px;align-items:center}
+.sbar svg{height:13px;fill:currentColor}
+.island{position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;border-radius:20px;background:#000}
+.ihead{display:flex;justify-content:space-between;align-items:center;padding:6px 20px 0}
+.ihead .wm{font-size:19px}
+.ibtns{display:flex;gap:8px}
+.ibtns i{width:38px;height:38px;border-radius:50%;background:var(--badge);display:grid;place-items:center;color:var(--ink)}
+.ibtns .ico{width:18px;height:18px}
+.ititle{font:700 34px/1.15 var(--display);letter-spacing:-.025em;margin:10px 20px 12px}
+.isearch{display:flex;gap:8px;align-items:center;margin:0 16px 10px;height:38px;padding:0 12px;border-radius:12px;background:var(--badge);color:var(--muted);font-size:16px}
+.isearch .ico{width:17px;height:17px}
+.ichips{display:flex;gap:8px;margin:0 16px 14px}
+.ichips span{padding:6px 12px;border-radius:999px;background:var(--badge);font-size:14px;font-weight:500}
+.ichips span:last-child{margin-left:auto}
+.icard{background:var(--surface);border-radius:16px;overflow:hidden;margin:0 16px}
+.icard .row{padding:12px 14px}
+.icard .row:first-child{border-top:none}
+.vp .row .tt{font-size:15px}
+.vp .row .mm{font-size:13px}
+.vp .b{font-size:12px;padding:2px 8px;border-radius:6px}
+.vp .newdot{top:17px;right:14px}
+.row.muted{opacity:.55}
+.row .ps{width:9px;margin-top:4px;flex:none;color:var(--muted)}
+.itabs{position:absolute;left:18px;right:18px;bottom:30px;height:64px;border-radius:32px;padding:5px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;background:color-mix(in srgb,var(--surface) 94%,transparent);border:1px solid var(--line);box-shadow:0 10px 30px rgba(20,16,12,.16)}
+.itabs span{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:27px;font-size:10.5px;font-weight:600;color:var(--muted)}
+.itabs span.on{background:color-mix(in srgb,var(--caramel) 15%,transparent);color:var(--caramel-ink)}
+.itabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.itabs em{position:absolute;top:3px;right:14px;font-style:normal;min-width:17px;height:17px;border-radius:9px;background:var(--caramel);color:#fff;font-size:11px;line-height:17px;text-align:center;padding:0 4px}
+.homebar{position:absolute;bottom:8px;left:50%;width:140px;height:5px;margin-left:-70px;border-radius:3px;background:var(--ink);opacity:.85}
+.split2{display:flex;height:calc(100% - 54px)}
+.split2>.pane{width:300px;flex:none;border-right:1px solid var(--line);overflow:hidden}
+.split2>.pane .ititle{font-size:30px;margin-top:4px}
+.split2>.pane .icard{margin:0 12px}
+.dt{flex:1;min-width:0;padding:8px 22px 0}
+.dt h4{font:700 22px/1.2 var(--display);letter-spacing:-.02em;margin:4px 0 6px}
+.dt .mm{font-size:13px;color:var(--muted)}
+.dt .bs{margin:10px 0 16px}
+.dt .acts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.dt .acts span{padding:9px 14px;border-radius:999px;background:var(--badge);font-size:14px;font-weight:500}
+.dt .acts span.pri{background:var(--caramel);color:#fff;font-weight:600}
+.dt .lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0 4px 6px}
+.dt .lc{background:var(--surface);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.dt .lc div{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);font-size:14.5px}
+.dt .lc div:first-child{border-top:none}
+.dt .lc b{width:16px;font-weight:700}
+.dt .lc span{flex:1}
+.dt .lc small{font-size:12.5px;color:var(--muted)}
+.dt .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.side{width:250px;flex:none;background:color-mix(in srgb,var(--sand) 45%,var(--bg));padding:6px 12px 0;display:flex;flex-direction:column;gap:18px}
+.side .wm{font-size:20px;padding:6px 8px 0}
+.side .nv{display:flex;flex-direction:column;gap:2px}
+.side .nv span{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;font-size:16px;font-weight:600}
+.side .nv span.on{background:color-mix(in srgb,var(--caramel) 16%,transparent);color:var(--caramel-ink)}
+.side .nv em{font-style:normal;min-width:22px;height:20px;border-radius:10px;background:var(--caramel);color:#fff;font-size:12px;line-height:20px;text-align:center;padding:0 6px}
+.side .grp{display:flex;flex-direction:column;gap:2px}
+.side .grp>b{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:0 12px 4px}
+.side .grp span{display:flex;justify-content:space-between;padding:7px 12px;font-size:15px}
+.side .grp small{color:var(--muted);font-size:13px}
+.ipadsb{padding:0 26px;height:30px;font-size:14px}
+.cols3 b{display:block;margin-bottom:4px}
+
 .widgets{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
 .wdg{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:9px;font-size:12px}
 .wdg.sm{width:160px;height:160px}
@@ -237,7 +320,7 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
 <div class="wrap">
   <nav>
     <a class="brand" href="#"><span class="appicon" style="width:30px;height:30px"><svg><use href="#pr"/></svg></span><span class="wm"><b>PR</b>umo</span></a>
-    <div class="links"><a href="#avisos">Avisos</a><a href="#lista">Lista</a><a href="#contas">Contas</a><a href="#organizacao">Filtros</a><a href="#claude">Claude Code</a><a href="#teclado">Teclado</a><a href="#widget">Widget</a><a href="#instalar">Instalar</a><a href="https://github.com/adrianogl/prumo">GitHub</a></div>
+    <div class="links"><a href="#avisos">Avisos</a><a href="#lista">Lista</a><a href="#contas">Contas</a><a href="#organizacao">Filtros</a><a href="#claude">Claude Code</a><a href="#teclado">Teclado</a><a href="#widget">Widget</a><a href="#em-breve">iPhone e iPad</a><a href="#instalar">Instalar</a><a href="https://github.com/adrianogl/prumo">GitHub</a></div>
   </nav>
 
   <div class="hero">
@@ -253,6 +336,7 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
       </div>
       <div class="dl-meta">Versão <span data-version>0.2.0</span> · macOS 26 ou mais novo · <a href="#instalar">leia o aviso sobre a primeira abertura</a></div>
       <div class="req">macOS 26 ou mais novo · usa o seu gh e o seu glab · sem servidor</div>
+      <a class="soon" href="#em-breve"><span class="tag">Em breve</span>PRumo para iPhone e iPad</a>
     </div>
 
     <div class="stage" aria-label="Exemplo do PRumo aberto na barra de menu">
@@ -485,6 +569,58 @@ footer.site{padding-block:28px;color:var(--muted);font-size:13px;display:flex;fl
   </div>
 </section>
 
+<section id="em-breve">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag">Em breve</span>
+      <h2 style="margin-top:14px">PRumo no iPhone e no iPad.</h2>
+      <p>Os mesmos PRs, reviews e avisos do Mac, no bolso e na mesa. Ainda não tem data.</p>
+    </div>
+    <div class="devstage" aria-label="Exemplo do PRumo no iPad e no iPhone Pro Max">
+      <div class="devinner">
+<div class="dev ipad"><div class="scr"><div class="vp">
+<div class="sbar ipadsb"><span>9:41  sex. 6 de nov.</span><span class="ic3"><svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg viewBox="0 0 16 12"><path d="M8 2.2c2.4 0 4.6.9 6.2 2.5l1.3-1.3A10.6 10.6 0 0 0 8 .4 10.6 10.6 0 0 0 .5 3.4l1.3 1.3A8.8 8.8 0 0 1 8 2.2Zm0 3.6c1.4 0 2.7.5 3.7 1.4l1.3-1.3A7 7 0 0 0 8 4 7 7 0 0 0 3 5.9l1.3 1.3c1-.9 2.3-1.4 3.7-1.4Zm0 3.6c.5 0 1 .2 1.3.5L8 11.2 6.7 9.9c.3-.3.8-.5 1.3-.5Z"/></svg><svg viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".45"/><rect x="2.5" y="2.5" width="16" height="8" rx="2"/><rect x="24.5" y="4.5" width="2" height="4" rx="1" opacity=".45"/></svg></span></div>
+<div class="split2" style="height:calc(100% - 30px)">
+<div class="side"><span class="wm"><b>PR</b>umo</span>
+<div class="nv"><span class="on">Meus PRs<em>5</em></span><span>Revisar<em>4</em></span><span>Merge<em>1</em></span></div>
+<div class="grp"><b>Visões</b><span>Sprint atual</span><span>Só a loja</span></div>
+<div class="grp"><b>Repositórios</b><span>acme/loja<small>2</small></span><span>acme/api<small>1</small></span><span>acme/web<small>1</small></span><span>acme/infra<small>1</small></span></div>
+</div>
+<div class="pane" style="width:380px"><div class="ititle">Meus PRs</div><div class="isearch"><svg class="ico"><use href="#search"/></svg>Título, repositório ou número</div>
+<div class="icard"><div class="row new"><span class="sd" style="background:var(--bad)"></span><div><div class="tt">feat(pedido): filtro por status na listagem</div><div class="mm">acme/loja #809 · 5h</div><div class="bs"><span class="b bad">✗ unit-tests</span><span class="b jira">ON-1234</span></div></div><span class="newdot"></span></div><div class="row"><span class="sd" style="background:var(--ok)"></span><div><div class="tt"><svg class="ico" style="width:12px;height:12px;color:var(--caramel);margin-right:4px;vertical-align:-1px"><use href="#pin"/></svg>fix(carrinho): preço do combo sem imposto</div><div class="mm">acme/loja #812 · 2h</div><div class="bs"><span class="b ok">✓ CI 12/12</span><span class="b ok">✓ 2 aprovações</span></div></div></div><div class="row"><span class="sd" style="background:var(--info)"></span><div><div class="tt">refactor(frete): extrai o cálculo para um service</div><div class="mm">acme/api #74 · 3d</div><div class="bs"><span class="b attn">alterações pedidas</span><span class="b"><svg class="ico" style="width:12px;height:12px"><use href="#chat"/></svg>5</span><span class="b bad">conflito</span></div></div></div><div class="row"><span class="sd" style="background:var(--idle)"></span><div><div class="tt">chore(ci): cache do pnpm no workflow</div><div class="mm">acme/web #233 · 40min</div><div class="bs"><span class="b idle">● CI 4/9</span><span class="b">draft</span></div></div></div><div class="row muted"><svg class="ps" viewBox="0 0 10 10" aria-hidden="true"><rect x="1" y="1" width="3" height="8" rx="1" fill="currentColor"/><rect x="6" y="1" width="3" height="8" rx="1" fill="currentColor"/></svg><div><div class="tt">docs: atualiza o guia de deploy</div><div class="mm">acme/infra #77 · 2d</div><div class="bs"><span class="b ok">✓ CI 6/6</span></div></div></div></div></div>
+<div class="dt" style="padding:6px 30px 0">
+<span class="sd" style="background:var(--bad);display:inline-block;margin:0 0 6px"></span>
+<h4 style="font-size:26px">feat(pedido): filtro por status na listagem</h4>
+<div class="mm">acme/loja #809 · atualizado há 12 min</div>
+<div class="bs"><span class="b bad">✗ unit-tests</span><span class="b">1 aprovação</span><span class="b jira">ON-1234</span></div>
+<div class="acts"><span class="pri">Abrir no Safari</span><span>Re-rodar unit-tests</span><span>Abrir card ON-1234</span><span>Copiar link</span><span>Silenciar</span></div>
+<div class="two"><div><div class="lbl">Checks</div>
+<div class="lc"><div><b style="color:var(--bad)">✗</b><span>unit-tests</span><small>2m10s</small></div><div><b style="color:var(--ok)">✓</b><span>lint</span><small>38s</small></div><div><b style="color:var(--ok)">✓</b><span>build</span><small>1m52s</small></div><div><b style="color:var(--ok)">✓</b><span>e2e</span><small>6m03s</small></div></div></div>
+<div><div class="lbl">Reviews</div>
+<div class="lc"><div><b style="color:var(--ok)">✓</b><span>@carla</span><small>aprovou</small></div><div><b style="color:var(--idle)">●</b><span>@joao</span><small>pendente</small></div></div></div></div>
+<div class="lbl">Atividade</div>
+<div class="lc"><div><b style="color:var(--bad)">✗</b><span>CI falhou em unit-tests</span><small>há 12 min</small></div><div><b style="color:var(--ok)">✓</b><span>@carla aprovou</span><small>há 1h</small></div><div><b style="color:var(--idle)">↑</b><span>Você fez push de 2 commits</span><small>há 2h</small></div></div>
+</div>
+</div>
+<span class="homebar" style="width:300px;margin-left:-150px"></span>
+</div></div></div>
+<div class="dev promax"><div class="scr"><div class="vp">
+<div class="sbar"><span>9:41</span><span class="ic3"><svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg viewBox="0 0 16 12"><path d="M8 2.2c2.4 0 4.6.9 6.2 2.5l1.3-1.3A10.6 10.6 0 0 0 8 .4 10.6 10.6 0 0 0 .5 3.4l1.3 1.3A8.8 8.8 0 0 1 8 2.2Zm0 3.6c1.4 0 2.7.5 3.7 1.4l1.3-1.3A7 7 0 0 0 8 4 7 7 0 0 0 3 5.9l1.3 1.3c1-.9 2.3-1.4 3.7-1.4Zm0 3.6c.5 0 1 .2 1.3.5L8 11.2 6.7 9.9c.3-.3.8-.5 1.3-.5Z"/></svg><svg viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".45"/><rect x="2.5" y="2.5" width="16" height="8" rx="2"/><rect x="24.5" y="4.5" width="2" height="4" rx="1" opacity=".45"/></svg></span></div><span class="island"></span>
+<div class="ihead"><span class="wm"><b>PR</b>umo</span><span class="ibtns"><i><svg class="ico"><use href="#bellz"/></svg></i><i><svg class="ico"><use href="#refresh"/></svg></i></span></div><div class="ititle">Meus PRs</div><div class="isearch"><svg class="ico"><use href="#search"/></svg>Título, repositório ou número</div><div class="ichips"><span>Repositórios ▾</span><span>Filtros ▾</span><span>Recentes ▾</span></div>
+<div class="icard"><div class="row new"><span class="sd" style="background:var(--bad)"></span><div><div class="tt">feat(pedido): filtro por status na listagem</div><div class="mm">acme/loja #809 · 5h</div><div class="bs"><span class="b bad">✗ unit-tests</span><span class="b jira">ON-1234</span></div></div><span class="newdot"></span></div><div class="row"><span class="sd" style="background:var(--ok)"></span><div><div class="tt"><svg class="ico" style="width:12px;height:12px;color:var(--caramel);margin-right:4px;vertical-align:-1px"><use href="#pin"/></svg>fix(carrinho): preço do combo sem imposto</div><div class="mm">acme/loja #812 · 2h</div><div class="bs"><span class="b ok">✓ CI 12/12</span><span class="b ok">✓ 2 aprovações</span></div></div></div><div class="row"><span class="sd" style="background:var(--info)"></span><div><div class="tt">refactor(frete): extrai o cálculo para um service</div><div class="mm">acme/api #74 · 3d</div><div class="bs"><span class="b attn">alterações pedidas</span><span class="b"><svg class="ico" style="width:12px;height:12px"><use href="#chat"/></svg>5</span><span class="b bad">conflito</span></div></div></div><div class="row"><span class="sd" style="background:var(--idle)"></span><div><div class="tt">chore(ci): cache do pnpm no workflow</div><div class="mm">acme/web #233 · 40min</div><div class="bs"><span class="b idle">● CI 4/9</span><span class="b">draft</span></div></div></div><div class="row muted"><svg class="ps" viewBox="0 0 10 10" aria-hidden="true"><rect x="1" y="1" width="3" height="8" rx="1" fill="currentColor"/><rect x="6" y="1" width="3" height="8" rx="1" fill="currentColor"/></svg><div><div class="tt">docs: atualiza o guia de deploy</div><div class="mm">acme/infra #77 · 2d</div><div class="bs"><span class="b ok">✓ CI 6/6</span></div></div></div></div>
+<div class="itabs"><span class="on"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v7M18 15.5V9a3 3 0 0 0-3-3h-4M13 3.5 10.5 6 13 8.5"/></svg>Meus PRs<em>5</em></span><span><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Revisar<em>4</em></span><span><svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 7.5v9M6 7.5c0 3 3 4.5 9.5 4.5"/></svg>Merge<em>1</em></span><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Ajustes</span></div><span class="homebar"></span>
+</div></div></div>
+      </div>
+    </div>
+    <div class="cols3">
+      <div><b>Notificações do PRumo</b><p>CI falhou, aprovado, review pedido e pronto para merge chegam com o nome e o ícone do app. Tocar e segurar mostra Abrir, Re-rodar e Silenciar.</p></div>
+      <div><b>iPhone</b><p>Meus PRs, Revisar e Merge na barra de baixo, busca e filtros no topo. Tocar no PR mostra as ações: abrir no Safari, re-rodar o job que falhou, abrir o card no Jira, fixar e silenciar.</p></div>
+      <div><b>iPad</b><p>Barra lateral com as abas, as visões e os repositórios, a lista no meio e, ao lado, os checks, os reviews e a atividade do PR selecionado.</p></div>
+      <div><b>Sem virar cliente do GitHub</b><p>Aprovar, comentar e fazer merge continuam no GitHub e no GitLab, como no Mac.</p></div>
+    </div>
+  </div>
+</section>
+
 <section id="privacidade">
   <div class="wrap">
     <div class="sec-head"><h2>Roda no seu Mac e fala só com o GitHub e o GitLab.</h2></div>
@@ -542,6 +678,24 @@ fetch("https://api.github.com/repos/adrianogl/prumo/releases/latest", { headers:
     document.querySelectorAll("[data-version]").forEach((el) => { el.textContent = version; });
   })
   .catch(() => {});
+</script>
+<script>
+(() => {
+  const stage = document.querySelector('.devstage');
+  if (!stage) return;
+  const inner = stage.querySelector('.devinner');
+  const fit = () => {
+    const narrow = stage.clientWidth < 600;
+    stage.classList.toggle('narrow', narrow);
+    const w = narrow ? 240 : 920, h = narrow ? 500 : 620;
+    const k = Math.min(1, stage.clientWidth / w);
+    inner.style.transform = 'scale(' + k + ')';
+    inner.style.left = Math.max(0, (stage.clientWidth - w * k) / 2) + 'px';
+    stage.style.height = Math.ceil(h * k) + 'px';
+  };
+  new ResizeObserver(fit).observe(stage);
+  fit();
+})();
 </script>
 </body>
 </html>
