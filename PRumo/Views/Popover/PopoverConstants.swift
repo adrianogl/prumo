@@ -43,6 +43,7 @@ enum PopoverKey {
     static let mergeTab: Character = "3"
     static let rowMenu: Character = "."
     static let openWindow: Character = "o"
+    static let quit: KeyEquivalent = "q"
     static let claude = Character(ClaudeText.shortcutKey)
     static let openJira = RowMenuKey.openJira
     static let copy = RowMenuKey.copy
@@ -78,6 +79,8 @@ enum PopoverText {
     static let dayMonthFormat = "dd/MM"
     static let settings = "Ajustes"
     static let refresh = "Atualizar"
+    static let quit = "Sair"
+    static let quitHelp = "Encerrar o PRumo (⌘Q)"
     static let updating = "Atualizando…"
     static let reconnect = "Conectar de novo"
     static let invalidToken = "Token inválido."

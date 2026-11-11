@@ -531,6 +531,11 @@ struct PopoverView: View {
             }
             .buttonStyle(.plain)
             .fixedSize()
+            Button(PopoverText.quit) { NSApp.terminate(nil) }
+                .buttonStyle(.plain)
+                .fixedSize()
+                .keyboardShortcut(PopoverKey.quit, modifiers: .command)
+                .help(PopoverText.quitHelp)
         }
         .font(.system(size: PopoverMetrics.footerFontSize))
         .foregroundStyle(.secondary)
