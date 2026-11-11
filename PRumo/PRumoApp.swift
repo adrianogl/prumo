@@ -8,6 +8,10 @@ struct PRumoApp: App {
     @State private var model: AppModel
 
     init() {
+        if let running = SingleInstance.otherRunningInstance() {
+            running.activate()
+            exit(0)
+        }
         let notifications = NotificationService()
         UNUserNotificationCenter.current().delegate = notifications
         let model = AppModel(notifications: notifications)
